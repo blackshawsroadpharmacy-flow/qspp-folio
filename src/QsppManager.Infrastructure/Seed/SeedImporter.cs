@@ -20,7 +20,25 @@ public class SeedImporter(QsppDbContext db, AttachmentStore store, AuditService 
         return new Guid(bytes.Take(16).ToArray());
     }
 
-    private static string PackRoot => "/home/vpnhugh/Projects/qspp-pack";
+    /// <summary>Where the reference pack's source files live. Resolution order (M4 · DD-26):
+    /// 1. QSPP_PACK_ROOT environment variable; 2. a vendored copy at &lt;repo&gt;/vendor/qspp-pack
+    /// (portable handoff); 3. the original path on the authoring machine. The last one only
+    /// exists on the Linux box this app was built on — Mac/Windows machines use one of the first two.</summary>
+    private static string ResolvePackRoot()
+    {
+        var env = Environment.GetEnvironmentVariable("QSPP_PACK_ROOT");
+        if (!string.IsNullOrWhiteSpace(env) && Directory.Exists(env)) return env;
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        for (var i = 0; i < 8 && dir != null; i++, dir = dir.Parent)
+        {
+            var vendored = Path.Combine(dir.FullName, "vendor", "qspp-pack");
+            if (Directory.Exists(Path.Combine(vendored, "website-scrape", "downloads")))
+                return vendored;
+        }
+        return "/home/vpnhugh/Projects/qspp-pack";
+    }
+
+    private static readonly string PackRoot = ResolvePackRoot();
 
     public (int reqs, int examples, int issues, int docs) ImportAll(CancellationToken ct = default)
     {
