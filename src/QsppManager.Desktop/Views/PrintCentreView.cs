@@ -138,8 +138,9 @@ public partial class PrintCentreView : UserControl
         var anchorNote = detail.SourceDocument is null
             ? "source document not linked to this requirement"
             : $"{detail.SourceDocument.DisplayName} · sha256 {detail.SourceDocument.Sha256Hex[..12]}…";
-        if (detail.Requirement.AnchorApproximate)
-            anchorNote += " · line anchor approximate (provisional)";
+        anchorNote += detail.Requirement.AnchorPage is { } pg
+            ? $" · PDF p{pg}{(detail.Requirement.AnchorVerified ? " (verified)" : " (unverified)")}"
+            : detail.Requirement.AnchorApproximate ? " · line anchor approximate (provisional)" : "";
 
         var model = new PdfComposer.ChecklistModel(
             App.Workspace.EnsurePharmacy().Name,

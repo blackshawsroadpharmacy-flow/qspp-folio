@@ -52,7 +52,8 @@ public partial class LibraryView : UserControl
         _sources.Columns.Add(new DataGridTextColumn { Header = "Role", Binding = new Avalonia.Data.Binding("Role"), Width = new DataGridLength(90) });
         _sources.Columns.Add(new DataGridTextColumn { Header = "Version", Binding = new Avalonia.Data.Binding("Version"), Width = new DataGridLength(170) });
         _sources.Columns.Add(new DataGridTextColumn { Header = "sha256", Binding = new Avalonia.Data.Binding("ShaShort"), Width = new DataGridLength(110) });
-        _sources.Columns.Add(new DataGridTextColumn { Header = "Provenance", Binding = new Avalonia.Data.Binding("Provenance"), Width = new DataGridLength(280) });
+        _sources.Columns.Add(new DataGridTextColumn { Header = "Full text", Binding = new Avalonia.Data.Binding("Indexed"), Width = new DataGridLength(80) });
+        _sources.Columns.Add(new DataGridTextColumn { Header = "Provenance", Binding = new Avalonia.Data.Binding("Provenance"), Width = new DataGridLength(230) });
         sp.Children.Add(_sources);
         var docRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         docRow.Children.Add(new Button { Content = "Open source PDF via system viewer", Height = 34 }.With(b => b.Click += (_, _) =>
@@ -60,6 +61,29 @@ public partial class LibraryView : UserControl
             if (_sources.SelectedItem is SourceDocRow s)
                 Helpers.OpenWithSystemViewer(App.Store.AbsolutePath(s.StoredRelativePath));
             else _message.Text = "Select a source document first.";
+        }));
+        docRow.Children.Add(new Button { Content = "Extract full text (selected)", Height = 34 }.With(b => b.Click += (_, _) =>
+        {
+            if (_sources.SelectedItem is not SourceDocRow s) { _message.Text = "Select a source document first."; return; }
+            var (ok, pages, err) = App.TextIndex.Extract(s.Id);
+            _message.Text = ok
+                ? $"Extracted {pages} pages from “{s.DisplayName}” into the search index. Ctrl+K and the search box now find words inside that document."
+                : $"Extraction failed: {err}";
+            Load();
+        }));
+        docRow.Children.Add(new Button { Content = "Extract & index all documents", Height = 34 }.With(b => b.Click += (_, _) =>
+        {
+            var docs = App.Workspace.AllSourceDocuments();
+            var done = 0; var failed = 0; var pagesTotal = 0; var lastError = "";
+            foreach (var d in docs)
+            {
+                var (ok, pages, err) = App.TextIndex.Extract(d.Id);
+                if (ok) { done++; pagesTotal += pages; } else { failed++; lastError = $"{d.DisplayName}: {err}"; }
+            }
+            _message.Text = done == docs.Count
+                ? $"Indexed {done} documents ({pagesTotal} pages). The full corpus text is now searchable."
+                : $"Indexed {done} of {docs.Count} documents ({pagesTotal} pages); {failed} failed — first failure: {lastError}";
+            Load();
         }));
         sp.Children.Add(docRow);
 
@@ -97,7 +121,8 @@ public partial class LibraryView : UserControl
     private void Load()
     {
         _sources.ItemsSource = App.Workspace.AllSourceDocuments()
-            .Select(d => new SourceDocRow(d.DisplayName, d.Role, d.SourceVersion, d.Sha256Hex[..12] + "…", d.ProvenanceNote, d.StoredRelativePath)).ToList();
+            .Select(d => new SourceDocRow(d.Id, d.DisplayName, d.Role, d.SourceVersion, d.Sha256Hex[..12] + "…",
+                App.TextIndex.IsCached(d.Sha256Hex) ? "indexed" : "—", d.ProvenanceNote, d.StoredRelativePath)).ToList();
         _issues.ItemsSource = App.Workspace.Issues()
             .Select(i => new IssueRow(i.Id, i.Key, i.Title, i.Status, i.ConservativePlanning)).ToList();
         _superseded.ItemsSource = App.Workspace.SupersessionReview()
@@ -185,7 +210,7 @@ public partial class LibraryView : UserControl
         Load();
     }
 
-    public record SourceDocRow(string DisplayName, string Role, string Version, string ShaShort, string Provenance, string StoredRelativePath);
+    public record SourceDocRow(Guid Id, string DisplayName, string Role, string Version, string ShaShort, string Indexed, string Provenance, string StoredRelativePath);
     public record IssueRow(Guid Id, string Key, string Title, string Status, string Planning);
     public record SupersededRow(string OldTitle, string Replacement, string Reason, string AffectedReqs, string OpenTasks);
     public record SearchRow(string Kind, string Title, string Excerpt, string Meta, Guid Id);

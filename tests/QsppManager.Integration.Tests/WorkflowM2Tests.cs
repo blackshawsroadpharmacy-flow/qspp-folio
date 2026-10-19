@@ -13,9 +13,9 @@ public class SearchTests : TestBase
     [Fact]
     public void BuildFtsQuery_QuotesTokens_AndPrefixesTheLast()
     {
-        Assert.Equal("\"potency\" AND \"test*\"", CorpusSearch.BuildFtsQuery("potency test"));
+        Assert.Equal("\"potency\" AND \"test\"*", CorpusSearch.BuildFtsQuery("potency test"));
         // Single-token queries also get the prefix star — "attestation" must find "attestations".
-        Assert.Equal("\"mid-cycle*\"", CorpusSearch.BuildFtsQuery("mid-cycle"));
+        Assert.Equal("\"mid-cycle\"*", CorpusSearch.BuildFtsQuery("mid-cycle"));
     }
 
     [Fact]

@@ -105,4 +105,8 @@ public interface ICorpusIndexer
     int RebuildIndex();
     void IndexEvidence(Guid evidenceId);
     void RetireIndexEntry(Guid targetId);
+
+    /// <summary>Indexes (or re-indexes) a source document row whose body includes extracted
+    /// full text — after this, palette search hits inside the actual PDFs.</summary>
+    void IndexDocumentText(Guid documentId, string displayName, string text);
 }

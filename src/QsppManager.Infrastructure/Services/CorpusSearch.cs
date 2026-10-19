@@ -108,6 +108,12 @@ public class CorpusSearch(QsppDbContext db) : ICorpusIndexer
         db.Database.ExecuteSqlRaw("DELETE FROM search_index WHERE target = {0}", targetId.ToString());
     }
 
+    public void IndexDocumentText(Guid documentId, string displayName, string text)
+    {
+        db.Database.ExecuteSqlRaw("DELETE FROM search_index WHERE target = {0}", documentId.ToString());
+        IndexRow("Source", "", displayName, text, "source document · full text indexed", documentId);
+    }
+
     public List<SearchResultRow> Query(string text, int cap = 40)
     {
         text = text.Trim();
@@ -126,14 +132,14 @@ public class CorpusSearch(QsppDbContext db) : ICorpusIndexer
         return rows;
     }
 
-    /// <summary>"potency test" → '"potency" AND "test*"' — every token required, last token prefix-enabled.</summary>
+    /// <summary>"potency test" → '"potency" AND "test"*' — every token required, last-token
+    /// prefix enabled. The star goes OUTSIDE the quotes: inside them it's a literal token.</summary>
     public static string BuildFtsQuery(string text)
     {
         var tokens = text.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(t => "\"" + t.Replace("\"", "") + "\"").ToList();
         if (tokens.Count == 0) return "\"\"";
-        var last = tokens[^1];
-        tokens[^1] = last[..^1] + "*\""; // add prefix star inside the quotes
+        tokens[^1] += "*";
         return string.Join(" AND ", tokens);
     }
 
@@ -145,7 +151,7 @@ public class CorpusSearch(QsppDbContext db) : ICorpusIndexer
         if (cmd.Connection.State != System.Data.ConnectionState.Open) cmd.Connection.Open();
         cmd.CommandText = """
             SELECT kind, ref, title, snippet(search_index, 3, '[', ']', '…', 14), meta, target,
-                   bm25(search_index, 0.0, 2.0, 10.0, 1.0) AS score
+                   bm25(search_index, 0.0, 2.0, 10.0, 1.0, 0.0, 0.0) AS score
             FROM search_index WHERE search_index MATCH @q
             ORDER BY score LIMIT @cap
             """;

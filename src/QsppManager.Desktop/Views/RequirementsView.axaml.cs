@@ -114,9 +114,11 @@ public partial class RequirementsView : UserControl
             Classes = { "small" },
             TextWrapping = TextWrapping.Wrap,
             Text = $"Source: {d.SourceDocument?.DisplayName ?? d.Requirement.SourceDocFile} v{d.Requirement.SourceVersion}" +
-                   (d.Requirement.AnchorApproximate
-                       ? $" · anchor approx. lines {d.Requirement.AnchorLines} (provisional — verified page anchoring arrives in Milestone 2)"
-                       : $" · anchor lines {d.Requirement.AnchorLines}") +
+                   (d.Requirement.AnchorPage is { } pg
+                       ? $" · PDF p{pg}{(d.Requirement.AnchorVerified ? " (verified)" : " (unverified — locator search only)")}"
+                       : d.Requirement.AnchorApproximate
+                           ? $" · anchor approx. lines {d.Requirement.AnchorLines} (provisional)"
+                           : $" · anchor lines {d.Requirement.AnchorLines}") +
                    $" · type {d.Requirement.RefKind}",
         });
         return sp;

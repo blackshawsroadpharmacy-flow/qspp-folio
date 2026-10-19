@@ -25,6 +25,7 @@ public partial class App : Avalonia.Application
     public static CupsPrintService Printer { get; private set; } = null!;
     public static PdfComposer Composer { get; private set; } = null!;
     public static CorpusSearch Search { get; private set; } = null!;
+    public static DocumentTextIndex TextIndex { get; private set; } = null!;
     public static bool DemoMode { get; private set; }
 
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
@@ -44,7 +45,7 @@ public partial class App : Avalonia.Application
             .UseSqlite($"Data Source={AppData.DatabasePath(DemoMode)}")
             .Options;
         Db = new QsppDbContext(options);
-        Db.Database.EnsureCreated();
+        DatabaseBootstrapper.Prepare(Db);   // fresh → migrations create; legacy EnsureCreated → stamped then migrated
 
         var fontsDir = Path.Combine(RepoRoot, "assets", "fonts");
         if (!Directory.Exists(fontsDir))
@@ -56,6 +57,7 @@ public partial class App : Avalonia.Application
         Auth = new AuthService(Db, Audit);
         Seeds = new SeedImporter(Db, Store, Audit, RepoRoot);
         Search = new CorpusSearch(Db);
+        TextIndex = new DocumentTextIndex(Db, Store, Search, AppData.Ensure("document-text"));
         Workspace = new QsppWorkspace(Db, Store, Audit, Search);
         Printer = new CupsPrintService(Db, Audit);
         Composer = new PdfComposer(fontsDir);
@@ -66,6 +68,7 @@ public partial class App : Avalonia.Application
             // Fresh full-text index over whatever the import (re)built — cheap at corpus scale.
             Search.EnsureIndex();
             Log.Information("FTS index rebuilt: {Rows} rows", Search.RebuildIndex());
+            Log.Information("Document full-text reindexed from cache: {Docs} docs", TextIndex.ReindexCached());
         }
         catch (Exception ex)
         {

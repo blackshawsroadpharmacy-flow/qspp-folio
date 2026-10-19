@@ -21,6 +21,10 @@ public class Requirement
     /// <summary>Page anchor where derivable; null when not (owner brief: do not invent).</summary>
     public int? AnchorPage { get; set; }
 
+    /// <summary>True when the page number was verified by locating the wording on that page
+    /// (page-anchors.json provenance). Unverified page numbers keep AnchorApproximate = true.</summary>
+    public bool AnchorVerified { get; set; } = false;
+
     public string WordingExcerpt { get; set; } = "";
     public DomainPart Domain { get; set; }
     public ApplicabilityHint ApplicabilityHint { get; set; }
