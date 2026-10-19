@@ -682,6 +682,71 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
         return (rows, note);
     }
 
+    // ---------- M4: assessment events & findings ----------
+    public List<AssessmentEvent> AssessmentEvents() =>
+        db.AssessmentEvents.AsNoTracking().OrderBy(e => e.ScheduledDate).ToList();
+
+    public ServiceResult AddAssessmentEvent(string kind, DateOnly date, string note, UserSession session)
+    {
+        if (session == null || session.ReadOnly) return ServiceResult.Fail("Read-only reviewer accounts cannot record assessment events.");
+        if (kind is not ("Onsite" or "MidCycle" or "ReAccreditation" or "Other")) return ServiceResult.Fail("Unknown assessment kind.");
+        var ev = new AssessmentEvent { Kind = kind, ScheduledDate = date, Note = note ?? "", CreatedByUserId = session.UserId };
+        db.AssessmentEvents.Add(ev);
+        db.SaveChanges();
+        audit.Append(session.DisplayName, session.UserId, "assessment.recorded", "assessment-event", ev.Id.ToString(), $"{kind} on {date:dd MMM yyyy}");
+        return ServiceResult.Succeed(ev.Id);
+    }
+
+    /// <summary>OutcomeReceived REQUIRES the external reference — the app must never record
+    /// an assessor outcome that hasn't physically arrived.</summary>
+    public ServiceResult SetAssessmentEventState(Guid eventId, string state, string outcomeRef, UserSession session)
+    {
+        if (session == null || !session.CanVerify) return ServiceResult.Fail("Only Owner/Admin or Manager/Reviewer accounts can update assessment events.");
+        if (state is not ("Planned" or "InProgress" or "Completed" or "OutcomeReceived")) return ServiceResult.Fail("Unknown event state.");
+        if (state == "OutcomeReceived" && string.IsNullOrWhiteSpace(outcomeRef))
+            return ServiceResult.Fail("Recording an outcome requires the report or letter reference. Never claim an outcome that has not arrived.");
+        var ev = db.AssessmentEvents.FirstOrDefault(e => e.Id == eventId);
+        if (ev == null) return ServiceResult.Fail("Assessment event not found.");
+        ev.State = state;
+        ev.OutcomeRef = state == "OutcomeReceived" ? outcomeRef.Trim() : ev.OutcomeRef;
+        db.SaveChanges();
+        audit.Append(session.DisplayName, session.UserId, "assessment.state", "assessment-event", eventId.ToString(), $"{ev.State}" + (state == "OutcomeReceived" ? $"; ref={ev.OutcomeRef}" : ""));
+        return ServiceResult.Succeed();
+    }
+
+    public List<Finding> FindingsFor(Guid eventId) =>
+        db.Findings.AsNoTracking().Where(f => f.EventId == eventId).OrderBy(f => f.State).ThenBy(f => f.CreatedAtUtc).ToList();
+
+    public ServiceResult AddFinding(Guid eventId, string requirementRef, string description, string severity, Guid ownerUser, UserSession session)
+    {
+        if (session == null || session.ReadOnly) return ServiceResult.Fail("Read-only reviewer accounts cannot record findings.");
+        if (!db.AssessmentEvents.Any(e => e.Id == eventId)) return ServiceResult.Fail("Assessment event not found.");
+        if (string.IsNullOrWhiteSpace(description)) return ServiceResult.Fail("Describe the finding — the record is what an assessor (and future staff) must see.");
+        var f = new Finding { EventId = eventId, RequirementRef = requirementRef?.Trim() ?? "", Description = description, Severity = severity ?? "", OwnerUserId = ownerUser };
+        db.Findings.Add(f);
+        db.SaveChanges();
+        audit.Append(session.DisplayName, session.UserId, "finding.recorded", "finding", f.Id.ToString(), $"{severity}; {description[..Math.Min(120, description.Length)]}");
+        return ServiceResult.Succeed(f.Id);
+    }
+
+    /// <summary>Closure requires a corrective action — findings disappear if they can be
+    /// closed empty, and the action is the evidence that something actually changed.</summary>
+    public ServiceResult SetFindingState(Guid findingId, string state, string correctiveAction, UserSession session)
+    {
+        if (session == null || !session.CanVerify) return ServiceResult.Fail("Only Owner/Admin or Manager/Reviewer accounts can update findings.");
+        if (state is not ("Open" or "Actioned" or "Closed")) return ServiceResult.Fail("Unknown finding state.");
+        var f = db.Findings.FirstOrDefault(x => x.Id == findingId);
+        if (f == null) return ServiceResult.Fail("Finding not found.");
+        if (state == "Closed" && string.IsNullOrWhiteSpace(correctiveAction) && string.IsNullOrWhiteSpace(f.CorrectiveAction))
+            return ServiceResult.Fail("A finding cannot close without a recorded corrective action.");
+        f.State = state;
+        if (!string.IsNullOrWhiteSpace(correctiveAction)) f.CorrectiveAction = correctiveAction;
+        f.UpdatedAtUtc = DateTime.UtcNow;
+        db.SaveChanges();
+        audit.Append(session.DisplayName, session.UserId, "finding.state", "finding", findingId.ToString(), state + (correctiveAction != null && correctiveAction != "" ? $"; action={correctiveAction}" : ""));
+        return ServiceResult.Succeed();
+    }
+
     // ---------- deadlines ----------
     public List<DeadlineInfo> DeadlinesFor(Requirement r, RequirementState state)
     {

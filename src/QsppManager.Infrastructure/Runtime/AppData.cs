@@ -6,6 +6,8 @@ public static class AppData
         Environment.GetEnvironmentVariable("QSPP_DATA_DIR")
         ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "QsppManager");
 
+    public static string RestoreStaging() => Ensure("restore-staging");
+
     public static string DatabasePath(bool demo) => Path.Combine(Root, demo ? "qspp-demo.db" : "qspp.db");
     public static string SeedDirectory(string repoRoot) =>
         Path.Combine(repoRoot, "seed");

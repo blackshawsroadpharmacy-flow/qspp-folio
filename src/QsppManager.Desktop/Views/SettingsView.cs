@@ -92,8 +92,10 @@ public partial class SettingsView : UserControl
             _message.Text = valid ? "Audit chain verified: every entry links to the previous digest." : $"AUDIT CHAIN BROKEN at entry {broken}. Stop and investigate before trusting recorded actions.";
         };
         var backup = new Button { Content = "Back up database + attachments…" };
-        backup.Click += (_, _) => Backup();
-        var bRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { verify, backup } };
+        backup.Click += (_, _) => { _ = Backup(); };
+        var restoreBtn = new Button { Content = "Restore from backup…" };
+        restoreBtn.Click += (_, _) => { _ = RestoreAsync(); };
+        var bRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { verify, backup, restoreBtn } };
         sp.Children.Add(bRow);
         sp.Children.Add(_message);
 
@@ -179,39 +181,37 @@ public partial class SettingsView : UserControl
 
     private async Task Backup()
     {
-        var win = new Avalonia.Controls.Window { Title = "Choose backup folder" };
-        _ = win;
-        try
+        var label = await Dialogs.Prompt(this, "Backup", "Label for this backup (optional)") ?? "";
+        var svc = new QsppManager.Infrastructure.Backup.BackupService(App.Db, App.Store, AppData.BackupsDir);
+        var (ok, zipPath, error, shaHead) = svc.CreateBackup(label);
+        _message.Text = ok
+            ? $"Backup written (zip): {zipPath}\nsha256 {shaHead}… (database at backup time). Restores validate every file hash before extracting anything."
+            : $"Backup failed: {error}. Nothing was corrupted — the live data was only read.";
+        return;
+    }
+
+    private async Task RestoreAsync()
+    {
+        var tl = TopLevel.GetTopLevel(this);
+        if (tl == null) return;
+        var files = await tl.StorageProvider.OpenFilePickerAsync(new Avalonia.Platform.Storage.FilePickerOpenOptions
         {
-            var dest = Path.Combine(AppData.BackupsDir, $"backup-{DateTime.Now:yyyyMMdd-HHmm}");
-            Directory.CreateDirectory(dest);
-            var dbPath = AppData.DatabasePath(App.DemoMode);
-            File.Copy(dbPath, Path.Combine(dest, Path.GetFileName(dbPath)), overwrite: true);
-            var attachDir = AppData.AttachmentsDir;
-            if (Directory.Exists(attachDir))
-            {
-                foreach (var f in Directory.GetFiles(attachDir, "*", SearchOption.AllDirectories))
-                {
-                    var rel = Path.GetRelativePath(attachDir, f);
-                    var target = Path.Combine(dest, "attachments", rel);
-                    Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-                    File.Copy(f, target, overwrite: true);
-                }
-            }
-            // manifest with checksums
-            var lines = new List<string>();
-            foreach (var f in Directory.GetFiles(dest, "*", SearchOption.AllDirectories))
-            {
-                using var stream = File.OpenRead(f);
-                var hash = Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
-                lines.Add($"{hash}  {Path.GetRelativePath(dest, f)}");
-            }
-            await File.WriteAllLinesAsync(Path.Combine(dest, "manifest.sha256"), lines);
-            _message.Text = $"Backup written to {dest} with a sha256 manifest. Restore verification is part of Milestone 4 (this backup is a consistent copy at the current moment).";
-        }
-        catch (Exception ex)
+            AllowMultiple = false, Title = "Choose a QSPP Manager backup (.zip)",
+            FileTypeFilter = [new Avalonia.Platform.Storage.FilePickerFileType("QSPP backup") { Patterns = ["*.zip"] }],
+        });
+        if (files.Count == 0) return;
+        var zipPath = files[0].Path.LocalPath;
+        var confirm = await Dialogs.Prompt(this, "Restore", $"Restore from {Path.GetFileName(zipPath)}?\nType RESTORE to continue. The app will close after a verified restore — the restored copy replaces the data on next launch.");
+        if (confirm != "RESTORE") { _message.Text = "Restore cancelled — nothing changed."; return; }
+        var svc = new QsppManager.Infrastructure.Backup.BackupService(App.Db, App.Store, AppData.BackupsDir);
+        var restoreDir = AppData.RestoreStaging();
+        var (ok, error, restoredDb, restoredFiles) = svc.Restore(zipPath, restoreDir);
+        if (!ok)
         {
-            _message.Text = $"Backup failed: {ex.Message}. Nothing was corrupted — the live data was only read.";
+            _message.Text = $"RESTORE REFUSED: {error}\nThe current data is untouched.";
+            return;
         }
+        _message.Text = $"Verified and extracted {restoredFiles} files into {restoreDir}. Restore completes after app restart.";
+        await Dialogs.Prompt(this, "Restore ready", $"Files verified and extracted to {restoreDir}. Close the app now; on next launch it uses the restored copy. (Data dir swap is logged in the audit trail on restart.)");
     }
 }

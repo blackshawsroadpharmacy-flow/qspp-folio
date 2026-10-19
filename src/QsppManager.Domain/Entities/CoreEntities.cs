@@ -362,6 +362,37 @@ public class PotencyRecord
     public Guid? EvidenceItemId { get; set; }
 }
 
+/// <summary>M4: assessment events timeline — planned/attended Guild assessments and the
+/// outcome reference when it actually arrives. The app records, never predicts.</summary>
+public class AssessmentEvent
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string Kind { get; set; } = "Onsite";     // Onsite | MidCycle | ReAccreditation | Other
+    public DateOnly ScheduledDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+    public string State { get; set; } = "Planned";   // Planned | InProgress | Completed | OutcomeReceived
+    /// <summary>Required when State = OutcomeReceived: the report/letter reference.</summary>
+    public string OutcomeRef { get; set; } = "";
+    public string Note { get; set; } = "";
+    public Guid CreatedByUserId { get; set; }
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+}
+
+/// <summary>A finding raised in/by an assessment (or internal review) with its corrective
+/// action and closure. Closure demands a recorded corrective action — same rule as incidents.</summary>
+public class Finding
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid EventId { get; set; }
+    public string RequirementRef { get; set; } = "";  // free-text ref; not an FK — findings may be informal
+    public string Description { get; set; } = "";
+    public string Severity { get; set; } = "";        // free text; the program defines no taxonomy we can verify
+    public string State { get; set; } = "Open";       // Open | Actioned | Closed
+    public string CorrectiveAction { get; set; } = "";
+    public Guid OwnerUserId { get; set; }
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
+}
+
 /// <summary>Per-policy acknowledgement with the version acknowledged — QSPP asks for
 /// policy-version-tied acknowledgement, not a blanket "yes I've read things".</summary>
 public class PolicyAcknowledgement

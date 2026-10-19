@@ -11,6 +11,9 @@ namespace QsppManager.Desktop.Views;
 /// with the Guild — the app only helps you not be surprised.</summary>
 public partial class AssessmentsView : UserControl
 {
+    private readonly DataGrid _events = new() { Height = 140, AutoGenerateColumns = false, IsReadOnly = true, RowHeight = 32 };
+    private readonly DataGrid _findings = new() { Height = 150, AutoGenerateColumns = false, IsReadOnly = true, RowHeight = 32 };
+
     public AssessmentsView(ShellViewModel shell)
     {
         var sp = new StackPanel { Margin = new(32, 28), Spacing = 14, MaxWidth = 1100, HorizontalAlignment = HorizontalAlignment.Left };
@@ -19,8 +22,104 @@ public partial class AssessmentsView : UserControl
             Text = "The preparation journey from first reading to the cycle's end. QSPP accreditation is awarded by the Guild's assessment process — this screen helps you arrive ready and keep the records that show it. Counts are live database values; what to do next is stated plainly." });
 
         Refresh(sp, shell);
+        BuildEvents(sp);
+        LoadEvents();
         Content = new ScrollViewer { Content = sp };
     }
+
+    private void BuildEvents(StackPanel sp)
+    {
+        sp.Children.Add(new TextBlock { Text = "Assessment events timeline & findings", Classes = { "h3" }, Margin = new(0, 10, 0, 0) });
+        sp.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
+            Text = "Record each planned assessment and the outcome when it actually arrives — an outcome can never be marked received without the report or letter reference. Findings carry corrective actions; a finding cannot close empty." });
+        _events.Columns.Add(new DataGridTextColumn { Header = "Kind", Binding = new Avalonia.Data.Binding("Kind"), Width = new DataGridLength(130) });
+        _events.Columns.Add(new DataGridTextColumn { Header = "Date", Binding = new Avalonia.Data.Binding("Date"), Width = new DataGridLength(110) });
+        _events.Columns.Add(new DataGridTextColumn { Header = "State", Binding = new Avalonia.Data.Binding("State"), Width = new DataGridLength(140) });
+        _events.Columns.Add(new DataGridTextColumn { Header = "Outcome reference", Binding = new Avalonia.Data.Binding("Outcome"), Width = new DataGridLength(260) });
+        _events.Columns.Add(new DataGridTextColumn { Header = "Note", Binding = new Avalonia.Data.Binding("Note"), Width = new DataGridLength(400) });
+        sp.Children.Add(_events);
+        _events.SelectionChanged += (_, _) => LoadFindings();
+        var evRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        evRow.Children.Add(new Button { Content = "New event…", Classes = { "primary" }, Height = 34 }.With(b => b.Click += async (_, _) =>
+        {
+            var kind = await Dialogs.Prompt(this, "New assessment event", "Onsite, MidCycle, ReAccreditation or Other", "Onsite");
+            if (string.IsNullOrWhiteSpace(kind)) return;
+            var dateText = await Dialogs.Prompt(this, "New assessment event", "Scheduled date (yyyy-MM-dd)");
+            if (!DateOnly.TryParse(dateText, out var date)) { _eventsMessage.Text = "Date must be yyyy-MM-dd."; return; }
+            var note = await Dialogs.Prompt(this, "New assessment event", "Note (provider, booking ref…)") ?? "";
+            var res = App.Workspace.AddAssessmentEvent(kind.Trim(), date, note, App.Session!);
+            _eventsMessage.Text = res.Ok ? "Event recorded on the timeline." : res.Error;
+            LoadEvents();
+        }));
+        evRow.Children.Add(new Button { Content = "Mark completed", Height = 34 }.With(b => b.Click += (_, _) =>
+        {
+            if (_events.SelectedItem is not EvRow r) { _eventsMessage.Text = "Select an event first."; return; }
+            var res = App.Workspace.SetAssessmentEventState(r.Id, "Completed", "", App.Session!);
+            _eventsMessage.Text = res.Ok ? "Marked completed." : res.Error;
+            LoadEvents();
+        }));
+        evRow.Children.Add(new Button { Content = "Outcome received…", Height = 34 }.With(b => b.Click += async (_, _) =>
+        {
+            if (_events.SelectedItem is not EvRow r) { _eventsMessage.Text = "Select an event first."; return; }
+            var refText = await Dialogs.Prompt(this, "Outcome received", "Report or letter reference (required)");
+            var res = App.Workspace.SetAssessmentEventState(r.Id, "OutcomeReceived", refText ?? "", App.Session!);
+            _eventsMessage.Text = res.Ok ? "Outcome recorded with its reference — the closure evidence the program expects." : res.Error;
+            LoadEvents();
+        }));
+        sp.Children.Add(evRow);
+
+        sp.Children.Add(new TextBlock { Text = "Findings (selected event)", Classes = { "h3" }, Margin = new(0, 6, 0, 0) });
+        _findings.Columns.Add(new DataGridTextColumn { Header = "Requirement", Binding = new Avalonia.Data.Binding("ReqRef"), Width = new DataGridLength(120) });
+        _findings.Columns.Add(new DataGridTextColumn { Header = "Severity", Binding = new Avalonia.Data.Binding("Severity"), Width = new DataGridLength(100) });
+        _findings.Columns.Add(new DataGridTextColumn { Header = "Description", Binding = new Avalonia.Data.Binding("Desc"), Width = new DataGridLength(430) });
+        _findings.Columns.Add(new DataGridTextColumn { Header = "State", Binding = new Avalonia.Data.Binding("State"), Width = new DataGridLength(90) });
+        _findings.Columns.Add(new DataGridTextColumn { Header = "Corrective action", Binding = new Avalonia.Data.Binding("Action"), Width = new DataGridLength(280) });
+        sp.Children.Add(_findings);
+        var fRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        fRow.Children.Add(new Button { Content = "Record finding…", Height = 34 }.With(b => b.Click += async (_, _) =>
+        {
+            if (_events.SelectedItem is not EvRow ev) { _eventsMessage.Text = "Select an event first."; return; }
+            var desc = await Dialogs.Prompt(this, "Record finding", "What was found");
+            if (string.IsNullOrWhiteSpace(desc)) return;
+            var reqRef = await Dialogs.Prompt(this, "Record finding", "Related requirement ref (optional, e.g. 2.2.3.8)") ?? "";
+            var sev = await Dialogs.Prompt(this, "Record finding", "Severity (free text — the program defines no taxonomy)") ?? "";
+            var res = App.Workspace.AddFinding(ev.Id, reqRef, desc, sev, App.Session!.UserId, App.Session);
+            _eventsMessage.Text = res.Ok ? "Finding recorded — it stays open until a corrective action closes it." : res.Error;
+            LoadEvents();
+        }));
+        fRow.Children.Add(new Button { Content = "Close finding…", Height = 34 }.With(b => b.Click += async (_, _) =>
+        {
+            if (_findings.SelectedItem is not FRow f) { _eventsMessage.Text = "Select a finding first."; return; }
+            var action = await Dialogs.Prompt(this, "Close finding", "Corrective action (required to close)");
+            var res = App.Workspace.SetFindingState(f.Id, "Closed", action ?? "", App.Session!);
+            _eventsMessage.Text = res.Ok ? "Finding closed with its corrective action on record." : res.Error;
+            LoadEvents();
+        }));
+        sp.Children.Add(fRow);
+        _eventsMessage = new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap };
+        sp.Children.Add(_eventsMessage);
+    }
+
+    private TextBlock _eventsMessage = new();
+
+    private void LoadEvents()
+    {
+        _events.ItemsSource = App.Workspace.AssessmentEvents().Select(e => new EvRow(
+            e.Id, e.Kind, e.ScheduledDate.ToString("dd MMM yyyy"), e.State, e.OutcomeRef, e.Note)).ToList();
+        LoadFindings();
+    }
+
+    private void LoadFindings()
+    {
+        if (_events.SelectedItem is EvRow ev)
+            _findings.ItemsSource = App.Workspace.FindingsFor(ev.Id).Select(f => new FRow(
+                f.Id, f.RequirementRef, f.Severity, f.Description, f.State, f.CorrectiveAction)).ToList();
+        else
+            _findings.ItemsSource = new List<FRow>();
+    }
+
+    public record EvRow(Guid Id, string Kind, string Date, string State, string Outcome, string Note);
+    public record FRow(Guid Id, string ReqRef, string Severity, string Desc, string State, string Action);
 
     private void Refresh(StackPanel sp, ShellViewModel shell)
     {

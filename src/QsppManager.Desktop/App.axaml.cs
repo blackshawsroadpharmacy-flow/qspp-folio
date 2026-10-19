@@ -33,6 +33,7 @@ public partial class App : Avalonia.Application
     public override void OnFrameworkInitializationCompleted()
     {
         AppData.EnsureAll();
+        RestoreStagedBackupIfAny();
         RepoRoot = FindRepoRoot();
         DemoMode = Environment.GetEnvironmentVariable("QSPP_DEMO") == "1";
 
@@ -82,6 +83,31 @@ public partial class App : Avalonia.Application
             Main = desktop.MainWindow;
         }
         base.OnFrameworkInitializationCompleted();
+    }
+
+    /// <summary>If a verified restore left files in appsdata/restore-staging, promote them
+    /// (database + attachments) into the live data dir BEFORE the database opens. Runs once;
+    /// the staging dir is removed after promotion.</summary>
+    private static void RestoreStagedBackupIfAny()
+    {
+        var staging = AppData.RestoreStaging();
+        var stagedDb = Path.Combine(staging, "qspp.db");
+        if (!File.Exists(stagedDb)) return;
+        var liveDb = AppData.DatabasePath(App.DemoMode);
+        File.Copy(stagedDb, liveDb, overwrite: true);
+        var stagedAtt = Path.Combine(staging, "attachments");
+        if (Directory.Exists(stagedAtt))
+        {
+            var attDir = AppData.AttachmentsDir;
+            foreach (var f in Directory.EnumerateFiles(stagedAtt, "*", SearchOption.AllDirectories))
+            {
+                var dest = Path.Combine(attDir, Path.GetRelativePath(stagedAtt, f));
+                Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+                File.Copy(f, dest, overwrite: true);
+            }
+        }
+        try { Directory.Delete(staging, recursive: true); } catch { }
+        Console.WriteLine($"[qspp] restored backup promoted into {AppData.Root}");
     }
 
     /// <summary>Signed-in session; null until sign-in. Roles enforced in workspace services.</summary>
