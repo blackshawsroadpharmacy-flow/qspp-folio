@@ -100,6 +100,28 @@ entries total.
   (`ISS-POTENCY-CADENCE`); QC2020 5.3.7 (@~3780–3788) said per-technician-only, the UAG adds the
   pharmacist cohort.
 
+## Page-anchor provenance (M2, added 2026-10-20)
+
+`seed/page-anchors.json` (traced run, retrieved 2026-10-20) carries PDF page numbers for
+**437 of 451** requirements; the 14 without pages are the HITLIST planning rows (pack-local,
+no PDF by nature). Anchors with `verified: true` had their locator string confirmed present
+on the recorded page; the importer keeps `AnchorApproximate = true` for anything unverified.
+
+Verified against the PDFs during import: Rule 10 → Program Rules p2 (cancellation wording
+present), 2.2.3.8 → Standard p28. Caveats from the tracing run:
+
+- The AS85000 PDF is **37 pages** (earlier "~54" was an over-estimate), and its clause
+  headings appear verbatim in the table of contents as well as the body — STD page anchors
+  were disambiguated TOC-vs-body by scoring body-text co-occurrence. If a Standard page
+  number looks like a TOC page, it isn't.
+- TC clauses 14–17 headings also appear inside the Clause 22 cross-reference list; the
+  tracing run chose the earliest BODY page. If a TC anchor seems early, check against the
+  clause's own section rather than the cross-ref list.
+- All 284 UAGKeyTask lettered items matched exact wording within their section page ranges
+  (no letter-repeat fallbacks needed).
+- Line anchors remain the fallback where PDF pages are absent; page numbers marked
+  "(verified)" in the UI are safe to cite; "(unverified)" are locator-search results only.
+
 ## 6. Not captured / unverified (deliberately marked, not invented)
 
 1. **FAQ answers** — hub accordions collapsed at scrape time; only questions captured. Not in seeds.
