@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>QsppManager.Domain</RootNamespace>
+  </PropertyGroup>
+
+  <!-- Pure domain: no framework dependencies allowed here (deadline services, entities, state machines). -->
+
+</Project>

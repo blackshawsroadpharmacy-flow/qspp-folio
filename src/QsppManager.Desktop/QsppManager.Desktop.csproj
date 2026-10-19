@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>QsppManager.Desktop</RootNamespace>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../QsppManager.Application/QsppManager.Application.csproj" />
+    <ProjectReference Include="../QsppManager.Infrastructure/QsppManager.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\Fonts\**" />
+    <AvaloniaResource Include="Assets\Icons\**" />
+    <AvaloniaResource Include="Assets\Notices\**" />
+  </ItemGroup>
+
+  <!-- Avalonia + Fluent + DataGrid + Diagnostics(debug) added via CLI. -->
+
+</Project>

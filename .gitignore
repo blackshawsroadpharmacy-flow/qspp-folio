@@ -1,0 +1,27 @@
+# Build
+bin/
+obj/
+*.user
+artifacts/
+
+# Data locations the app manages at runtime
+appdata/
+*.db
+*.db-shm
+*.db-wal
+backups/
+
+# Secrets & credentials — MUST never enter source control (see docs/decisions.md)
+**/cookies.json
+**/cookiejar*.json
+**/secrets*.json
+.env
+.env.*
+
+# Fonts/icons fetched by tools/setup-deps.sh are committed; large downloads are not
+downloads.tmp/
+tmp/
+
+# OS
+.DS_Store
+Thumbs.db

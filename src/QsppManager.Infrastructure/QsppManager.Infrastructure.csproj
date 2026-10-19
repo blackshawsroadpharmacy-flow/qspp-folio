@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>QsppManager.Infrastructure</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../QsppManager.Application/QsppManager.Application.csproj" />
+  </ItemGroup>
+
+  <!-- EF Core SQLite, PdfPig, QuestPDF, ClosedXML, Serilog added via CLI. -->
+
+</Project>

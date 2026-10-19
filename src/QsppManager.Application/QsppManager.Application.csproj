@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>QsppManager.Application</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../QsppManager.Domain/QsppManager.Domain.csproj" />
+  </ItemGroup>
+
+  <!-- CommunityToolkit.Mvvm added via CLI (pinned version recorded in docs/dependencies.md). -->
+
+</Project>
