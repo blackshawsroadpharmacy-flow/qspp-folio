@@ -88,7 +88,8 @@ public partial class DocumentsView : UserControl
         var path = files[0].Path.LocalPath;
         if (string.IsNullOrEmpty(path)) { _message.Text = "The chosen file has no local path."; return; }
         var dlg = new EvidenceDialog(this);
-        if (!await dlg.ShowDialog<bool>(App.Main!)) return;
+        await dlg.ShowDialog(App.Main!);
+        if (!dlg.Confirmed) return;
         var (evidResult, _) = App.Workspace.ImportEvidence(path, dlg.TitleText, dlg.Kind, dlg.EffectiveFrom, dlg.EffectiveTo, dlg.HasPatientData, dlg.PatientDataAttestation, App.Session!);
         _message.Text = evidResult.Ok ? $"Attached. Signature and checksum verified; review starts at Draft." : evidResult.Error;
         Load();
@@ -118,7 +119,8 @@ public partial class DocumentsView : UserControl
         if (oldRow.ReviewState != nameof(EvidenceReviewState.ManagerVerified))
         { _message.Text = "Only ManagerVerified evidence uses the supersession flow. Drafts can simply be deleted or reworked."; return; }
         var picker = new EvidencePickerDialog(this);
-        var replacement = await picker.ShowDialog<EvidenceItem?>(App.Main!);
+        await picker.ShowDialog(App.Main!);
+        var replacement = picker.SelectedItem;
         if (replacement == null) return;
         var reason = await Dialogs.Prompt(this, "Supersession reason (required)", "Why is the old version being replaced?");
         if (string.IsNullOrWhiteSpace(reason)) return;

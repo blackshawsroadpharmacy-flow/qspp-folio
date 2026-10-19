@@ -134,6 +134,11 @@ public class TaskItem
     public DateTime? CompletedAtUtc { get; set; }
     public Guid? CompletedByUserId { get; set; }
     public string CompletionNote { get; set; } = "";
+
+    /// <summary>M3 recurring-task machinery: the definition that spawned this occurrence and
+    /// the date it is FOR (occurrence). Together they make generation idempotent.</summary>
+    public Guid? RecurrenceDefId { get; set; }
+    public DateOnly? OccurrenceDate { get; set; }
 }
 
 public class AppUser
@@ -238,4 +243,89 @@ public class PrintPreset
     public bool Duplex { get; set; }
     public bool Landscape { get; set; }
     public bool IsDefault { get; set; }
+}
+
+// ---------------- M3: daily operations ----------------
+
+public enum RecurrenceCadence { Weekly = 0, Fortnightly = 1, Monthly = 2, Quarterly = 3, PerAnnum = 4, CustomDays = 5 }
+
+/// <summary>A durable recurring-task definition (equipment testing, maintenance, counts).
+/// Occurrences materialise as ordinary TaskItems; generation is idempotent per (def, date).</summary>
+public class RecurringTaskDef
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string Title { get; set; } = "";
+    public string Details { get; set; } = "";
+    public Guid? RequirementId { get; set; }
+    public Guid? EquipmentId { get; set; }
+    public Guid AssignedToUserId { get; set; }
+    public TaskPriority Priority { get; set; } = TaskPriority.Normal;
+    public RecurrenceCadence Cadence { get; set; } = RecurrenceCadence.Monthly;
+    /// <summary>Only for CustomDays.</summary>
+    public int CustomDays { get; set; } = 0;
+    /// <summary>First occurrence date; month-end anchors clamp into shorter months.</summary>
+    public DateOnly AnchorDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+    public bool Active { get; set; } = true;
+    public Guid CreatedByUserId { get; set; }
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+}
+
+/// <summary>Equipment register (AS85000 2.1.1.4b-c recurring maintenance/testing of safety systems).</summary>
+public class Equipment
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string Name { get; set; } = "";
+    public string Model { get; set; } = "";
+    public string Serial { get; set; } = "";
+    public string Location { get; set; } = "";
+    public string State { get; set; } = "InService";  // InService | Maintenance | Retired
+    public DateOnly? CalibrationDue { get; set; }
+    public Guid? CalibrationTaskDefId { get; set; }
+    public string Notes { get; set; } = "";
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+}
+
+/// <summary>Incident register (AS85000 1.1.2.4 reporting to a person responsible).
+/// Severity is free text so the register never invents a taxonomy the program doesn't define.</summary>
+public class Incident
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public DateTime Date { get; set; } = DateTime.UtcNow;
+    public string Severity { get; set; } = "";
+    public string Description { get; set; } = "";
+    public string ImmediateAction { get; set; } = "";
+    public string CorrectiveAction { get; set; } = "";
+    public string ReportedBy { get; set; } = "";
+    public string State { get; set; } = "Open";      // Open | Actioned | Closed
+    public Guid? RequirementId { get; set; }
+    public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
+}
+
+/// <summary>Staff are not necessarily app users — the matrix tracks pharmacy staff.</summary>
+public class StaffMember
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string Name { get; set; } = "";
+    public string Role { get; set; } = "";
+    /// <summary>S2/S3 training must be completed within 6 months of first supply.</summary>
+    public DateOnly? S2S3FirstSupplyDate { get; set; }
+    public DateOnly? S2S3InitialCompleted { get; set; }
+    /// <summary>Refresher is anniversary-based (approved list, 6 Oct 2026); due each year after initial.</summary>
+    public DateOnly? S2S3RefresherCompleted { get; set; }
+    public bool Active { get; set; } = true;
+    public string Notes { get; set; } = "";
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+}
+
+/// <summary>Per-policy acknowledgement with the version acknowledged — QSPP asks for
+/// policy-version-tied acknowledgement, not a blanket "yes I've read things".</summary>
+public class PolicyAcknowledgement
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid StaffMemberId { get; set; }
+    public string PolicyName { get; set; } = "";
+    public string PolicyVersion { get; set; } = "";
+    public Guid? EvidenceItemId { get; set; }
+    public DateOnly AcknowledgedOn { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+    public Guid RecordedByUserId { get; set; }
 }

@@ -26,7 +26,7 @@ public partial class TasksView : UserControl
     {
         var sp = new StackPanel { Margin = new(32, 28), Spacing = 14, MaxWidth = 1100, HorizontalAlignment = HorizontalAlignment.Left };
         sp.Children.Add(new TextBlock { Classes = { "h1" }, Text = "Tasks & calendar" });
-        sp.Children.Add(new TextBlock { Classes = { "lead" }, Text = "One-off work with owners and due dates. Each task may be linked to a requirement and evidence. Recurring obligations (registers, checks, drills) arrive in Milestone 3." });
+        sp.Children.Add(new TextBlock { Classes = { "lead" }, Text = "One-off work and recurring schedule occurrences, with owners and due dates. Missed occurrences stay open (overdue) until done; completing one records who and when. Schedules live in Registers." });
 
         var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, VerticalAlignment = VerticalAlignment.Center };
         row.Children.Add(_filter);
@@ -66,9 +66,11 @@ public partial class TasksView : UserControl
         };
         _grid.ItemsSource = tasks.Select(t => new
         {
-            t.Title,
+            Title = t.Title + (t.RecurrenceDefId != null ? " (recurring)" : ""),
             Priority = t.Priority.ToString(),
-            DueLabel = t.DueDate?.ToString("dd MMM yyyy") ?? "no due date",
+            DueLabel = t.OccurrenceDate.HasValue && t.DueDate != t.OccurrenceDate
+                ? $"{t.DueDate:dd MMM yyyy} (for {t.OccurrenceDate:dd MMM})"
+                : t.DueDate?.ToString("dd MMM yyyy") ?? "no due date",
             Owner = users.GetValueOrDefault(t.AssignedToUserId, "?"),
             ReqRef = t.RequirementId.HasValue && reqs.TryGetValue(t.RequirementId.Value, out var r) ? r : "",
             t.Details,

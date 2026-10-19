@@ -87,6 +87,11 @@ public class ShellViewModel : ViewModelBase
         SignedIn = true;
         SessionLabel = $"{session.DisplayName} · {RoleLabel(session.Role)}";
         RefreshSessionAwareUi();
+        try
+        {
+            App.Workspace.GenerateRecurringOccurrences(session: session); // idempotent; brings schedules live at sign-in
+        }
+        catch { /* generation failures must never block sign-in; the audit trail still logs */ }
         if (SelectedNav == null) SelectedNav = NavItems[0];
         Navigate(ShellPage.Today);
     }
@@ -121,8 +126,8 @@ public class ShellViewModel : ViewModelBase
             ShellPage.Requirements => new RequirementsView(this),
             ShellPage.Documents => new DocumentsView(this),
             ShellPage.Tasks => new TasksView(this),
-            ShellPage.Registers => new PlaceholdersView("Registers", "Equipment, calibration and maintenance schedules, incidents, risks, suppliers and temperature logs arrive in Milestone 3. Recurring-task rules are drafted in docs/milestones.md."),
-            ShellPage.People => new PlaceholdersView("People & training", "Staff profiles, induction checklists, qualifications, the training matrix and policy acknowledgements arrive in Milestone 3."),
+            ShellPage.Registers => new RegistersView(),
+            ShellPage.People => new PeopleView(),
             ShellPage.Assessments => new AssessmentsView(this),
             ShellPage.Library => new LibraryView(this),
             ShellPage.PrintCentre => new PrintCentreView(this),

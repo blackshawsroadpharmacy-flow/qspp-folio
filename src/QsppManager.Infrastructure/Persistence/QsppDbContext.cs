@@ -18,6 +18,11 @@ public class QsppDbContext(DbContextOptions<QsppDbContext> options) : DbContext(
     public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
     public DbSet<PrintJob> PrintJobs => Set<PrintJob>();
     public DbSet<PrintPreset> PrintPresets => Set<PrintPreset>();
+    public DbSet<RecurringTaskDef> RecurringTaskDefs => Set<RecurringTaskDef>();
+    public DbSet<Equipment> Equipment => Set<Equipment>();
+    public DbSet<Incident> Incidents => Set<Incident>();
+    public DbSet<StaffMember> StaffMembers => Set<StaffMember>();
+    public DbSet<PolicyAcknowledgement> PolicyAcknowledgements => Set<PolicyAcknowledgement>();
 
     protected override void OnModelCreating(ModelBuilder mb)
     {
@@ -51,6 +56,7 @@ public class QsppDbContext(DbContextOptions<QsppDbContext> options) : DbContext(
         mb.Entity<TaskItem>(e =>
         {
             e.HasIndex(x => new { x.State, x.DueDate });
+            e.HasIndex(x => new { x.RecurrenceDefId, x.OccurrenceDate }).IsUnique();
             e.Property(x => x.Title).HasMaxLength(300);
             e.Property(x => x.CompletionNote).HasMaxLength(2000);
         });
@@ -69,5 +75,26 @@ public class QsppDbContext(DbContextOptions<QsppDbContext> options) : DbContext(
         mb.Entity<PrintJob>(e => e.Property(x => x.Title).HasMaxLength(300));
         mb.Entity<PrintPreset>(e => e.Property(x => x.Name).HasMaxLength(120));
         mb.Entity<Pharmacy>(e => e.Property(x => x.Name).HasMaxLength(200));
+        mb.Entity<RecurringTaskDef>(e =>
+        {
+            e.Property(x => x.Title).HasMaxLength(300);
+            e.Property(x => x.Details).HasMaxLength(2000);
+        });
+        mb.Entity<Equipment>(e =>
+        {
+            e.Property(x => x.Name).HasMaxLength(200);
+            e.Property(x => x.Notes).HasMaxLength(2000);
+        });
+        mb.Entity<Incident>(e =>
+        {
+            e.Property(x => x.Description).HasMaxLength(4000);
+            e.Property(x => x.CorrectiveAction).HasMaxLength(4000);
+        });
+        mb.Entity<StaffMember>(e =>
+        {
+            e.Property(x => x.Name).HasMaxLength(200);
+            e.Property(x => x.Notes).HasMaxLength(2000);
+        });
+        mb.Entity<PolicyAcknowledgement>(e => e.HasIndex(x => new { x.StaffMemberId, x.PolicyName, x.PolicyVersion }).IsUnique());
     }
 }

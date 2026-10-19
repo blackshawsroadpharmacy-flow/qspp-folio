@@ -381,6 +381,211 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
         return ServiceResult.Succeed();
     }
 
+    // ---------- M3: recurring tasks ----------
+    /// <summary>Materialises due recurring occurrences as ordinary tasks. Idempotent per
+    /// (definition, occurrence date) — safe to call on every boot and screen refresh.
+    /// Missed occurrences stay open with past due dates, where Today shows them.</summary>
+    public int GenerateRecurringOccurrences(DateOnly? horizonDate = null, UserSession? session = null)
+    {
+        var horizon = horizonDate ?? DateOnly.FromDateTime(DateTime.Today).AddDays(14);
+        var created = 0;
+        foreach (var def in db.RecurringTaskDefs.AsNoTracking().Where(d => d.Active))
+        {
+            var existing = db.Tasks.Where(t => t.RecurrenceDefId == def.Id)
+                .Select(t => t.OccurrenceDate).ToHashSet();
+            foreach (var d in RecurrenceCalculator.Occurrences(def, horizon))
+            {
+                if (existing.Contains(d)) continue;
+                db.Tasks.Add(new TaskItem
+                {
+                    Title = def.Title,
+                    Details = def.Details,
+                    RequirementId = def.RequirementId,
+                    RecurrenceDefId = def.Id,
+                    OccurrenceDate = d,
+                    DueDate = d,
+                    AssignedToUserId = def.AssignedToUserId,
+                    Priority = def.Priority,
+                    CreatedByUserId = def.CreatedByUserId != Guid.Empty ? def.CreatedByUserId : session?.UserId ?? Guid.Empty,
+                });
+                created++;
+            }
+        }
+        if (created > 0)
+        {
+            db.SaveChanges();
+            audit.Append(session?.DisplayName ?? "system", session?.UserId, "recurring.generated", "task", "*", $"{created} recurring occurrence(s) generated to {horizon:dd MMM yyyy}");
+        }
+        return created;
+    }
+
+    public ServiceResult CreateRecurringDef(string title, string details, Guid? requirementId, Guid? equipmentId,
+        Guid assignedTo, RecurrenceCadence cadence, int customDays, DateOnly anchor, TaskPriority priority, UserSession session)
+    {
+        if (session == null || session.ReadOnly) return ServiceResult.Fail("Read-only reviewer accounts cannot create schedules.");
+        if (string.IsNullOrWhiteSpace(title)) return ServiceResult.Fail("Give the schedule a title.");
+        if (cadence == RecurrenceCadence.CustomDays && customDays < 1) return ServiceResult.Fail("Custom cadence needs an interval of at least 1 day.");
+        var def = new RecurringTaskDef
+        {
+            Title = title.Trim(), Details = details ?? "", RequirementId = requirementId, EquipmentId = equipmentId,
+            AssignedToUserId = assignedTo, Cadence = cadence, CustomDays = cadence == RecurrenceCadence.CustomDays ? customDays : 0,
+            AnchorDate = anchor, Priority = priority, CreatedByUserId = session.UserId,
+        };
+        db.RecurringTaskDefs.Add(def);
+        db.SaveChanges();
+        audit.Append(session.DisplayName, session.UserId, "recurring.created", "recurring-def", def.Id.ToString(), $"{cadence} from {anchor:dd MMM yyyy}: {title}");
+        return ServiceResult.Succeed(def.Id);
+    }
+
+    public ServiceResult SetRecurringDefActive(Guid defId, bool active, UserSession session)
+    {
+        if (session == null || !session.CanVerify) return ServiceResult.Fail("Only Owner/Admin or Manager/Reviewer accounts can pause or resume schedules.");
+        var def = db.RecurringTaskDefs.FirstOrDefault(d => d.Id == defId);
+        if (def == null) return ServiceResult.Fail("Schedule not found.");
+        if (def.Active == active) return ServiceResult.Fail($"Schedule is already {(active ? "active" : "paused")}.");
+        def.Active = active;
+        db.SaveChanges();
+        audit.Append(session.DisplayName, session.UserId, active ? "recurring.resumed" : "recurring.paused", "recurring-def", defId.ToString(), def.Title);
+        return ServiceResult.Succeed();
+    }
+
+    public List<RecurringTaskDef> RecurringDefs() => db.RecurringTaskDefs.AsNoTracking().OrderBy(d => d.Active ? 0 : 1).ThenBy(d => d.Title).ToList();
+
+    // ---------- M3: registers ----------
+    public List<Equipment> Equipment() => db.Equipment.AsNoTracking().OrderBy(e => e.State).ThenBy(e => e.Name).ToList();
+
+    public ServiceResult AddEquipment(string name, string model, string serial, string location, string notes, UserSession session)
+    {
+        if (session == null || session.ReadOnly) return ServiceResult.Fail("Read-only reviewer accounts cannot edit registers.");
+        if (string.IsNullOrWhiteSpace(name)) return ServiceResult.Fail("Give the equipment a name.");
+        var eq = new Equipment { Name = name.Trim(), Model = model ?? "", Serial = serial ?? "", Location = location ?? "", Notes = notes ?? "" };
+        db.Equipment.Add(eq);
+        db.SaveChanges();
+        audit.Append(session.DisplayName, session.UserId, "equipment.added", "equipment", eq.Id.ToString(), $"{name} ({model} {serial}) {location}".Trim());
+        return ServiceResult.Succeed(eq.Id);
+    }
+
+    public ServiceResult SetEquipmentState(Guid equipmentId, string state, UserSession session)
+    {
+        if (session == null || !session.CanVerify) return ServiceResult.Fail("Only Owner/Admin or Manager/Reviewer accounts can change equipment state.");
+        if (state is not ("InService" or "Maintenance" or "Retired")) return ServiceResult.Fail("Unknown equipment state.");
+        var eq = db.Equipment.FirstOrDefault(e => e.Id == equipmentId);
+        if (eq == null) return ServiceResult.Fail("Equipment not found.");
+        eq.State = state;
+        db.SaveChanges();
+        audit.Append(session.DisplayName, session.UserId, "equipment.state", "equipment", equipmentId.ToString(), $"{eq.Name} → {state}");
+        return ServiceResult.Succeed();
+    }
+
+    /// <summary>Sets calibration-due and attaches a monthly calibration-check schedule
+    /// linked to the equipment (creating it once if needed).</summary>
+    public ServiceResult SetCalibrationDue(Guid equipmentId, DateOnly due, UserSession session)
+    {
+        if (session == null || !session.CanVerify) return ServiceResult.Fail("Only Owner/Admin or Manager/Reviewer accounts can record calibration dates.");
+        var eq = db.Equipment.FirstOrDefault(e => e.Id == equipmentId);
+        if (eq == null) return ServiceResult.Fail("Equipment not found.");
+        eq.CalibrationDue = due;
+        if (eq.CalibrationTaskDefId is null)
+        {
+            var def = new RecurringTaskDef
+            {
+                Title = $"Calibration check — {eq.Name}",
+                Details = $"Verify {eq.Name} ({eq.Model} {eq.Serial}) calibration is current. Record the result and file the certificate as evidence.",
+                EquipmentId = eq.Id, AssignedToUserId = EnsurePharmacyOwner(), Cadence = RecurrenceCadence.Monthly,
+                AnchorDate = due, Priority = TaskPriority.Normal, CreatedByUserId = session.UserId,
+            };
+            db.RecurringTaskDefs.Add(def);
+            db.SaveChanges();
+            eq.CalibrationTaskDefId = def.Id;
+        }
+        db.SaveChanges();
+        audit.Append(session.DisplayName, session.UserId, "equipment.calibration", "equipment", equipmentId.ToString(), $"{eq.Name} calibration due {due:dd MMM yyyy}; monthly check schedule ensured");
+        return ServiceResult.Succeed();
+    }
+
+    public List<Incident> Incidents() => db.Incidents.AsNoTracking().OrderByDescending(i => i.Date).ToList();
+
+    public ServiceResult AddIncident(DateOnly date, string severity, string description, string immediateAction, string reportedBy, UserSession session)
+    {
+        if (session == null || session.ReadOnly) return ServiceResult.Fail("Read-only reviewer accounts cannot record incidents.");
+        if (string.IsNullOrWhiteSpace(description)) return ServiceResult.Fail("Describe the incident — the register is the evidence that reporting happened.");
+        var inc = new Incident { Date = date.ToDateTime(TimeOnly.MinValue), Severity = severity ?? "", Description = description, ImmediateAction = immediateAction ?? "", ReportedBy = reportedBy ?? session.DisplayName };
+        db.Incidents.Add(inc);
+        db.SaveChanges();
+        var ph = EnsurePharmacy();
+        // Link to the incident-reporting requirement (1.1.2.4) so the record is findable from the clause.
+        var req = db.Requirements.AsNoTracking().FirstOrDefault(r => r.Ref == "1.1.2.4");
+        if (req != null) { inc.RequirementId = req.Id; db.SaveChanges(); }
+        _ = ph;
+        audit.Append(session.DisplayName, session.UserId, "incident.reported", "incident", inc.Id.ToString(), $"severity={severity}; {description[..Math.Min(120, description.Length)]}");
+        return ServiceResult.Succeed(inc.Id);
+    }
+
+    public ServiceResult SetIncidentState(Guid incidentId, string state, string correctiveAction, UserSession session)
+    {
+        if (session == null || !session.CanVerify) return ServiceResult.Fail("Only Owner/Admin or Manager/Reviewer accounts can close incidents.");
+        if (state is not ("Open" or "Actioned" or "Closed")) return ServiceResult.Fail("Unknown incident state.");
+        var inc = db.Incidents.FirstOrDefault(i => i.Id == incidentId);
+        if (inc == null) return ServiceResult.Fail("Incident not found.");
+        if (state == "Closed" && string.IsNullOrWhiteSpace(correctiveAction) && string.IsNullOrWhiteSpace(inc.CorrectiveAction))
+            return ServiceResult.Fail("An incident cannot close without a recorded corrective action.");
+        inc.State = state;
+        if (!string.IsNullOrWhiteSpace(correctiveAction)) inc.CorrectiveAction = correctiveAction;
+        inc.UpdatedAtUtc = DateTime.UtcNow;
+        db.SaveChanges();
+        audit.Append(session.DisplayName, session.UserId, "incident.state", "incident", incidentId.ToString(), $"{inc.State}" + (correctiveAction != null ? $"; action={correctiveAction}" : ""));
+        return ServiceResult.Succeed();
+    }
+
+    // ---------- M3: staff & training ----------
+    public List<StaffMember> Staff() => db.StaffMembers.AsNoTracking().Where(s => s.Active).OrderBy(s => s.Name).ToList();
+
+    public ServiceResult AddStaffMember(string name, string role, UserSession session)
+    {
+        if (session == null || session.ReadOnly) return ServiceResult.Fail("Read-only reviewer accounts cannot manage staff records.");
+        if (string.IsNullOrWhiteSpace(name)) return ServiceResult.Fail("Give the staff member a name.");
+        var s = new StaffMember { Name = name.Trim(), Role = role ?? "" };
+        db.StaffMembers.Add(s);
+        db.SaveChanges();
+        audit.Append(session.DisplayName, session.UserId, "staff.added", "staff", s.Id.ToString(), $"{name} · {role}");
+        return ServiceResult.Succeed(s.Id);
+    }
+
+    public ServiceResult SetStaffTraining(Guid staffId, DateOnly? firstSupply, DateOnly? initialCompleted, DateOnly? refresherCompleted, UserSession session)
+    {
+        if (session == null || session.ReadOnly) return ServiceResult.Fail("Read-only reviewer accounts cannot update training records.");
+        var s = db.StaffMembers.FirstOrDefault(x => x.Id == staffId);
+        if (s == null) return ServiceResult.Fail("Staff member not found.");
+        s.S2S3FirstSupplyDate = firstSupply ?? s.S2S3FirstSupplyDate;
+        s.S2S3InitialCompleted = initialCompleted ?? s.S2S3InitialCompleted;
+        s.S2S3RefresherCompleted = refresherCompleted ?? s.S2S3RefresherCompleted;
+        db.SaveChanges();
+        audit.Append(session.DisplayName, session.UserId, "staff.training", "staff", staffId.ToString(),
+            $"supply={firstSupply?.ToString("dd MMM yyyy") ?? "-"} initial={initialCompleted?.ToString("dd MMM yyyy") ?? "-"} refresher={refresherCompleted?.ToString("dd MMM yyyy") ?? "-"}");
+        return ServiceResult.Succeed();
+    }
+
+    /// <summary>Records a version-tied policy acknowledgement; one row per staff+policy+version.</summary>
+    public ServiceResult AcknowledgePolicy(Guid staffId, string policyName, string policyVersion, Guid? evidenceItemId, UserSession session)
+    {
+        if (session == null || session.ReadOnly) return ServiceResult.Fail("Read-only reviewer accounts cannot record acknowledgements.");
+        if (string.IsNullOrWhiteSpace(policyName) || string.IsNullOrWhiteSpace(policyVersion))
+            return ServiceResult.Fail("Record WHICH policy and WHICH version was acknowledged.");
+        if (evidenceItemId.HasValue && !db.EvidenceItems.Any(e => e.Id == evidenceItemId))
+            return ServiceResult.Fail("Linked evidence not found.");
+        if (db.PolicyAcknowledgements.Any(a => a.StaffMemberId == staffId && a.PolicyName == policyName.Trim() && a.PolicyVersion == policyVersion.Trim()))
+            return ServiceResult.Fail("That acknowledgement is already recorded (staff, policy, version).");
+        var s = db.StaffMembers.FirstOrDefault(x => x.Id == staffId);
+        if (s == null) return ServiceResult.Fail("Staff member not found.");
+        var ack = new PolicyAcknowledgement { StaffMemberId = staffId, PolicyName = policyName.Trim(), PolicyVersion = policyVersion.Trim(), EvidenceItemId = evidenceItemId, RecordedByUserId = session.UserId };
+        db.PolicyAcknowledgements.Add(ack);
+        db.SaveChanges();
+        audit.Append(session.DisplayName, session.UserId, "policy.acknowledged", "staff", staffId.ToString(), $"{s.Name} · {policyName} v{policyVersion}");
+        return ServiceResult.Succeed(ack.Id);
+    }
+
+    public List<PolicyAcknowledgement> Acknowledgements() => db.PolicyAcknowledgements.AsNoTracking().OrderByDescending(a => a.AcknowledgedOn).ToList();
+
     // ---------- deadlines ----------
     public List<DeadlineInfo> DeadlinesFor(Requirement r, RequirementState state)
     {

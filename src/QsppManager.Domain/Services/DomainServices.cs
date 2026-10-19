@@ -64,11 +64,79 @@ public static class DeadlineCalculator
         => AddBusinessDays(assessmentDate, -10);
 }
 
+/// <summary>Recurring-task occurrence maths (M3). Anchor-based sequences: month/quarter/year
+/// anchors keep their anchor day and clamp into shorter months (31 Jan monthly → 28/29 Feb → 31 Mar).
+/// Missed occurrences simply stay in the list as open tasks with past due dates.</summary>
+public static class RecurrenceCalculator
+{
+    /// <summary>All occurrence dates from the anchor up to and including horizon (bounded).</summary>
+    public static List<DateOnly> Occurrences(RecurringTaskDef def, DateOnly horizon, int max = 200)
+    {
+        var list = new List<DateOnly>();
+        var d = def.AnchorDate;
+        while (d <= horizon && list.Count < max)
+        {
+            list.Add(d);
+            d = NextAfter(def, d);
+        }
+        return list;
+    }
+
+    public static DateOnly NextAfter(RecurringTaskDef def, DateOnly current) => def.Cadence switch
+    {
+        RecurrenceCadence.Weekly => current.AddDays(7),
+        RecurrenceCadence.Fortnightly => current.AddDays(14),
+        RecurrenceCadence.CustomDays => current.AddDays(Math.Max(1, def.CustomDays)),
+        RecurrenceCadence.Monthly => NextAnchorAfter(def.AnchorDate, current, 1),
+        RecurrenceCadence.Quarterly => NextAnchorAfter(def.AnchorDate, current, 3),
+        RecurrenceCadence.PerAnnum => NextAnchorAfter(def.AnchorDate, current, 12),
+        _ => current.AddDays(Math.Max(1, def.CustomDays)),
+    };
+
+    /// <summary>Smallest anchor+k·step (clamped to month end) strictly after current.</summary>
+    public static DateOnly NextAnchorAfter(DateOnly anchor, DateOnly current, int stepMonths)
+    {
+        for (var k = 1; k <= 240; k++)
+        {
+            var cand = DeadlineCalculator.AddCalendarMonths(anchor, k * stepMonths);
+            if (cand > current) return cand;
+        }
+        return current;
+    }
+}
+
+/// <summary>S2/S3 training status rules (training fact sheet; refresher approved list 6 Oct 2026):
+/// initial within 6 months of first supply; refresher due on the anniversary of the LAST
+/// completed training (initial or refresher); 3-hour annual minimum.</summary>
+public static class TrainingRules
+{
+    public const string InitialNotNeeded = "No first-supply date recorded — record one when staff begin Schedule 2/3 supply.";
+
+    public static (DateOnly? dueBy, string status) InitialStatus(StaffMember s, DateOnly today)
+    {
+        if (s.S2S3FirstSupplyDate is null) return (null, InitialNotNeeded);
+        var dueBy = s.S2S3FirstSupplyDate.Value.AddDays(183); // ~6 months (fact sheet: "within six months")
+        if (s.S2S3InitialCompleted is { } done) return (dueBy, done <= dueBy ? $"Initial completed {done:dd MMM yyyy} (in time)" : $"Initial completed {done:dd MMM yyyy} (AFTER the six-month deadline — check with the manager)");
+        return (dueBy, today > dueBy ? $"OVERDUE — initial was due by {dueBy:dd MMM yyyy}" : $"Initial due by {dueBy:dd MMM yyyy}");
+    }
+
+    public static (DateOnly? due, string status) RefresherStatus(StaffMember s, DateOnly today)
+    {
+        if (s.S2S3InitialCompleted is null && s.S2S3RefresherCompleted is null)
+            return (null, "Awaiting initial completion.");
+        var last = new[] { s.S2S3InitialCompleted, s.S2S3RefresherCompleted }.Max();
+        var due = last!.Value.AddDays(365);
+        if (s.S2S3RefresherCompleted is { } r && r >= last.Value.AddDays(-31)) // completed on time
+            return (due, r >= today ? $"Refresher completed {r:dd MMM yyyy} — next not expected until {due:dd MMM yyyy}" : $"Refresher completed {r:dd MMM yyyy}; next due {due:dd MMM yyyy}");
+        return (due, today > due ? $"OVERDUE — refresher was due {due:dd MMM yyyy}" : $"Refresher due {due:dd MMM yyyy}");
+    }
+}
+
 public enum DeadlineKind
 {
-    InternalTask = 0,
-    ProgramCalculated = 1,
-    ProviderConfirmed = 2,
+InternalTask = 0,
+ProgramCalculated = 1,
+ProviderConfirmed = 2,
 }
 
 /// <summary>A deadline with provenance. ProgramCalculated dates carry an explanation and
