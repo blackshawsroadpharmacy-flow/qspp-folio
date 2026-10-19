@@ -23,20 +23,29 @@ claim runtime validation that did not happen on this machine.
 | App boot with corpus import | ✔ | Timeout-run on this desktop: DB created, 14 tables, counts verified. Pharmacies/Users empty at boot is correct — onboarding (next screen after launch) collects them |
 | Screenshots + scaling sweep | ✗ | M5 requirement; current ledger does not claim them |
 
-## M2 — full requirements + evidence coverage (next)
-Page-aware corpus anchoring from the 451-entry seed (FAQ answers + lettered QCPP↔QSPP mapping
-stay explicitly marked unverified); FTS5 search replacing LIKE v1; guided “Prepare for assessment”
-journey; PDF/text/image preview renderer sharing Avalonia's Skia (resolves DD-20); interpretation-issue
-destination screens; supersession impact review; adopt CommunityToolkit.Mvvm (DD-18) and PdfPig
-text extraction (DD-19); EF migrations replacing EnsureCreated.
+## M2 — full requirements + evidence coverage · **COMPLETE (verified 20 Oct 2026)**
 
-## M3 — daily operations
-Recurring tasks (durable, idempotent, missed occurrences visible); registers (equipment incl.
-calibration, incidents, risks, suppliers, temp logs); people/training matrix (S2/S3 initial vs
-refresher routes from the verified fact sheet, competency, policy acknowledgements per version);
-compounding module (supplier qualification, spill kits, BUD records, counselling evidence, recalls,
-potency matrix preserving ISSUE-POTENCY wording); Print centre maturity (presets, batches, binders,
-pre-filled paper templates, print-again with saved preset).
+| Item | Status | Evidence |
+|---|---|---|
+| FTS5 search replacing LIKE v1 | ✔ | `CorpusSearch.cs` — SQLite FTS5 with bm25 column weights (title 10, ref 2, body 1), snippet highlights, token prefix on the last term, per-record re-index on evidence import/review/supersede, LIKE fallback preserved. Two real bugs fixed en route: quoted `token*` (star must sit outside quotes) and the 6-argument bm25 (4 weights made every FTS query throw → silent LIKE fallback) |
+| Library destination | ✔ | `LibraryView.cs` — corpus search panel, source documents with sha256/"full text indexed" column, the three interpretation issues with verbatim competing quotes (acknowledge + resolve-with-recorded-outcome actions; resolution requires a note, enforced), supersession impact review with affected links + open re-link tasks |
+| Guided "Prepare for assessment" journey | ✔ | `AssessmentsView.cs` — 7 phases of live counts from `JourneySnapshot` (applicability decided, owners, evidence links, verification, onsite date, expiry), honest phrasing ("QSPP accreditation is awarded by the Guild's assessment process") |
+| Supersession impact review | ✔ | `QsppWorkspace.SupersessionReview()` + Library section; re-link tasks now carry the superseded evidence id (data-linkage bug found by test) |
+| Page-aware anchoring | ✔ (plumbing; data pending subagent) | `seed/page-anchors.json` importer (idempotent, audit-logged; unverified pages keep `AnchorApproximate`), Requirements detail + printed checklist show `PDF pN (verified)/(unverified)` |
+| EF migrations replacing bare EnsureCreated | ✔ | `Persistence/Migrations/` (InitialCreate + M2PageAnchors) + `DatabaseBootstrapper`: fresh DBs migrate; **legacy v1 EnsureCreated DB stamped and migrated — verified on the real M1 data dir (451 rows intact, history correct)** |
+| Document full-text search (PdfPig) | ✔ | `DocumentTextIndex.cs` + Library "Extract & index all". **Real-corpus verified: 20/21 PDFs extracted** (Decision-tree.png honestly excluded), body search finds wording inside the PDFs, cached re-index on reboot. PdfPig 0.1.16 restored cleanly on net10 (M1's friction didn't recur) |
+| Token-boundary normalisation | ✔ | PdfPig glues adjacent lines (`1.1.1Heading` → token `1heading`, unfindable); digit↔letter + camel-hump boundaries split at index time (regression-tested) |
+| CommunityToolkit.Mvvm adoption (DD-18) | ✗ deferred to M3 | Deliberate: zero user-facing value this phase, refactors 3 VMs with risk; ledger records it rather than claiming it |
+| Interpretation-issue destination | ✔ | Library section + `ResolveIssue` service rule + audit events |
+
+## M3 — daily operations (next)
+Recurring tasks (durable definitions, missed occurrences visible, no duplicates on reopen);
+registers (equipment incl. calibration, incidents, risks, suppliers, temp logs);
+people/training matrix (S2/S3 initial vs refresher routes from the verified fact sheet,
+competency, policy acknowledgements per version); compounding module (supplier qualification,
+spill kits, BUD records, counselling evidence, recalls, potency matrix preserving ISSUE-POTENCY
+wording); Print centre maturity (presets, batches, binders, pre-filled paper templates,
+print-again with saved preset); CommunityToolkit.Mvvm adoption (DD-18).
 
 ## M4 — assessments & continuity
 Assessment events timeline; deadline services with injectable clocks + VIC holiday provenance
