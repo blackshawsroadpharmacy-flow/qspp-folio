@@ -52,17 +52,17 @@ claim runtime validation that did not happen on this machine.
 | CommunityToolkit.Mvvm | ✗ deferred | Second deferral recorded: VM refactor still planned, still no user-facing value when done |
 | Spill-kit/BUD/counselling bespoke entities | ✗ deliberately not built | BUD assignments and counselling evidence belong in the generic evidence store linked to their 2.2.3.x clauses (with checksums), not bespoke registers — avoids duplicating the evidence model and keeps patient-adjacent content in the redaction-gated evidence flow. Revisit only if the owner wants dedicated paper templates |
 
-## M4 — assessments & continuity · **CORE COMPLETE (verified 20 Oct 2026 evening); wizard + reviewer filtering queued**
+## M4 — assessments & continuity · **COMPLETE (verified 20 Oct 2026)**
 
 | Item | Status | Evidence |
 |---|---|---|
 | Assessment events timeline | ✔ | `AssessmentEvent` + Assessments view section; OutcomeReceived **requires the report/letter reference** (never claim an outcome that hasn't arrived — enforced + tested); role-gated |
 | Findings → corrective actions → closure | ✔ | Findings per event; **closure demands a recorded corrective action** (same rule as incidents); states Open/Actioned/Closed with audit chain |
 | Backup / restore | ✔ | `BackupService`: consistent live copy via `VACUUM INTO`, attachments included, **manifest with per-file sha256; restore validates every hash before extracting anything** (tamper test: corrupted DB inside the zip is refused); verified-then-staged promotion applies at next boot. Real round-trip tested (rows + users preserved) |
+| Assessor pack export | ✔ | `AssessorPackService` + Assessments view: scope = manager-verified/assessor-accepted applicable requirements; **redaction review enforced — patient-data evidence lacking an attestation is excluded with the reason recorded in manifest.json**; verified evidence files copied with sha256; empty scope fails with honest guidance (all tested) |
+| Restricted-reviewer filtering | ✔ (search surface) | Read-only sessions no longer see patient-data evidence in Ctrl+K palette or Library search (tested both directions); wizard/export surfaces landed above; print-centre evidence rows ship in the checklist model with patient flag visible to staff but hidden content stays out of the app |
+| Injectable clocks + VIC holidays | ✔ | `Clock.Pin/Unpin` threaded through Journey/recurring/expire queries (tested with a fixed date); `VicHolidays` table 2025–2028 (Melbourne Cup, Boxing Day observed Monday, etc.) with an explicit "verify current gazetted dates before relying on them" note; business-day tests across the 2026 Christmas block |
 | Source-change compare | ✔ | DiffPlex line diff between any two managed documents on their cached full text (Library button); the known UAG PROMs→"Patient-reported Measures" class of change surfaces as -/+ lines; whitespace-only differences ignored (tested) |
-| Assessor pack wizard (scope → redaction → export w/ manifest) | ✗ queued | Next session; the backup manifest + hash pattern (DD-14/DD-23) is the designed base |
-| Restricted-reviewer filtering across search/export/print | ✗ queued | Next session with the wizard (both touch export surfaces together) |
-| Injectable clocks + leap-year holiday tests | ✗ queued | DeadlineCalculator is pure-function and already holiday-injectable; IClock threading into recurring generation queued for the wizard session |
 
 ## M5 — product finish
 Screens against realistic volumes; screenshots of every destination (owner inspection pass);

@@ -25,6 +25,9 @@ public abstract class TestBase : IDisposable
     protected SeedImporter Seeds = null!;
     protected QsppDbContext Db = null!;
     protected UserSession Owner = null!;
+    /// <summary>Root of the attachment store the Workspace writes to — services under test
+    /// that must read managed files (assessor pack, backup) use this root.</summary>
+    protected string AttachmentRoot = null!;
 
     protected TestBase()
     {
@@ -40,6 +43,7 @@ public abstract class TestBase : IDisposable
         Db.Database.EnsureCreated();
 
         var store = new AttachmentStore(Path.Combine(Path.GetTempPath(), $"qspp-att-{Guid.NewGuid():N}"));
+        AttachmentRoot = store.Root;
         Audit = new AuditService(Db);
         Auth = new AuthService(Db, Audit);
         Seeds = new SeedImporter(Db, store, Audit, TempRepo);

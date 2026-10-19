@@ -162,7 +162,7 @@ public partial class LibraryView : UserControl
 
     private void RunSearch()
     {
-        _results.ItemsSource = App.Search.Query(_searchBox.Text, 60)
+        _results.ItemsSource = App.Search.Query(_searchBox.Text, 60, hidePatientDataEvidence: App.Session?.ReadOnly == true)
             .Select(r => new SearchRow(r.Kind, r.Title, r.Excerpt, r.Meta, r.Id)).ToList();
         if (_results.ItemCount == 0) _message.Text = "Nothing matched. The LIKE fallback also ran — try a shorter term.";
     }

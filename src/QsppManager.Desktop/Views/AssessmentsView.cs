@@ -2,6 +2,8 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using QsppManager.Desktop.ViewModels;
+using QsppManager.Infrastructure.Backup;
+using QsppManager.Infrastructure.Runtime;
 
 namespace QsppManager.Desktop.Views;
 
@@ -98,6 +100,24 @@ public partial class AssessmentsView : UserControl
         sp.Children.Add(fRow);
         _eventsMessage = new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap };
         sp.Children.Add(_eventsMessage);
+
+        // ---- assessor pack ----
+        sp.Children.Add(new TextBlock { Text = "Assessor pack export", Classes = { "h3" }, Margin = new(0, 10, 0, 0) });
+        sp.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
+            Text = "One checklist per manager-verified/applicable requirement plus the verified evidence that passes the redaction review, with a tamper-evident manifest (per-file sha256). Patient-data evidence without a redaction attestation is excluded and the exclusion is recorded in the manifest — decide with the manager whether to redact and re-import instead." });
+        sp.Children.Add(new Button
+        {
+            Content = "Export assessor pack…", Classes = { "primary" }, Height = 36, MinWidth = 200,
+        }.With(b => b.Click += async (_, _) =>
+        {
+            var label = await Dialogs.Prompt(this, "Assessor pack", "Label for this export (optional)") ?? "";
+            var svc = new AssessorPackService(App.Workspace, App.Db, App.Composer, App.Store, AppData.PackDir);
+            var (ok, zipPath, error, reqCount, files, exclusions) = svc.Export(App.Session!, label);
+            if (!ok) { _eventsMessage.Text = $"Assessor pack failed: {error}"; return; }
+            var note = exclusions.Count > 0 ? $"\nREDACTION EXCLUSIONS ({exclusions.Count}):\n- " + string.Join("\n- ", exclusions.Take(6)) : "\nNo redaction exclusions.";
+            _eventsMessage.Text = $"Pack exported: {zipPath}\n{reqCount} requirement checklist(s), {files} evidence file(s).{note}";
+            Helpers.OpenWithSystemViewer(zipPath);
+        }));
     }
 
     private TextBlock _eventsMessage = new();

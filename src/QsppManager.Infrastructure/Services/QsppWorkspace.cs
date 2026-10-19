@@ -304,7 +304,7 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
 
     public List<(EvidenceItem item, DateOnly? effectiveTo)> ExpiringEvidence(int withinDays = 60)
     {
-        var today = DateOnly.FromDateTime(DateTime.Today);
+        var today = Clock.Today();
         return db.EvidenceItems.AsNoTracking()
             .Where(e => e.ReviewState == EvidenceReviewState.ManagerVerified && e.EffectiveTo != null)
             .ToList()
@@ -387,7 +387,7 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
     /// Missed occurrences stay open with past due dates, where Today shows them.</summary>
     public int GenerateRecurringOccurrences(DateOnly? horizonDate = null, UserSession? session = null)
     {
-        var horizon = horizonDate ?? DateOnly.FromDateTime(DateTime.Today).AddDays(14);
+        var horizon = horizonDate ?? Clock.Today().AddDays(14);
         var created = 0;
         foreach (var def in db.RecurringTaskDefs.AsNoTracking().Where(d => d.Active))
         {
@@ -811,7 +811,7 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
             .Where(l => l.State != LinkState.Superseded).Select(l => l.RequirementId).Distinct().Count();
         var verified = states.Count(s => s.Readiness == RequirementReadiness.ManagerVerified);
         var pendingReview = db.EvidenceItems.Count(e => e.ReviewState == EvidenceReviewState.ReadyForReview);
-        var today = DateOnly.FromDateTime(DateTime.Today);
+        var today = Clock.Today();
         var overdue = db.Tasks.Count(t => t.State == TaskState.Open && t.DueDate != null && t.DueDate < today);
         var issues = db.InterpretationIssues.AsNoTracking().ToList();
         return new JourneySnapshot(

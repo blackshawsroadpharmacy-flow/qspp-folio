@@ -163,7 +163,7 @@ public class ShellViewModel : ViewModelBase
     {
         SearchResults.Clear();
         if (_searchText.Trim().Length < 2) return;
-        foreach (var r in App.Search.Query(_searchText))
+        foreach (var r in App.Search.Query(_searchText, hidePatientDataEvidence: App.Session?.ReadOnly == true))
             SearchResults.Add(r);
     }
 

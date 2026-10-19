@@ -114,7 +114,7 @@ public class CorpusSearch(QsppDbContext db) : ICorpusIndexer
         IndexRow("Source", "", displayName, text, "source document · full text indexed", documentId);
     }
 
-    public List<SearchResultRow> Query(string text, int cap = 40)
+    public List<SearchResultRow> Query(string text, int cap = 40, bool hidePatientDataEvidence = false)
     {
         text = text.Trim();
         if (text.Length < 2) return [];
@@ -129,6 +129,11 @@ public class CorpusSearch(QsppDbContext db) : ICorpusIndexer
             rows = []; // malformed FTS syntax — fall through to LIKE
         }
         if (rows.Count == 0) rows = QueryLike(text, cap);
+        if (hidePatientDataEvidence)
+            rows = rows
+                .Where(r => r.Kind != "Evidence" || !db.EvidenceItems.AsNoTracking()
+                        .Any(e => e.Id == r.Id && e.ContainsPatientData))
+                .ToList();
         return rows;
     }
 
