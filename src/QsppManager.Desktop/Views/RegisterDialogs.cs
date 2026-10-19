@@ -142,6 +142,59 @@ public sealed class IncidentDialog : RegisterDialogBase
     }
 }
 
+public sealed class PotencyDialog : RegisterDialogBase
+{
+    public Guid StaffId;
+    public string Role = "Compounding technician";
+    public string Drug = "", Form = "", Outcome = "";
+    public DateOnly TestedOn = DateOnly.FromDateTime(DateTime.Today);
+
+    private readonly ComboBox _staff = new() { MinWidth = 240 };
+    private readonly ComboBox _role = new() { SelectedIndex = 0, MinWidth = 220, ItemsSource = new[] { "Compounding technician", "Compounding pharmacist" } };
+    private readonly TextBox _drug = new() { Watermark = "Drug tested (e.g. hydrocortisone)" };
+    private readonly TextBox _form = new() { Watermark = "Dosage form (e.g. cream, suspension, ointment)" };
+    private readonly DatePicker _date = new() { SelectedDate = DateTimeOffset.Now };
+    private readonly TextBox _outcome = new() { Watermark = "Outcome / action (pass, fail + what was done)" };
+
+    public PotencyDialog() : base("Record potency testing") { }
+
+    protected override Control BuildBody() => new StackPanel { Spacing = 8, Children =
+    {
+        _staff,
+        new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, Children =
+        {
+            new StackPanel { Children = { new TextBlock { Classes = { "label" }, Text = "PERSON" }, _staff } },
+            new StackPanel { Children = { new TextBlock { Classes = { "label" }, Text = "ROLE" }, _role } },
+        } },
+        new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, Children =
+        {
+            new StackPanel { Children = { new TextBlock { Classes = { "label" }, Text = "DRUG" }, _drug } },
+            new StackPanel { Children = { new TextBlock { Classes = { "label" }, Text = "DOSAGE FORM" }, _form } },
+            new StackPanel { Children = { new TextBlock { Classes = { "label" }, Text = "TESTED ON" }, _date } },
+        } },
+        _outcome,
+        new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
+            Text = "Add staff first under People & training. The cadence interpretation stays open (ISSUE-POTENCY): the app tracks per-person coverage — two different drugs across two different dosage forms per year is the conservative planning reading, not a settled rule." },
+    } };
+
+    protected override bool OnSave(TextBlock message)
+    {
+        var staff = App.Workspace.Staff().ToList();
+        _staff.ItemsSource = staff.Select(s => s.Name).ToList();
+        if (_staff.SelectedIndex < 0 && staff.Count > 0) _staff.SelectedIndex = 0;
+        if (_staff.SelectedIndex < 0) { message.Text = "No staff recorded yet — add people under People & training first."; return false; }
+        if (string.IsNullOrWhiteSpace(_drug.Text) || string.IsNullOrWhiteSpace(_form.Text))
+        { message.Text = "Record WHICH drug and WHICH dosage form were tested."; return false; }
+        StaffId = staff[_staff.SelectedIndex].Id;
+        Role = _role.SelectedItem as string ?? Role;
+        Drug = _drug.Text;
+        Form = _form.Text;
+        if (_date.SelectedDate is { } dt) TestedOn = DateOnly.FromDateTime(dt.DateTime);
+        Outcome = _outcome.Text ?? "";
+        return true;
+    }
+}
+
 public sealed class TrainingDialog : RegisterDialogBase
 {
     public DateOnly? FirstSupply, Initial, Refresher;

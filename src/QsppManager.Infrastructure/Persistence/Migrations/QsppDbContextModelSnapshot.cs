@@ -107,6 +107,41 @@ namespace QsppManager.Infrastructure.Persistence.Migrations
                     b.ToTable("AuditEvents");
                 });
 
+            modelBuilder.Entity("QsppManager.Domain.Entities.CompoundSupplier", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("EvidenceItemId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly?>("LastReviewed")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RegistrationNote")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Supplies")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CompoundSuppliers");
+                });
+
             modelBuilder.Entity("QsppManager.Domain.Entities.Equipment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -462,6 +497,42 @@ namespace QsppManager.Infrastructure.Persistence.Migrations
                     b.ToTable("PolicyAcknowledgements");
                 });
 
+            modelBuilder.Entity("QsppManager.Domain.Entities.PotencyRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DosageForm")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Drug")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("EvidenceItemId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Outcome")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("StaffMemberId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly>("TestedOn")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PotencyRecords");
+                });
+
             modelBuilder.Entity("QsppManager.Domain.Entities.PrintJob", b =>
                 {
                     b.Property<Guid>("Id")
@@ -549,6 +620,42 @@ namespace QsppManager.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("PrintPresets");
+                });
+
+            modelBuilder.Entity("QsppManager.Domain.Entities.ProductRecall", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Batch")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("EvidenceItemId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Product")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly>("ReceivedDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ProductRecalls");
                 });
 
             modelBuilder.Entity("QsppManager.Domain.Entities.RecurringTaskDef", b =>

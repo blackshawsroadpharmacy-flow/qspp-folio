@@ -317,6 +317,51 @@ public class StaffMember
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 }
 
+// ---------------- M3: compounding records ----------------
+
+/// <summary>Supplier register (AS85000 2.2.3.3 sourcing from registered suppliers;
+/// compounding materials). Quality-agreement evidence links live as EvidenceItems.</summary>
+public class CompoundSupplier
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string Name { get; set; } = "";
+    public string Supplies { get; set; } = "";       // what is bought from them
+    public string RegistrationNote { get; set; } = "";  // TGA/licence note the pharmacy verifies
+    public Guid? EvidenceItemId { get; set; }
+    public DateOnly? LastReviewed { get; set; }
+    public bool Active { get; set; } = true;
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+}
+
+/// <summary>Product recall register: what was recalled, what the pharmacy did, evidence link.</summary>
+public class ProductRecall
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string Product { get; set; } = "";
+    public string Batch { get; set; } = "";
+    public DateOnly ReceivedDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+    public string Action { get; set; } = "";         // what the pharmacy did (quarantined/returned/destroyed)
+    public string State { get; set; } = "Open";      // Open | Closed
+    public Guid? EvidenceItemId { get; set; }
+    public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
+}
+
+/// <summary>Potency-testing record per PERSON (staff member) — cadence interpretation per
+/// ISSUE-POTENCY: each compounding technician and each compounding pharmacist performs
+/// testing on two (2) different drugs across two (2) different dosage forms per year.
+/// The app tracks per-person coverage and never asserts the four-combinations reading.</summary>
+public class PotencyRecord
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid StaffMemberId { get; set; }
+    public string Role { get; set; } = "Compounding technician";  // technician | pharmacist
+    public string Drug { get; set; } = "";
+    public string DosageForm { get; set; } = "";     // e.g. cream, suspension
+    public DateOnly TestedOn { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+    public string Outcome { get; set; } = "";        // pass/fail + action note
+    public Guid? EvidenceItemId { get; set; }
+}
+
 /// <summary>Per-policy acknowledgement with the version acknowledged — QSPP asks for
 /// policy-version-tied acknowledgement, not a blanket "yes I've read things".</summary>
 public class PolicyAcknowledgement

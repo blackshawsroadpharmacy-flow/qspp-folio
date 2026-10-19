@@ -38,16 +38,21 @@ claim runtime validation that did not happen on this machine.
 | CommunityToolkit.Mvvm adoption (DD-18) | ✗ deferred to M3 | Deliberate: zero user-facing value this phase, refactors 3 VMs with risk; ledger records it rather than claiming it |
 | Interpretation-issue destination | ✔ | Library section + `ResolveIssue` service rule + audit events |
 
-## M3 — daily operations (next)
-Recurring tasks (durable definitions, missed occurrences visible, no duplicates on reopen);
-registers (equipment incl. calibration, incidents, risks, suppliers, temp logs);
-people/training matrix (S2/S3 initial vs refresher routes from the verified fact sheet,
-competency, policy acknowledgements per version); compounding module (supplier qualification,
-spill kits, BUD records, counselling evidence, recalls, potency matrix preserving ISSUE-POTENCY
-wording); Print centre maturity (presets, batches, binders, pre-filled paper templates,
-print-again with saved preset); CommunityToolkit.Mvvm adoption (DD-18).
+## M3 — daily operations · **COMPLETE (verified 20 Oct 2026, pre-dawn)**
 
-## M4 — assessments & continuity
+| Item | Status | Evidence |
+|---|---|---|
+| Recurring tasks | ✔ | `RecurringTaskDef` + `RecurrenceCalculator`: anchor-based sequences, month-end clamping (31 Jan → 28/29 Feb → 31 Mar; leap-year tested), weekly/fortnightly/monthly/quarterly/yearly/custom-days. Generation idempotent per (definition, occurrence) — unique index + tested; **missed occurrences stay open (overdue)**; runs at sign-in and Registers refresh. TasksView marks "(recurring)" |
+| Equipment register | ✔ | Name/model/serial/location/state (InService/Maintenance/Retired); calibration-due date **automatically ensures a monthly check schedule per item** (created once, tested); linked to AS85000 2.1.1.4b–c territory |
+| Incident register | ✔ | Records link to requirement 1.1.2.4 when the corpus has it; **closing requires a corrective action** (enforced + tested); role-gated |
+| People & training matrix | ✔ | Staff register (separate from app users); S2/S3 initial due = first supply + ~6 months with OVERDUE status; refresher due = anniversary of last completion; version-tied policy acknowledgements (staff+policy+version unique, tested) |
+| Compounding module | ✔ (scoped) | Supplier register (2.2.3.3 sourcing, review dates), product recall register (closure requires recorded stock action), **potency matrix per person** with distinct drug × form coverage against the conservative reading of ISSUE-POTENCY — coverage only, interpretation never presented as settled |
+| Migrations | ✔ | Three further migrations (M3Registers, M3Compounding) applied on the live legacy database — verified: tables present, 451 requirements + 437 verified page anchors intact |
+| Print centre maturity | ◐ | Presets entity exists from M1; batch/binder printing and pre-filled templates remain for M4/M5 |
+| CommunityToolkit.Mvvm | ✗ deferred | Second deferral recorded: VM refactor still planned, still no user-facing value when done |
+| Spill-kit/BUD/counselling bespoke entities | ✗ deliberately not built | BUD assignments and counselling evidence belong in the generic evidence store linked to their 2.2.3.x clauses (with checksums), not bespoke registers — avoids duplicating the evidence model and keeps patient-adjacent content in the redaction-gated evidence flow. Revisit only if the owner wants dedicated paper templates |
+
+## M4 — assessments & continuity (next)
 Assessment events timeline; deadline services with injectable clocks + VIC holiday provenance
 (boundary tests incl. leap years); findings → corrective actions → closure; assessor pack wizard
 (scope → redaction review → preview → export/print with manifest + hashes); source-change compare

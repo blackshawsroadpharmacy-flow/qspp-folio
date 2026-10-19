@@ -586,6 +586,102 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
 
     public List<PolicyAcknowledgement> Acknowledgements() => db.PolicyAcknowledgements.AsNoTracking().OrderByDescending(a => a.AcknowledgedOn).ToList();
 
+    // ---------- M3: compounding records ----------
+    public List<CompoundSupplier> Suppliers(bool activeOnly = true) =>
+        db.CompoundSuppliers.AsNoTracking().Where(s => !activeOnly || s.Active).OrderBy(s => s.Name).ToList();
+
+    public ServiceResult AddSupplier(string name, string supplies, string registrationNote, UserSession session)
+    {
+        if (session == null || session.ReadOnly) return ServiceResult.Fail("Read-only reviewer accounts cannot edit the supplier register.");
+        if (string.IsNullOrWhiteSpace(name)) return ServiceResult.Fail("Give the supplier a name.");
+        var s = new CompoundSupplier { Name = name.Trim(), Supplies = supplies ?? "", RegistrationNote = registrationNote ?? "" };
+        db.CompoundSuppliers.Add(s);
+        db.SaveChanges();
+        audit.Append(session.DisplayName, session.UserId, "supplier.added", "compound-supplier", s.Id.ToString(), $"{name}; {supplies}");
+        return ServiceResult.Succeed(s.Id);
+    }
+
+    public ServiceResult SetSupplierReviewed(Guid supplierId, Guid? evidenceItemId, DateOnly lastReviewed, UserSession session)
+    {
+        if (session == null || session.ReadOnly) return ServiceResult.Fail("Read-only reviewer accounts cannot update supplier reviews.");
+        if (evidenceItemId.HasValue && !db.EvidenceItems.Any(e => e.Id == evidenceItemId)) return ServiceResult.Fail("Linked evidence not found.");
+        var s = db.CompoundSuppliers.FirstOrDefault(x => x.Id == supplierId);
+        if (s == null) return ServiceResult.Fail("Supplier not found.");
+        s.LastReviewed = lastReviewed;
+        if (evidenceItemId.HasValue) s.EvidenceItemId = evidenceItemId;
+        db.SaveChanges();
+        audit.Append(session.DisplayName, session.UserId, "supplier.reviewed", "compound-supplier", supplierId.ToString(), $"{s.Name} reviewed {lastReviewed:dd MMM yyyy}");
+        return ServiceResult.Succeed();
+    }
+
+    public List<ProductRecall> Recalls() => db.ProductRecalls.AsNoTracking().OrderByDescending(r => r.ReceivedDate).ToList();
+
+    public ServiceResult AddRecall(string product, string batch, DateOnly received, string action, UserSession session)
+    {
+        if (session == null || session.ReadOnly) return ServiceResult.Fail("Read-only reviewer accounts cannot record recalls.");
+        if (string.IsNullOrWhiteSpace(product)) return ServiceResult.Fail("Name the recalled product.");
+        var r = new ProductRecall { Product = product.Trim(), Batch = batch ?? "", ReceivedDate = received, Action = action ?? "" };
+        db.ProductRecalls.Add(r);
+        db.SaveChanges();
+        audit.Append(session.DisplayName, session.UserId, "recall.recorded", "product-recall", r.Id.ToString(), $"{product} batch {batch}");
+        return ServiceResult.Succeed(r.Id);
+    }
+
+    public ServiceResult CloseRecall(Guid recallId, string action, UserSession session)
+    {
+        if (session == null || !session.CanVerify) return ServiceResult.Fail("Only Owner/Admin or Manager/Reviewer accounts can close recalls.");
+        if (string.IsNullOrWhiteSpace(action)) return ServiceResult.Fail("Record what was done with the affected stock before closing (quarantined/returned/destroyed).");
+        var r = db.ProductRecalls.FirstOrDefault(x => x.Id == recallId);
+        if (r == null) return ServiceResult.Fail("Recall not found.");
+        if (r.State == "Closed") return ServiceResult.Fail("Recall is already closed.");
+        r.Action = action;
+        r.State = "Closed";
+        r.UpdatedAtUtc = DateTime.UtcNow;
+        db.SaveChanges();
+        audit.Append(session.DisplayName, session.UserId, "recall.closed", "product-recall", recallId.ToString(), $"{r.Product}: {action}");
+        return ServiceResult.Succeed();
+    }
+
+    public List<PotencyRecord> PotencyRecords() => db.PotencyRecords.AsNoTracking().OrderByDescending(p => p.TestedOn).ToList();
+
+    public ServiceResult AddPotencyRecord(Guid staffId, string role, string drug, string dosageForm, DateOnly testedOn, string outcome, UserSession session)
+    {
+        if (session == null || session.ReadOnly) return ServiceResult.Fail("Read-only reviewer accounts cannot record potency testing.");
+        if (!db.StaffMembers.Any(s => s.Id == staffId)) return ServiceResult.Fail("Select the person who performed the testing.");
+        if (string.IsNullOrWhiteSpace(drug) || string.IsNullOrWhiteSpace(dosageForm)) return ServiceResult.Fail("Record WHICH drug and WHICH dosage form were tested.");
+        var rec = new PotencyRecord { StaffMemberId = staffId, Role = role == "Compounding pharmacist" ? role : "Compounding technician", Drug = drug.Trim(), DosageForm = dosageForm.Trim(), TestedOn = testedOn, Outcome = outcome ?? "" };
+        db.PotencyRecords.Add(rec);
+        db.SaveChanges();
+        audit.Append(session.DisplayName, session.UserId, "potency.recorded", "potency-record", rec.Id.ToString(), $"{drug}/{dosageForm} on {testedOn:dd MMM yyyy} by {staffId}");
+        return ServiceResult.Succeed(rec.Id);
+    }
+
+    /// <summary>Per-person current-year coverage against the ISSUE-POTENCY planning reading:
+    /// per person per year, two different drugs across two different dosage forms. The app
+    /// reports coverage only — it never asserts the unresolved interpretation as resolved.</summary>
+    public (List<(string name, List<string> drugs, List<string> forms, string status)> rows, string note) PotencyCoverage()
+    {
+        var year = DateTime.Today.Year;
+        var staff = db.StaffMembers.AsNoTracking().Where(s => s.Active).ToList();
+        var records = db.PotencyRecords.AsNoTracking().Where(p => p.TestedOn.Year == year).ToList();
+        var rows = new List<(string, List<string>, List<string>, string)>();
+        foreach (var s in staff)
+        {
+            var mine = records.Where(p => p.StaffMemberId == s.Id).ToList();
+            var drugs = mine.Select(p => p.Drug).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            var forms = mine.Select(p => p.DosageForm).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            var status = (drugs.Count, forms.Count) switch
+            {
+                ( >= 2, >= 2) => $"coverage met: {drugs.Count} drugs × {forms.Count} forms",
+                ( 0, 0 ) => "no testing recorded this year",
+                ( var d, var f ) => $"partial: {d} distinct drug(s), {f} distinct form(s) — planning target is two different drugs across two different forms per person",
+            };
+            rows.Add((s.Name, drugs, forms, status));
+        }
+        var note = "Cadence interpretation is ISSUE-POTENCY (unresolved): the UAG wording reads 'two different drugs and two different dosage forms per compounding technician and per compounding pharmacist per year'. This screen shows per-person coverage and does not resolve the interpretation.";
+        return (rows, note);
+    }
+
     // ---------- deadlines ----------
     public List<DeadlineInfo> DeadlinesFor(Requirement r, RequirementState state)
     {

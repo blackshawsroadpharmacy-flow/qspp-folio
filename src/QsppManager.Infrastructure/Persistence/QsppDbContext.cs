@@ -23,6 +23,9 @@ public class QsppDbContext(DbContextOptions<QsppDbContext> options) : DbContext(
     public DbSet<Incident> Incidents => Set<Incident>();
     public DbSet<StaffMember> StaffMembers => Set<StaffMember>();
     public DbSet<PolicyAcknowledgement> PolicyAcknowledgements => Set<PolicyAcknowledgement>();
+    public DbSet<CompoundSupplier> CompoundSuppliers => Set<CompoundSupplier>();
+    public DbSet<ProductRecall> ProductRecalls => Set<ProductRecall>();
+    public DbSet<PotencyRecord> PotencyRecords => Set<PotencyRecord>();
 
     protected override void OnModelCreating(ModelBuilder mb)
     {
