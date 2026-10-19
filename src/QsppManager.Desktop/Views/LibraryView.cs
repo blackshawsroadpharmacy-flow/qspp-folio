@@ -5,6 +5,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using QsppManager.Desktop.ViewModels;
 using QsppManager.Domain.Entities;
+using QsppManager.Infrastructure.Services;
 
 namespace QsppManager.Desktop.Views;
 
@@ -114,9 +115,33 @@ public partial class LibraryView : UserControl
         _superseded.Columns.Add(new DataGridTextColumn { Header = "Open re-link tasks", Binding = new Avalonia.Data.Binding("OpenTasks"), Width = new DataGridLength(130) });
         sp.Children.Add(_superseded);
 
+        // ---- source version compare ----
+        sp.Children.Add(new TextBlock { Text = "Compare source versions", Classes = { "h3" }, Margin = new(0, 10, 0, 0) });
+        var cmpRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        cmpRow.Children.Add(new Button { Content = "Compare full text of two documents…", Height = 34 }.With(b => b.Click += async (_, _) =>
+        {
+            var docs = App.Workspace.AllSourceDocuments().Where(d => d.Sha256Hex.Length > 0).ToList();
+            if (docs.Count < 2) { _message.Text = "Two source documents are needed for a compare."; return; }
+            var list = string.Join("\n", docs.Select((d, i) => $"{i + 1}. {d.DisplayName} ({d.FileName})"));
+            var aIdx = await Dialogs.Prompt(this, "Compare source versions — the OLDER version", "Number of the first document…\n" + list);
+            if (aIdx is null || !int.TryParse(aIdx, out var ai) || ai < 1 || ai > docs.Count) return;
+            var bIdx = await Dialogs.Prompt(this, "Compare source versions — the NEWER version", "Number of the second document");
+            if (bIdx is null || !int.TryParse(bIdx, out var bi) || bi < 1 || bi > docs.Count) return;
+            var (ok, err, summary, lines) = SourceCompare.DiffDocuments(App.TextIndex, docs[ai - 1], docs[bi - 1]);
+            _message.Text = ok ? summary : err;
+            _diffLines.ItemsSource = lines.Take(150).Select(l => new DiffRow(l)).ToList();
+        }));
+        sp.Children.Add(cmpRow);
+        sp.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
+            Text = "Diff runs on the cached full-text extractions (both documents get extracted on demand). '+ ' lines exist only in the newer document; '- ' lines only in the older." });
+        _diffLines = new ListBox { Height = 160, FontFamily = new Avalonia.Media.FontFamily("JetBrains Mono, Consolas"), FontSize = 11 };
+        sp.Children.Add(_diffLines);
+
         sp.Children.Add(_message);
         return new ScrollViewer { Content = sp };
     }
+
+    private ListBox _diffLines = null!;
 
     private void Load()
     {
@@ -214,6 +239,7 @@ public partial class LibraryView : UserControl
     public record IssueRow(Guid Id, string Key, string Title, string Status, string Planning);
     public record SupersededRow(string OldTitle, string Replacement, string Reason, string AffectedReqs, string OpenTasks);
     public record SearchRow(string Kind, string Title, string Excerpt, string Meta, Guid Id);
+    public record DiffRow(string Line);
 
     public void OpenLibrarySearch(string text)
     {

@@ -52,12 +52,17 @@ claim runtime validation that did not happen on this machine.
 | CommunityToolkit.Mvvm | ✗ deferred | Second deferral recorded: VM refactor still planned, still no user-facing value when done |
 | Spill-kit/BUD/counselling bespoke entities | ✗ deliberately not built | BUD assignments and counselling evidence belong in the generic evidence store linked to their 2.2.3.x clauses (with checksums), not bespoke registers — avoids duplicating the evidence model and keeps patient-adjacent content in the redaction-gated evidence flow. Revisit only if the owner wants dedicated paper templates |
 
-## M4 — assessments & continuity (next)
-Assessment events timeline; deadline services with injectable clocks + VIC holiday provenance
-(boundary tests incl. leap years); findings → corrective actions → closure; assessor pack wizard
-(scope → redaction review → preview → export/print with manifest + hashes); source-change compare
-(DiffPlex) on imported UAG copies; backup/restore with restore test; restricted reviewer enforcement
-across search/preview/export/print.
+## M4 — assessments & continuity · **CORE COMPLETE (verified 20 Oct 2026 evening); wizard + reviewer filtering queued**
+
+| Item | Status | Evidence |
+|---|---|---|
+| Assessment events timeline | ✔ | `AssessmentEvent` + Assessments view section; OutcomeReceived **requires the report/letter reference** (never claim an outcome that hasn't arrived — enforced + tested); role-gated |
+| Findings → corrective actions → closure | ✔ | Findings per event; **closure demands a recorded corrective action** (same rule as incidents); states Open/Actioned/Closed with audit chain |
+| Backup / restore | ✔ | `BackupService`: consistent live copy via `VACUUM INTO`, attachments included, **manifest with per-file sha256; restore validates every hash before extracting anything** (tamper test: corrupted DB inside the zip is refused); verified-then-staged promotion applies at next boot. Real round-trip tested (rows + users preserved) |
+| Source-change compare | ✔ | DiffPlex line diff between any two managed documents on their cached full text (Library button); the known UAG PROMs→"Patient-reported Measures" class of change surfaces as -/+ lines; whitespace-only differences ignored (tested) |
+| Assessor pack wizard (scope → redaction → export w/ manifest) | ✗ queued | Next session; the backup manifest + hash pattern (DD-14/DD-23) is the designed base |
+| Restricted-reviewer filtering across search/export/print | ✗ queued | Next session with the wizard (both touch export surfaces together) |
+| Injectable clocks + leap-year holiday tests | ✗ queued | DeadlineCalculator is pure-function and already holiday-injectable; IClock threading into recurring generation queued for the wizard session |
 
 ## M5 — product finish
 Screens against realistic volumes; screenshots of every destination (owner inspection pass);

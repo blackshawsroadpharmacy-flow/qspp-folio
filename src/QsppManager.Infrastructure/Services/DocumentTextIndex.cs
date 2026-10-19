@@ -23,6 +23,9 @@ public class DocumentTextIndex(QsppDbContext db, AttachmentStore store, ICorpusI
     private string CachePathFor(string sha256Hex) =>
         Path.Combine(cacheRoot, $"doctext-{sha256Hex[..Math.Min(24, sha256Hex.Length)]}.txt");
 
+    /// <summary>Read access for helper services (SourceCompare) that need the cache dir.</summary>
+    public string CacheRootSnapshot => cacheRoot;
+
     public bool IsCached(string sha256Hex) => sha256Hex.Length > 0 && File.Exists(CachePathFor(sha256Hex));
 
     public (bool ok, int pages, string error) Extract(Guid documentId)
