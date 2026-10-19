@@ -11,7 +11,7 @@ namespace QsppManager.Infrastructure.Services;
 
 /// <summary>Single workspace service for requirements, evidence, tasks, search and
 /// deadlines. Authorisation and state machines are enforced HERE, not in the UI.</summary>
-public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService audit)
+public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService audit, ICorpusIndexer? indexer = null)
 {
     // ---------- baseline ----------
     public Pharmacy EnsurePharmacy(bool demo = false)
@@ -199,6 +199,7 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
         db.EvidenceItems.Add(item);
         db.SaveChanges();
         audit.Append(session.DisplayName, session.UserId, "evidence.imported", "evidence", item.Id.ToString(), $"{title}; sha256 {sha[..12]}…; patientData={containsPatientData}");
+        indexer?.IndexEvidence(item.Id);
         return (ServiceResult.Succeed(item.Id), item);
     }
 
@@ -244,6 +245,7 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
         }
         db.SaveChanges();
         audit.Append(session.DisplayName, session.UserId, "evidence.review", "evidence", evidenceId.ToString(), $"to={target}; note={note}");
+        indexer?.IndexEvidence(evidenceId);
         return ServiceResult.Succeed();
     }
 
@@ -262,6 +264,8 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
         old.ReviewState = EvidenceReviewState.Retired;
         old.SupersededById = newId;
         old.SupersededReason = reason;
+        indexer?.IndexEvidence(old.Id);
+        indexer?.IndexEvidence(nu.Id);
         var affected = db.EvidenceLinks.Where(l => l.EvidenceItemId == oldId && l.State != LinkState.Superseded).ToList();
         foreach (var l in affected)
         {
@@ -273,6 +277,7 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
                 Title = $"Evidence superseded — re-link current version for {req?.Ref ?? "requirement"}",
                 Details = $"Superseded evidence '{old.Title}' was replaced ({reason}). Choose the current version, link it with a rationale, and mark the link reviewed so readiness reflects reality.",
                 RequirementId = l.RequirementId,
+                EvidenceItemId = oldId,
                 AssignedToUserId = st?.OwnerUnassigned == false ? st.OwnerUserId : EnsurePharmacyOwner(),
                 Priority = TaskPriority.High,
                 CreatedByUserId = session.UserId,
@@ -358,6 +363,24 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
         return ServiceResult.Succeed();
     }
 
+    /// <summary>Resolving an issue REQUIRES a recorded outcome: who settled it and which
+    /// source is authoritative. The plan-only flags in deadline views lift only then.</summary>
+    public ServiceResult ResolveIssue(Guid issueId, string resolutionNote, UserSession session)
+    {
+        if (session == null || !session.CanVerify) return ServiceResult.Fail("Only Owner/Admin or Manager/Reviewer accounts can resolve an interpretation issue.");
+        if (string.IsNullOrWhiteSpace(resolutionNote))
+            return ServiceResult.Fail("Record how the question was settled — who confirmed it, and which source is taken as authoritative.");
+        var i = db.InterpretationIssues.FirstOrDefault(x => x.Id == issueId);
+        if (i == null) return ServiceResult.Fail("Interpretation issue not found.");
+        i.Status = "resolved";
+        i.ResolutionNote = resolutionNote[..Math.Min(resolutionNote.Length, 2000)];
+        i.LastReviewedAtUtc = DateTime.UtcNow;
+        i.ReviewedByUserId = session.UserId;
+        db.SaveChanges();
+        audit.Append(session.DisplayName, session.UserId, "issue.resolved", "interpretation-issue", issueId.ToString(), $"{i.Key}; {i.ResolutionNote}");
+        return ServiceResult.Succeed();
+    }
+
     // ---------- deadlines ----------
     public List<DeadlineInfo> DeadlinesFor(Requirement r, RequirementState state)
     {
@@ -406,6 +429,49 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
         var total = db.Requirements.Count();
         var verified = db.RequirementStates.AsNoTracking().Count(s => s.PharmacyId == ph.Id && s.Readiness == RequirementReadiness.ManagerVerified);
         return (verified, total);
+    }
+
+    // ---------- preparation journey (Assessments screen) ----------
+    /// <summary>Counts only — the journey view turns them into narrative. No invented
+    /// percentages; every number is a real query result.</summary>
+    public JourneySnapshot Journey()
+    {
+        var ph = EnsurePharmacy();
+        var states = db.RequirementStates.AsNoTracking().Where(s => s.PharmacyId == ph.Id).ToList();
+        var reqsTotal = db.Requirements.Count();
+        var owned = states.Count(s => !s.OwnerUnassigned);
+        var decided = states.Count(s => s.Applicability != Applicability.Unknown);
+        var withEvidence = db.EvidenceLinks.AsNoTracking()
+            .Where(l => l.State != LinkState.Superseded).Select(l => l.RequirementId).Distinct().Count();
+        var verified = states.Count(s => s.Readiness == RequirementReadiness.ManagerVerified);
+        var pendingReview = db.EvidenceItems.Count(e => e.ReviewState == EvidenceReviewState.ReadyForReview);
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var overdue = db.Tasks.Count(t => t.State == TaskState.Open && t.DueDate != null && t.DueDate < today);
+        var issues = db.InterpretationIssues.AsNoTracking().ToList();
+        return new JourneySnapshot(
+            reqsTotal, decided, owned, withEvidence, verified,
+            states.Count(s => s.Readiness == RequirementReadiness.InProgress),
+            states.Count(s => s.Readiness == RequirementReadiness.NotStarted),
+            pendingReview, overdue,
+            issues.Count(i => i.Status != "resolved"), issues.Count(i => i.Status == "acknowledged"),
+            issues.Count, ph.OnsiteAssessmentDate, ph.AccreditationExpiryDate);
+    }
+
+    /// <summary>Supersession impact review: retired evidence with its replacement and the
+    /// count of requirement links that were marked Superseded (each got a re-link task).</summary>
+    public List<SupersessionRow> SupersessionReview()
+    {
+        var rows = new List<SupersessionRow>();
+        foreach (var old in db.EvidenceItems.AsNoTracking().Where(e => e.ReviewState == EvidenceReviewState.Retired))
+        {
+            var replacement = old.SupersededById.HasValue
+                ? db.EvidenceItems.AsNoTracking().FirstOrDefault(e => e.Id == old.SupersededById) : null;
+            var affected = db.EvidenceLinks.Count(l => l.EvidenceItemId == old.Id && l.State == LinkState.Superseded);
+            var openTasks = db.Tasks.Count(t => t.EvidenceItemId == old.Id && t.State == TaskState.Open);
+            rows.Add(new SupersessionRow(old.Id, old.Title, old.SupersededReason,
+                replacement?.Title ?? "(no replacement recorded)", affected, openTasks));
+        }
+        return rows.OrderBy(r => r.OpenTaskCount == 0).ThenBy(r => r.OldTitle).ToList();
     }
 
     public List<EvidenceItem> AllEvidence() => db.EvidenceItems.AsNoTracking().OrderByDescending(e => e.CreatedAtUtc).ToList();

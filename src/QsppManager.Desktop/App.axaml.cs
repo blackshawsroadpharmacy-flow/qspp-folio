@@ -55,14 +55,17 @@ public partial class App : Avalonia.Application
         Audit = new AuditService(Db);
         Auth = new AuthService(Db, Audit);
         Seeds = new SeedImporter(Db, Store, Audit, RepoRoot);
-        Workspace = new QsppWorkspace(Db, Store, Audit);
+        Search = new CorpusSearch(Db);
+        Workspace = new QsppWorkspace(Db, Store, Audit, Search);
         Printer = new CupsPrintService(Db, Audit);
         Composer = new PdfComposer(fontsDir);
-        Search = new CorpusSearch(Db);
 
         try
         {
             Seeds.ImportAll();
+            // Fresh full-text index over whatever the import (re)built — cheap at corpus scale.
+            Search.EnsureIndex();
+            Log.Information("FTS index rebuilt: {Rows} rows", Search.RebuildIndex());
         }
         catch (Exception ex)
         {

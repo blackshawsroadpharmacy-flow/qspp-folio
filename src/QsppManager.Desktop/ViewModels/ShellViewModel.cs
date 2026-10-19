@@ -123,8 +123,8 @@ public class ShellViewModel : ViewModelBase
             ShellPage.Tasks => new TasksView(this),
             ShellPage.Registers => new PlaceholdersView("Registers", "Equipment, calibration and maintenance schedules, incidents, risks, suppliers and temperature logs arrive in Milestone 3. Recurring-task rules are drafted in docs/milestones.md."),
             ShellPage.People => new PlaceholdersView("People & training", "Staff profiles, induction checklists, qualifications, the training matrix and policy acknowledgements arrive in Milestone 3."),
-            ShellPage.Assessments => new PlaceholdersView("Assessments", "Assessment events, preparation journey, findings and corrective actions arrive in Milestone 4. Cycle dates can already be set under Settings."),
-            ShellPage.Library => new PlaceholdersView("Library", "Source library, corpus search and the crosswalk browser arrive in Milestone 2. All imported source documents are already listed under Evidence & documents."),
+            ShellPage.Assessments => new AssessmentsView(this),
+            ShellPage.Library => new LibraryView(this),
             ShellPage.PrintCentre => new PrintCentreView(this),
             ShellPage.Settings => new SettingsView(this),
             _ => new LoadingView(),
@@ -142,6 +142,10 @@ public class ShellViewModel : ViewModelBase
         {
             if (SelectedNav?.Page != ShellPage.Requirements) SelectedNav = NavItems.FirstOrDefault(n => n.Page == ShellPage.Requirements);
             if (CurrentPage is RequirementsView rv) rv.OpenById(row.Id);
+        }
+        else if (row.Kind is "Issue" or "Source")
+        {
+            if (SelectedNav?.Page != ShellPage.Library) SelectedNav = NavItems.FirstOrDefault(n => n.Page == ShellPage.Library);
         }
         else
         {

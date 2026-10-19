@@ -90,7 +90,11 @@ public class TodayViewModel(ShellViewModel shell, TodayView view)
     public void OpenTasks() => shell.SelectedNav = shell.NavItems.First(n => n.Page == ShellPage.Tasks);
     public void OpenDocuments() => shell.SelectedNav = shell.NavItems.First(n => n.Page == ShellPage.Documents);
     public void OpenRequirements() => shell.SelectedNav = shell.NavItems.First(n => n.Page == ShellPage.Requirements);
-    public void OpenIssues() { /* issues live on requirement details (M2 destination) */ }
+    public void OpenIssues()
+    {
+        var nav = shell.NavItems.FirstOrDefault(n => n.Page == ShellPage.Library);
+        if (nav != null) shell.SelectedNav = nav;   // issues live in the Library with their competing sources
+    }
 }
 
 public static class AppViewExtensions

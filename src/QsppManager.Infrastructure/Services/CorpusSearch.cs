@@ -1,19 +1,174 @@
 using Microsoft.EntityFrameworkCore;
 using QsppManager.Application;
+using QsppManager.Domain;
 using QsppManager.Domain.Entities;
 using QsppManager.Infrastructure.Persistence;
 
 namespace QsppManager.Infrastructure.Services;
 
-/// <summary>Local corpus + evidence + document search (v1: EF LIKE; FTS5 arrives in M2).
-/// Restricted record families (HR, sensitive incidents) are excluded ahead of M4 role
-/// filtering — see docs/milestones.md.</summary>
-public class CorpusSearch(QsppDbContext db)
+/// <summary>Local corpus + evidence + document search backed by SQLite FTS5 (M2).
+/// The index is rebuilt after seed import and kept fresh per record on evidence/document
+/// changes. Requirement rows carry ref/heading wording; source-document rows let people
+/// find the governing document; issue and evidence rows round out the palette.
+/// Restricted record families still appear — M4 introduces role filtering here.</summary>
+public class CorpusSearch(QsppDbContext db) : ICorpusIndexer
 {
+    public void EnsureIndex()
+    {
+        db.Database.ExecuteSqlRaw("""
+            CREATE VIRTUAL TABLE IF NOT EXISTS search_index USING fts5(
+                kind UNINDEXED, ref, title, body, meta UNINDEXED, target UNINDEXED)
+            """);
+    }
+
+    /// <summary>Full rebuild from the current database contents. Cheap at this scale.</summary>
+    public int RebuildIndex()
+    {
+        EnsureIndex();
+        db.Database.ExecuteSqlRaw("DELETE FROM search_index");
+        var n = 0;
+
+        foreach (var r in db.Requirements.AsNoTracking().Include(x => x.EvidenceExamples))
+        {
+            var body = string.Join(" ", r.Title, r.PlainSummary, r.WordingExcerpt,
+                string.Join(" ", r.EvidenceExamples.Select(e => e.Text)));
+            IndexRow(r.RefKind.ToString(), r.Ref, r.Title, body, MetaRequirement(r), r.Id);
+            n++;
+        }
+
+        foreach (var e in db.EvidenceItems.AsNoTracking())
+        {
+            IndexRow("Evidence", "", e.Title, string.Join(" ", e.Title, e.FileName, e.ReviewState, e.Kind),
+                $"evidence · {e.FileName} · review {e.ReviewState}", e.Id);
+            n++;
+        }
+
+        foreach (var d in db.SourceDocuments.AsNoTracking())
+        {
+            IndexRow("Source", "", d.DisplayName, string.Join(" ", d.DisplayName, d.FileName, d.Role, d.SourceVersion, d.ProvenanceNote),
+                $"source document · {d.Role} · {d.SourceVersion}", d.Id);
+            n++;
+        }
+
+        foreach (var i in db.InterpretationIssues.AsNoTracking())
+        {
+            IndexRow("Issue", i.Key, i.Title, string.Join(" ", i.Title, i.ConservativePlanning, i.Status),
+                $"interpretation issue · {i.Status}", i.Id);
+            n++;
+        }
+        return n;
+    }
+
+    private static string MetaRequirement(Requirement r) => $"{EnumTitle(r.RefKind)} · {r.SourceDocFile} · {r.SourceVersion}"
+        + (r.AnchorPage.HasValue ? $" · PDF p{r.AnchorPage}" : r.AnchorApproximate && r.AnchorLines != "" ? $" · approx. lines {r.AnchorLines}" : "");
+
+    private static string EnumTitle(RefKind k) => k switch
+    {
+        RefKind.Std => "Standard",
+        RefKind.Uag => "UAG section",
+        RefKind.UagKeyTask => "UAG key task",
+        RefKind.Rule => "Program rule",
+        RefKind.Tc => "Terms & conditions",
+        RefKind.Policy => "Policy",
+        RefKind.Obligation => "Obligation",
+        RefKind.Hitlist => "Readiness hitlist",
+        _ => k.ToString(),
+    };
+
+    private void IndexRow(string kind, string req, string title, string body, string meta, Guid target)
+    {
+        using var cmd = db.Database.GetDbConnection().CreateCommand();
+        if (cmd.Connection == null) return;
+        cmd.CommandText = "INSERT INTO search_index (kind, ref, title, body, meta, target) VALUES (@k, @r, @t, @b, @m, @g)";
+        AddParam(cmd, "@k", kind); AddParam(cmd, "@r", req); AddParam(cmd, "@t", title);
+        AddParam(cmd, "@b", body); AddParam(cmd, "@m", meta); AddParam(cmd, "@g", target.ToString());
+        if (cmd.Connection.State != System.Data.ConnectionState.Open) cmd.Connection.Open();
+        _ = cmd.ExecuteNonQuery();
+    }
+
+    private static void AddParam(System.Data.Common.DbCommand cmd, string name, string value)
+    {
+        var p = cmd.CreateParameter();
+        p.ParameterName = name;
+        p.Value = value;
+        cmd.Parameters.Add(p);
+    }
+
+    public void IndexEvidence(Guid evidenceId)
+    {
+        var e = db.EvidenceItems.AsNoTracking().FirstOrDefault(x => x.Id == evidenceId);
+        if (e == null) return;
+        db.Database.ExecuteSqlRaw("DELETE FROM search_index WHERE target = {0}", evidenceId.ToString());
+        IndexRow("Evidence", "", e.Title, string.Join(" ", e.Title, e.FileName, e.ReviewState, e.Kind),
+            $"evidence · {e.FileName} · review {e.ReviewState}", e.Id);
+    }
+
+    public void RetireIndexEntry(Guid targetId)
+    {
+        db.Database.ExecuteSqlRaw("DELETE FROM search_index WHERE target = {0}", targetId.ToString());
+    }
+
     public List<SearchResultRow> Query(string text, int cap = 40)
     {
         text = text.Trim();
         if (text.Length < 2) return [];
+        var fts = BuildFtsQuery(text);
+        List<SearchResultRow> rows = [];
+        try
+        {
+            rows = QueryFts(fts, cap);
+        }
+        catch (Microsoft.Data.Sqlite.SqliteException)
+        {
+            rows = []; // malformed FTS syntax — fall through to LIKE
+        }
+        if (rows.Count == 0) rows = QueryLike(text, cap);
+        return rows;
+    }
+
+    /// <summary>"potency test" → '"potency" AND "test*"' — every token required, last token prefix-enabled.</summary>
+    public static string BuildFtsQuery(string text)
+    {
+        var tokens = text.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(t => "\"" + t.Replace("\"", "") + "\"").ToList();
+        if (tokens.Count == 0) return "\"\"";
+        var last = tokens[^1];
+        tokens[^1] = last[..^1] + "*\""; // add prefix star inside the quotes
+        return string.Join(" AND ", tokens);
+    }
+
+    private List<SearchResultRow> QueryFts(string match, int cap)
+    {
+        var rows = new List<SearchResultRow>();
+        using var cmd = db.Database.GetDbConnection().CreateCommand();
+        if (cmd.Connection == null) return rows;
+        if (cmd.Connection.State != System.Data.ConnectionState.Open) cmd.Connection.Open();
+        cmd.CommandText = """
+            SELECT kind, ref, title, snippet(search_index, 3, '[', ']', '…', 14), meta, target,
+                   bm25(search_index, 0.0, 2.0, 10.0, 1.0) AS score
+            FROM search_index WHERE search_index MATCH @q
+            ORDER BY score LIMIT @cap
+            """;
+        var q = cmd.CreateParameter(); q.ParameterName = "@q"; q.Value = match; cmd.Parameters.Add(q);
+        var c = cmd.CreateParameter(); c.ParameterName = "@cap"; c.Value = cap; cmd.Parameters.Add(c);
+        using var reader = cmd.ExecuteReader();
+        while (reader.Read())
+        {
+            var kind = reader.GetString(0);
+            var refTxt = reader.GetString(1);
+            var title = reader.GetString(2);
+            var excerpt = reader.IsDBNull(3) ? "" : reader.GetString(3);
+            var meta = reader.GetString(4);
+            _ = Guid.TryParse(reader.GetString(5), out var id);
+            rows.Add(new SearchResultRow(kind, string.IsNullOrEmpty(refTxt) ? title : $"{refTxt} — {title}",
+                excerpt, id, meta));
+        }
+        return rows;
+    }
+
+    /// <summary>LIKE fallback (also used when FTS finds nothing — substring beats token match).</summary>
+    private List<SearchResultRow> QueryLike(string text, int cap)
+    {
         var like = $"%{text.Replace("%", "").Replace("_", "")}%";
         List<SearchResultRow> rows = [];
 
@@ -24,9 +179,8 @@ public class CorpusSearch(QsppDbContext db)
             .Take(cap)
             .AsEnumerable()
             .Select(r => new SearchResultRow(
-                r.RefKind.ToString(), $"{r.Ref} — {r.Title}",
-                Snippet(r.PlainSummary, r.WordingExcerpt, text), r.Id,
-                $"{r.SourceDocFile} v{r.SourceVersion}{(r.AnchorApproximate ? " · approx. lines " + r.AnchorLines : "")}")));
+                EnumTitle(r.RefKind), $"{r.Ref} — {r.Title}",
+                Snippet(r.PlainSummary, r.WordingExcerpt, text), r.Id, MetaRequirement(r))));
 
         rows.AddRange(db.EvidenceItems.AsNoTracking()
             .Where(e => EF.Functions.Like(e.Title, like) || EF.Functions.Like(e.FileName, like))

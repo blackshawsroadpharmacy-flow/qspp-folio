@@ -35,6 +35,10 @@ public static class Helpers
     public static double TextScale { get; private set; } = 1.0;
     public static event Action<double>? TextScaleChanged;
 
+    /// <summary>Fetch an app-level brush resource (code-built views avoid XAML binding syntax).</summary>
+    public static Avalonia.Media.IBrush? Brush(string key)
+        => Avalonia.Application.Current?.Resources.TryGetValue(key, out var v) == true && v is Avalonia.Media.IBrush b ? b : null;
+
     public static void SetTextScale(double scale)
     {
         TextScale = scale;

@@ -1,0 +1,3614 @@
+{
+  "retrievedDate": "2026-10-20",
+  "generatedFromVersion": "pack 26 Sep 2026",
+  "entries": [
+    {
+      "id": "STD-1.1.1",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 14,
+      "verified": true,
+      "locator": "1.1.1 Governance, leadership, and culture",
+      "note": "multiple pages matched; chose best"
+    },
+    {
+      "id": "STD-1.1.2",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 14,
+      "verified": true,
+      "locator": "1.1.2 Patient safety and quality systems",
+      "note": "multiple pages matched; chose best"
+    },
+    {
+      "id": "STD-1.1.3",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 17,
+      "verified": true,
+      "locator": "1.1.3 Clinical performance and effectiveness",
+      "note": "multiple pages matched; chose best"
+    },
+    {
+      "id": "STD-1.1.4",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 17,
+      "verified": true,
+      "locator": "1.1.4 Safe environment for the delivery of care",
+      "note": "multiple pages matched; chose best"
+    },
+    {
+      "id": "STD-1.1.5",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 18,
+      "verified": true,
+      "locator": "1.1.5 Partnering with patients in their own care",
+      "note": "multiple pages matched; chose best"
+    },
+    {
+      "id": "STD-1.1.6",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 19,
+      "verified": true,
+      "locator": "1.1.6 Health literacy",
+      "note": "multiple pages matched; chose best"
+    },
+    {
+      "id": "STD-1.1.7",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 19,
+      "verified": true,
+      "locator": "1.1.7 Partnering with consumers in pharmacy design and governance",
+      "note": "multiple pages matched; chose best"
+    },
+    {
+      "id": "STD-1.2.1",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 19,
+      "verified": true,
+      "locator": "1.2.1 Legal and professional obligations",
+      "note": "multiple pages matched; chose best"
+    },
+    {
+      "id": "STD-1.2.2",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 20,
+      "verified": true,
+      "locator": "1.2.2 Business viability",
+      "note": "multiple pages matched; chose best"
+    },
+    {
+      "id": "STD-1.2.3",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 21,
+      "verified": true,
+      "locator": "1.2.3 Business continuity plan",
+      "note": "multiple pages matched; chose best"
+    },
+    {
+      "id": "STD-1.2.4",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 21,
+      "verified": true,
+      "locator": "1.2.4 Pharmacy premises",
+      "note": "multiple pages matched; chose best"
+    },
+    {
+      "id": "STD-1.2.5",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 21,
+      "verified": true,
+      "locator": "1.2.5 Safety and security",
+      "note": "multiple pages matched; chose best"
+    },
+    {
+      "id": "STD-1.2.6",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 22,
+      "verified": true,
+      "locator": "1.2.6 Information technology (IT)",
+      "note": "multiple pages matched; chose best"
+    },
+    {
+      "id": "STD-2.1.1",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 23,
+      "verified": true,
+      "locator": "2.1.1 Delivery of pharmacy services",
+      "note": "multiple pages matched; chose best"
+    },
+    {
+      "id": "STD-2.1.2",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 25,
+      "verified": true,
+      "locator": "2.1.2 Prescribing by pharmacists",
+      "note": "multiple pages matched; chose best"
+    },
+    {
+      "id": "STD-2.1.3",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 25,
+      "verified": true,
+      "locator": "2.1.3 Advertising of pharmacy services",
+      "note": "multiple pages matched; chose best"
+    },
+    {
+      "id": "STD-2.2.1",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 26,
+      "verified": true,
+      "locator": "2.2.1 Stock management",
+      "note": "multiple pages matched; chose best"
+    },
+    {
+      "id": "STD-2.2.2",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 26,
+      "verified": true,
+      "locator": "2.2.2 Safe and appropriate provision of medicines, medical devices and poisons",
+      "note": "multiple pages matched; chose best"
+    },
+    {
+      "id": "STD-2.2.3",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 28,
+      "verified": true,
+      "locator": "2.2.3 Complex compounding (if offered)",
+      "note": "multiple pages matched; chose best"
+    },
+    {
+      "id": "STD-2.2.4",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 29,
+      "verified": true,
+      "locator": "2.2.4 Indirect provision of medicines",
+      "note": "multiple pages matched; chose best"
+    },
+    {
+      "id": "STD-2.2.5",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 29,
+      "verified": true,
+      "locator": "2.2.5 Advertising of therapeutic goods",
+      "note": "multiple pages matched; chose best"
+    },
+    {
+      "id": "STD-2.3.1",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 30,
+      "verified": true,
+      "locator": "2.3.1 Preventing and controlling infections",
+      "note": "multiple pages matched; chose best"
+    },
+    {
+      "id": "STD-2.3.2",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 31,
+      "verified": true,
+      "locator": "2.3.2 Comprehensive care",
+      "note": "multiple pages matched; chose best"
+    },
+    {
+      "id": "STD-2.3.3",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 32,
+      "verified": true,
+      "locator": "2.3.3 Communicating for safety",
+      "note": "multiple pages matched; chose best"
+    },
+    {
+      "id": "STD-2.3.4",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 32,
+      "verified": true,
+      "locator": "2.3.4 Recognising and responding to serious deterioration and minimising harm",
+      "note": "multiple pages matched; chose best"
+    },
+    {
+      "id": "STD-2.4.1",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 33,
+      "verified": true,
+      "locator": "2.4.1 Human resources",
+      "note": "multiple pages matched; chose best"
+    },
+    {
+      "id": "STD-2.4.2",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 34,
+      "verified": true,
+      "locator": "2.4.2 Safety and security",
+      "note": "multiple pages matched; chose best"
+    },
+    {
+      "id": "STD-2.4.3",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 35,
+      "verified": true,
+      "locator": "2.4.3 Information technology (IT)",
+      "note": "multiple pages matched; chose best"
+    },
+    {
+      "id": "STD-2.2.3.1",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 28,
+      "verified": true,
+      "locator": "2.2.3.1 The pharmacy shall ensure there are appropriately trained and/or qualified staff to prepare compounded medicines",
+      "note": "matched clause line printed with ref number"
+    },
+    {
+      "id": "STD-2.2.3.2",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 28,
+      "verified": true,
+      "locator": "2.2.3.2 The pharmacy shall ensure they provide access to operating procedures and relevant reference material for all co",
+      "note": "matched clause line printed with ref number"
+    },
+    {
+      "id": "STD-2.2.3.3",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 28,
+      "verified": true,
+      "locator": "2.2.3.3 The pharmacy shall ensure there is a dedicated facility and equipment for complex compounding and a separate ded",
+      "note": "matched clause line printed with ref number"
+    },
+    {
+      "id": "STD-2.2.3.4",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 28,
+      "verified": true,
+      "locator": "2.2.3.4 The pharmacy shall maintain and follow a system of risk assessment for workplace health and safety for staff wor",
+      "note": "matched clause line printed with ref number"
+    },
+    {
+      "id": "STD-2.2.3.5",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 28,
+      "verified": true,
+      "locator": "2.2.3.5 Each time a medicine is compounded, the pharmacy shall follow a system of risk assessment to ensure: a. Appropri",
+      "note": "matched clause line printed with ref number"
+    },
+    {
+      "id": "STD-2.2.3.6",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 28,
+      "verified": true,
+      "locator": "2.2.3.6 The pharmacy shall source high-quality raw materials (pharmaceutical grade where applicable) from reputable supp",
+      "note": "matched clause line printed with ref number"
+    },
+    {
+      "id": "STD-2.2.3.7",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 28,
+      "verified": true,
+      "locator": "2.2.3.7 The pharmacy shall maintain and follow a system to identify, handle, store and dispose of materials safely, both",
+      "note": "matched clause line printed with ref number"
+    },
+    {
+      "id": "STD-2.2.3.8",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 28,
+      "verified": true,
+      "locator": "2.2.3.8 The pharmacy shall maintain and follow a system to ensure consistency of compounded products, including appropri",
+      "note": "matched clause line printed with ref number"
+    },
+    {
+      "id": "STD-2.2.3.9",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 28,
+      "verified": true,
+      "locator": "2.2.3.9 The pharmacy shall maintain and follow a system for appropriate packaging, labelling and storage of finished com",
+      "note": "matched clause line printed with ref number"
+    },
+    {
+      "id": "STD-2.2.3.10",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 28,
+      "verified": true,
+      "locator": "2.2.3.10 The pharmacy shall implement and follow a process for assigning beyond use by dates to ensure efficacy and safe",
+      "note": "matched clause line printed with ref number"
+    },
+    {
+      "id": "STD-2.2.3.11",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 28,
+      "verified": true,
+      "locator": "2.2.3.11 The pharmacy shall follow a process for the provision of relevant counselling to patients on the correct use an",
+      "note": "matched clause line printed with ref number"
+    },
+    {
+      "id": "STD-2.2.3.12",
+      "pdf": "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf",
+      "page": 29,
+      "verified": true,
+      "locator": "2.2.3.12 The pharmacy shall maintain and follow a system of initiating, managing and reporting a product recall of compo",
+      "note": "matched clause line printed with ref number"
+    },
+    {
+      "id": "UAG-1.1",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 12,
+      "verified": true,
+      "locator": "1.1 Governance, Leadership, and Culture",
+      "note": ""
+    },
+    {
+      "id": "UAG-1.2",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 14,
+      "verified": true,
+      "locator": "1.2 Patient Safety and Quality Systems",
+      "note": ""
+    },
+    {
+      "id": "UAG-1.3",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 22,
+      "verified": true,
+      "locator": "1.3 Clinical Performance and Effectiveness",
+      "note": ""
+    },
+    {
+      "id": "UAG-1.4",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 26,
+      "verified": true,
+      "locator": "1.4 Safe Environment for the Delivery of Care",
+      "note": ""
+    },
+    {
+      "id": "UAG-2.1",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 33,
+      "verified": true,
+      "locator": "2.1 Delivery of Pharmacy Services",
+      "note": ""
+    },
+    {
+      "id": "UAG-2.2",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 39,
+      "verified": true,
+      "locator": "2.2 Prescribing by Pharmacists",
+      "note": ""
+    },
+    {
+      "id": "UAG-2.3",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 42,
+      "verified": true,
+      "locator": "2.3 Safe and Appropriate Provision of Medicines, Medical Devices and Poisons",
+      "note": ""
+    },
+    {
+      "id": "UAG-2.4",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 48,
+      "verified": true,
+      "locator": "2.4 Complex Compounding",
+      "note": ""
+    },
+    {
+      "id": "UAG-2.5",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 54,
+      "verified": true,
+      "locator": "2.5 Indirect Provision of Medicines",
+      "note": ""
+    },
+    {
+      "id": "UAG-2.6",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 57,
+      "verified": true,
+      "locator": "2.6 Preventing and Controlling Infections",
+      "note": ""
+    },
+    {
+      "id": "UAG-2.7",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 62,
+      "verified": true,
+      "locator": "2.7 Communicating for Safety",
+      "note": ""
+    },
+    {
+      "id": "UAG-2.8",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 65,
+      "verified": true,
+      "locator": "2.8 Recognising and Responding to Serious Deterioration and Minimising Harm",
+      "note": ""
+    },
+    {
+      "id": "UAG-3.1",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 68,
+      "verified": true,
+      "locator": "3.1 Partnering with Patients in their own Care",
+      "note": ""
+    },
+    {
+      "id": "UAG-3.2",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 72,
+      "verified": true,
+      "locator": "3.2 Health Literacy",
+      "note": ""
+    },
+    {
+      "id": "UAG-3.3",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 74,
+      "verified": true,
+      "locator": "3.3 Partnering with Consumers in Pharmacy Design and Governance",
+      "note": ""
+    },
+    {
+      "id": "UAG-3.4",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 76,
+      "verified": true,
+      "locator": "3.4 Comprehensive Care",
+      "note": ""
+    },
+    {
+      "id": "UAG-4.1",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 80,
+      "verified": true,
+      "locator": "4.1 Legal and Professional Obligations",
+      "note": ""
+    },
+    {
+      "id": "UAG-4.2",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 83,
+      "verified": true,
+      "locator": "4.2 Business Viability",
+      "note": ""
+    },
+    {
+      "id": "UAG-4.3",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 86,
+      "verified": true,
+      "locator": "4.3 Business Continuity Plan",
+      "note": ""
+    },
+    {
+      "id": "UAG-4.4",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 88,
+      "verified": true,
+      "locator": "4.4 Pharmacy Premises",
+      "note": ""
+    },
+    {
+      "id": "UAG-4.5",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 91,
+      "verified": true,
+      "locator": "4.5 Safety and Security",
+      "note": ""
+    },
+    {
+      "id": "UAG-4.6",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 95,
+      "verified": true,
+      "locator": "4.6 Information Technology (IT)",
+      "note": ""
+    },
+    {
+      "id": "UAG-4.7",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 99,
+      "verified": true,
+      "locator": "4.7 Advertising of Pharmacy Services and Therapeutic Goods",
+      "note": ""
+    },
+    {
+      "id": "UAG-4.8",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 102,
+      "verified": true,
+      "locator": "4.8 Stock Management",
+      "note": ""
+    },
+    {
+      "id": "UAG-4.9",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 106,
+      "verified": true,
+      "locator": "4.9 Human Resources",
+      "note": ""
+    },
+    {
+      "id": "UAG-2.4-potency-cadence",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 51,
+      "verified": true,
+      "locator": "Establish a system for final product potency testing to ensure consistency, efficacy and quality. A final product potency test must be compl",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.1-1_1_1_1-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 12,
+      "verified": true,
+      "locator": "a. Have a culture of safety and quality improvement.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.1-1_1_1_1-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 12,
+      "verified": true,
+      "locator": "b. Partner with patients, carers, consumers and communities.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.1-1_1_1_1-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 12,
+      "verified": true,
+      "locator": "c. Establish and maintain systems for integrating care with other service providers involved in a patient's care.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.1-1_1_1_1-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 12,
+      "verified": true,
+      "locator": "d. Set priorities for safe and quality clinical care and ensure that these are communicated effectively to pharmacy staff.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.1-1_1_1_1-e",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 12,
+      "verified": true,
+      "locator": "e. Establish and maintain a clinical governance framework.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.1-1_1_1_1-f",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 12,
+      "verified": true,
+      "locator": "f. Clearly define the safety and quality roles, responsibilities and accountabilities of those who have ownership of the pharmacy, managemen",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.1-1_1_1_1-g",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 12,
+      "verified": true,
+      "locator": "g. Monitor and review the safety and quality performance of the pharmacy.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.1-1_1_1_1-h",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 12,
+      "verified": true,
+      "locator": "h. Consider the safety and quality of health care for patients in its business decision-making.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_1-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 14,
+      "verified": true,
+      "locator": "a. Establish and maintain policies, procedures and protocols and incorporate these into onboarding of pharmacy staff.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_1-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 14,
+      "verified": true,
+      "locator": "b. Make policies, procedures and protocols easily available to pharmacy staff.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_1-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 14,
+      "verified": true,
+      "locator": "c. Monitor and take action to improve adherence to policies, procedures and protocols.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_1-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 14,
+      "verified": true,
+      "locator": "d. Review all policies, procedures and protocols at least annually to ensure they remain fit for purpose.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_1-e",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 14,
+      "verified": true,
+      "locator": "e. Communicate changes of policies, procedures, and protocols to pharmacy staff.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_1-f",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 14,
+      "verified": true,
+      "locator": "f. Ensure compliance with relevant safety and quality legislation, regulations and jurisdictional requirements, as well as professional stan",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_2-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 14,
+      "verified": true,
+      "locator": "a. Identify priorities for safety and quality improvement.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_2-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 14,
+      "verified": true,
+      "locator": "b. Implement and monitor safety and quality improvement activities.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_2-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 14,
+      "verified": true,
+      "locator": "c. Measure changes in safety and quality outcomes.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_2-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 14,
+      "verified": true,
+      "locator": "d. Provide timely information on safety and quality performance to patients, consumers and pharmacy staff.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_3-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 15,
+      "verified": true,
+      "locator": "a. Support pharmacy staff to identify, mitigate and manage safety and quality risks.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_3-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 15,
+      "verified": true,
+      "locator": "b. Document and routinely monitor safety and quality risks.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_3-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 15,
+      "verified": true,
+      "locator": "c. Plan for, and manage, ongoing service provision during internal and external emergencies and disasters.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_4-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 15,
+      "verified": true,
+      "locator": "a. Supports pharmacy staff to recognise and report incidents and near misses that occur inside, or outside, the pharmacy.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_4-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 15,
+      "verified": true,
+      "locator": "b. Supports patients, carers, families and other health professionals to communicate concerns or report incidents.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_4-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 15,
+      "verified": true,
+      "locator": "c. Involves pharmacy staff in the review of incidents.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_4-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 15,
+      "verified": true,
+      "locator": "d. Provides timely feedback on the analysis of incidents to pharmacy staff, patients and consumers who have communicated concerns or inciden",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_4-e",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 15,
+      "verified": true,
+      "locator": "e. Uses the information from the analysis of incidents to improve safety and quality.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_4-f",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 15,
+      "verified": true,
+      "locator": "f. Incorporates risks identified in the analysis of incidents into the risk management system.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_4-g",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 15,
+      "verified": true,
+      "locator": "g. Regularly reviews and acts to improve the effectiveness of the incident management and investigation systems.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_4-h",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 15,
+      "verified": true,
+      "locator": "h. Reports incidents to third parties (for example, indemnity insurers, regulatory bodies, pharmaceutical companies etc.) as appropriate.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_6-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 16,
+      "verified": true,
+      "locator": "a. Seek feedback from patients and consumers about their experiences and outcomes of health care.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_6-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 16,
+      "verified": true,
+      "locator": "b. Have processes to regularly seek feedback from pharmacy staff on their understanding and use of the safety and quality system.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_6-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 16,
+      "verified": true,
+      "locator": "c. Use feedback to improve safety and quality.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_7-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 16,
+      "verified": true,
+      "locator": "a. Provide opportunities for its patients to report negative feedback.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_7-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 16,
+      "verified": true,
+      "locator": "b. Have processes to address negative feedback in a timely way.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_7-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 16,
+      "verified": true,
+      "locator": "c. Use information from the analysis of negative feedback to improve safety and quality.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_8-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 16,
+      "verified": true,
+      "locator": "a. People of Aboriginal and/or Torres Strait Islander origin.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_8-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 16,
+      "verified": true,
+      "locator": "b. People with a disability.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_8-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 16,
+      "verified": true,
+      "locator": "c. People with diverse backgrounds.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_8-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 16,
+      "verified": true,
+      "locator": "d. Other populations and communities identified.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_9-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 17,
+      "verified": true,
+      "locator": "a. Information gathered from patient populations shall be obtained with appropriate consent.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_10-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 17,
+      "verified": true,
+      "locator": "a. Makes patient medication and health records available to pharmacists at the point of dispensing and service delivery.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_10-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 17,
+      "verified": true,
+      "locator": "b. Supports pharmacy staff to maintain accurate and complete records.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_10-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 17,
+      "verified": true,
+      "locator": "c. Complies with privacy and security regulations for the handling, storage and disposal of records.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_10-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 17,
+      "verified": true,
+      "locator": "d. Supports audits of records.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_10-e",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 17,
+      "verified": true,
+      "locator": "e. Facilitates a patient's access to their healthcare records.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_11-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 17,
+      "verified": true,
+      "locator": "a. Receive and review reports and records on patients (for example, Home Medicines Review reports, hospital discharge summaries, medication ",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_11-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 17,
+      "verified": true,
+      "locator": "b. Recall patients and communicate about reports, records and healthcare options.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_11-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 17,
+      "verified": true,
+      "locator": "c. Take action and/or respond to reports and records in a timely manner.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_11-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 17,
+      "verified": true,
+      "locator": "d. Facilitate interprofessional collaboration through sharing reports and records as appropriate.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_11-e",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 17,
+      "verified": true,
+      "locator": "e. Document reports and records in a patient's healthcare record where possible.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_12-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 18,
+      "verified": true,
+      "locator": "a. Use national healthcare identifiers for patients and healthcare providers.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_12-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 18,
+      "verified": true,
+      "locator": "b. Support pharmacists to use the national electronic health record system to optimise the safety and quality of health care for patients.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_13-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 18,
+      "verified": true,
+      "locator": "a. Comply with legislative requirements, standards, codes and guidelines.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.2-1_1_2_13-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 18,
+      "verified": true,
+      "locator": "b. Ensure the accuracy and completeness of information uploaded.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.3-1_1_3_1-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 22,
+      "verified": true,
+      "locator": "a. Have processes to support pharmacy staff to understand and fulfil their assigned safety and quality roles and responsibilities.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.3-1_1_3_1-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 22,
+      "verified": true,
+      "locator": "b. Provide pharmacy staff with induction and training to their safety and quality roles on commencement with the pharmacy (i.e., onboarding)",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.3-1_1_3_1-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 22,
+      "verified": true,
+      "locator": "c. Identify the training needs of pharmacy staff to meet the requirements of this standard.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.3-1_1_3_1-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 22,
+      "verified": true,
+      "locator": "d. Ensure pharmacy staff complete training to meet their safety and quality training needs.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.3-1_1_3_3-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 22,
+      "verified": true,
+      "locator": "a. Are used to regularly review their performance.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.3-1_1_3_3-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 22,
+      "verified": true,
+      "locator": "b. Identify needs for training and development of safety and quality.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.3-1_1_3_4-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 22,
+      "verified": true,
+      "locator": "a. Describing the scope of practice for pharmacists practising in the pharmacy.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.3-1_1_3_4-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 22,
+      "verified": true,
+      "locator": "b. Monitoring practices to ensure pharmacists are operating within their scope of practice.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.3-1_1_3_4-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 22,
+      "verified": true,
+      "locator": "c. Reviewing pharmacists' scope of practice when a pharmacy service, procedure or technology is introduced or substantially altered.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.3-1_1_3_5-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 23,
+      "verified": true,
+      "locator": "a. Provide its pharmacists with ready access to practice guidelines and available evidence, and decision support tools relevant to their cli",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.3-1_1_3_5-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 23,
+      "verified": true,
+      "locator": "b. Require its pharmacists to use practice guidelines, available evidence and decision support tools relevant to their clinical practice.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.3-1_1_3_6-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 23,
+      "verified": true,
+      "locator": "a. Monitor and review care delivered against relevant evidence.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.3-1_1_3_6-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 23,
+      "verified": true,
+      "locator": "b. Explore reasons for variation of health care from relevant evidence.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.3-1_1_3_6-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 23,
+      "verified": true,
+      "locator": "c. Use information on unwarranted variation from evidence-based care to improve health care.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.4-1_1_4_1-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 26,
+      "verified": true,
+      "locator": "a. Through the design of the environment and management of the location where health care is provided.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.4-1_1_4_1-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 26,
+      "verified": true,
+      "locator": "b. By appropriately managing, and reviewing, the workload of pharmacy staff.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.4-1_1_4_1-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 26,
+      "verified": true,
+      "locator": "c. By providing access to an environment, devices and equipment that are fit for purpose and well maintained.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.4-1_1_4_1-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 26,
+      "verified": true,
+      "locator": "d. By safeguarding patients' privacy when health care is provided.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.4-1_1_4_1-e",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 26,
+      "verified": true,
+      "locator": "e. By respecting the cultural needs of patients when health care is provided.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.4-1_1_4_1-f",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 26,
+      "verified": true,
+      "locator": "f. By recognising and acknowledging trauma and its prevalence, and being sensitive to its dynamics when health care is provided.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-1.4-1_1_4_1-g",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 26,
+      "verified": true,
+      "locator": "g. By taking appropriate action in response to feedback regarding the environment in which health care was provided.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.1-2_1_1_1-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 33,
+      "verified": true,
+      "locator": "a. Can demonstrate competency, or the clinical knowledge required, to deliver each service.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.1-2_1_1_1-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 33,
+      "verified": true,
+      "locator": "b. Complete externally provided, Government-endorsed or accredited training where it is available and applicable.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.1-2_1_1_1-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 33,
+      "verified": true,
+      "locator": "c. Complete training on the pharmacy's procedures for the delivery of individual programs or services.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.1-2_1_1_1-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 33,
+      "verified": true,
+      "locator": "d. Document completion of the training they have undertaken.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.1-2_1_1_3-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 34,
+      "verified": true,
+      "locator": "a. Fit for purpose, including the provision of adequate space, light and temperature.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.1-2_1_1_3-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 34,
+      "verified": true,
+      "locator": "b. Compliant with any legislative or professional practice requirements, including privacy legislation.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.1-2_1_1_3-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 34,
+      "verified": true,
+      "locator": "c. Cleaned to the level expected of a clinical healthcare destination.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.1-2_1_1_3-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 34,
+      "verified": true,
+      "locator": "d. Maintained to ensure it remains fit for purpose.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.1-2_1_1_4-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 34,
+      "verified": true,
+      "locator": "a. Fit for purpose.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.1-2_1_1_4-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 34,
+      "verified": true,
+      "locator": "b. Calibrated, if required.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.1-2_1_1_4-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 34,
+      "verified": true,
+      "locator": "c. Maintained as specified by the manufacturer. Records of calibration and maintenance shall be kept by the pharmacy. If external certificat",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.1-2_1_1_5-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 34,
+      "verified": true,
+      "locator": "a. Compliant with any legislation, professional practice guidelines, funding or contractual requirements.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.1-2_1_1_5-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 34,
+      "verified": true,
+      "locator": "b. Provided to all staff members involved in the delivery of each program or service.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.1-2_1_1_5-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 34,
+      "verified": true,
+      "locator": "c. Reviewed at least annually and updated as required.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.1-2_1_1_6-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 35,
+      "verified": true,
+      "locator": "a. Conducting a risk screening and assessment.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.1-2_1_1_6-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 35,
+      "verified": true,
+      "locator": "b. Conducting a clinical assessment and diagnosis as appropriate.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.1-2_1_1_6-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 35,
+      "verified": true,
+      "locator": "c. Identifying the patient's goals of care.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.1-2_1_1_6-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 35,
+      "verified": true,
+      "locator": "d. Developing and agreeing a plan for care in partnership with the patient.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.1-2_1_1_6-e",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 35,
+      "verified": true,
+      "locator": "e. Delivering comprehensive care in accordance with the agreed plan for health care.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.1-2_1_1_6-f",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 35,
+      "verified": true,
+      "locator": "f. Collaborating and communicating with the patient's other healthcare providers as required.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.1-2_1_1_6-g",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 35,
+      "verified": true,
+      "locator": "g. Recalling patients for follow-up health care when required.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.1-2_1_1_6-h",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 35,
+      "verified": true,
+      "locator": "h. Reviewing and improving the processes of comprehensive care delivery.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.1-2_1_1_6-i",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 35,
+      "verified": true,
+      "locator": "i. Receiving a current advance care plan (where one is in place) and incorporating it into a patient's healthcare record.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.1-2_1_1_9-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 35,
+      "verified": true,
+      "locator": "a. The records are appropriate for the service that is delivered.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.1-2_1_1_9-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 35,
+      "verified": true,
+      "locator": "b. The recording occurs in a consistent manner.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.1-2_1_1_9-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 35,
+      "verified": true,
+      "locator": "c. The records are securely stored and in compliance with legislation.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.1-2_1_1_9-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 35,
+      "verified": true,
+      "locator": "d. The nature of the records is compliant with relevant professional practice guidelines, funding or contractual requirements.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.1-2_1_1_10-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 36,
+      "verified": true,
+      "locator": "a. Monitoring the safety of the programs and services delivered.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.1-2_1_1_10-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 36,
+      "verified": true,
+      "locator": "b. Assessing the impact of programs or services, where possible.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.1-2_1_1_10-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 36,
+      "verified": true,
+      "locator": "c. Improving the programs and services based on the outcomes of the evaluation process.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.2-2_1_2_6-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 39,
+      "verified": true,
+      "locator": "a. Monitoring the safety of the prescribing.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.2-2_1_2_6-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 39,
+      "verified": true,
+      "locator": "b. Compliance with relevant Australian therapeutic guidelines.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.2-2_1_2_6-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 39,
+      "verified": true,
+      "locator": "c. Assessing the impact of the prescribing, where possible.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.2-2_1_2_6-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 39,
+      "verified": true,
+      "locator": "d. Improving prescribing services based on the outcomes of the evaluation process where possible.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.3-2_2_2_2-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 42,
+      "verified": true,
+      "locator": "a. Non-prescription medicines.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.3-2_2_2_2-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 42,
+      "verified": true,
+      "locator": "b. Medicines that require special consideration or are subject to misuse.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.3-2_2_2_2-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 42,
+      "verified": true,
+      "locator": "c. Medical devices.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.3-2_2_2_2-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 42,
+      "verified": true,
+      "locator": "d. Poisons and other high-risk products.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.3-2_2_2_2-e",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 42,
+      "verified": true,
+      "locator": "e. Medicines packaged in dose administration aids.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.3-2_2_2_3-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 42,
+      "verified": true,
+      "locator": "a. Take a detailed medication history on presentation or as early as possible in the episode of care.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.3-2_2_2_3-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 42,
+      "verified": true,
+      "locator": "b. Ensure a patient's medicines-related information is included in a patient's healthcare record.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.3-2_2_2_3-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 42,
+      "verified": true,
+      "locator": "c. Partner with patients and consumers in the management of their medicines.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.3-2_2_2_3-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 42,
+      "verified": true,
+      "locator": "d. Support patients and consumers to maintain a current and accurate medicines list.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.3-2_2_2_3-e",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 42,
+      "verified": true,
+      "locator": "e. Encourage patients to share their medicines list with other healthcare providers involved in their care and/or does so on a patient's beh",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.3-2_2_2_3-f",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 42,
+      "verified": true,
+      "locator": "f. Use information on a patient's medication history to minimise risks in the planning and delivery of health care (for example, provision o",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.3-2_2_2_6-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 43,
+      "verified": true,
+      "locator": "a. Identifying medication-related problems which may include, but are not limited to, adverse drug reactions, dispensing errors (including n",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.3-2_2_2_6-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 43,
+      "verified": true,
+      "locator": "b. Performing an intervention.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.3-2_2_2_6-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 43,
+      "verified": true,
+      "locator": "c. Documenting the problem and the intervention made.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.3-2_2_2_6-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 43,
+      "verified": true,
+      "locator": "d. Reviewing medication-related problems and interventions made to identify whether changes in clinical practice or processes are required.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.3-2_2_2_6-e",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 43,
+      "verified": true,
+      "locator": "e. Taking action to minimise potential medication-related problems.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.3-2_2_2_6-f",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 43,
+      "verified": true,
+      "locator": "f. Reporting medication-related problems as required (for example, suspected adverse drug reactions to the Therapeutic Goods Administration,",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.3-2_2_2_8-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 43,
+      "verified": true,
+      "locator": "a. Ensures stock prices are consistent with the planned pricing structure and any advertised price.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.3-2_2_2_8-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 43,
+      "verified": true,
+      "locator": "b. Ensures any displayed or advertised stock price is consistent with the price charged at the point of sale.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.4-2_2_3_1-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 48,
+      "verified": true,
+      "locator": "a. Can demonstrate competency, or the clinical knowledge required, to prepare compounded medicines.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.4-2_2_3_1-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 48,
+      "verified": true,
+      "locator": "b. Complete externally provided training where it is available.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.4-2_2_3_1-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 48,
+      "verified": true,
+      "locator": "c. Complete training on the pharmacy's procedures for the preparation of compounded medicines.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.4-2_2_3_1-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 48,
+      "verified": true,
+      "locator": "d. Document completion of the training they have undertaken.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.4-2_2_3_5-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 49,
+      "verified": true,
+      "locator": "a. Appropriate circumstances for compounding.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.4-2_2_3_5-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 49,
+      "verified": true,
+      "locator": "b. Patient safety (including taking a medication history).",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.4-2_2_3_5-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 49,
+      "verified": true,
+      "locator": "c. Product formulation.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.4-2_2_3_5-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 49,
+      "verified": true,
+      "locator": "d. Product quality.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.5-2_2_4_1-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 54,
+      "verified": true,
+      "locator": "a. Ordering via internet, post, telehealth and fax.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.5-2_2_4_1-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 54,
+      "verified": true,
+      "locator": "b. Delivery by a third party on behalf of the pharmacy.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.5-2_2_4_1-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 54,
+      "verified": true,
+      "locator": "c. Ordering from, and delivery to, other medical facilities such as residential aged care facilities and Aboriginal community health organis",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.5-2_2_4_1-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 54,
+      "verified": true,
+      "locator": "d. Product deliveries conducted by pharmacy staff. A risk assessment shall be conducted for all indirect supply activities and pharmacist in",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.6-2_3_1_2-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 57,
+      "verified": true,
+      "locator": "a. Is consistent with the National Hand Hygiene Initiative and jurisdictional requirements.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.6-2_3_1_2-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 57,
+      "verified": true,
+      "locator": "b. Supports pharmacy staff and consumers to practise hand hygiene.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.6-2_3_1_4-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 57,
+      "verified": true,
+      "locator": "a. Identify procedures where aseptic technique applies.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.6-2_3_1_4-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 57,
+      "verified": true,
+      "locator": "b. Monitor healthcare providers' practices to ensure compliance with the pharmacy's policies and procedures on aseptic technique.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.6-2_3_1_6-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 58,
+      "verified": true,
+      "locator": "a. Respond to environmental risks, including novel infections.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.6-2_3_1_6-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 58,
+      "verified": true,
+      "locator": "b. Require cleaning and disinfection using products listed on the Australian Register of Therapeutic Goods consistent with manufacturers' in",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.6-2_3_1_6-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 58,
+      "verified": true,
+      "locator": "c. Provide access to training on cleaning processes for routine and outbreak situations and novel infections.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.6-2_3_1_7-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 58,
+      "verified": true,
+      "locator": "a. New and existing equipment, devices and products used in the pharmacy.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.6-2_3_1_7-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 58,
+      "verified": true,
+      "locator": "b. Clinical and non-clinical areas and workplace amenity areas.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.6-2_3_1_7-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 58,
+      "verified": true,
+      "locator": "c. Maintaining, repairing and upgrading buildings, equipment, furnishings and fittings (where the pharmacy has authority to do so).",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.6-2_3_1_7-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 58,
+      "verified": true,
+      "locator": "d. Handling, transporting and storage of linen (if applicable).",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.6-2_3_1_7-e",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 58,
+      "verified": true,
+      "locator": "e. Novel infections and risks identified as part of public health response or pandemic planning.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.6-2_3_1_8-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 58,
+      "verified": true,
+      "locator": "a. Is consistent with the current edition of the Australian Immunisation Handbook.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.6-2_3_1_8-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 58,
+      "verified": true,
+      "locator": "b. Is consistent with jurisdictional requirements for vaccine-preventable diseases.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.6-2_3_1_8-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 58,
+      "verified": true,
+      "locator": "c. Identifies and addresses specific risks to pharmacy staff, consumers and patients.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.6-2_3_1_9-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 58,
+      "verified": true,
+      "locator": "a. Are consistent with the relevant State or Territory work health safety regulation and current infection control guidelines.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.6-2_3_1_9-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 58,
+      "verified": true,
+      "locator": "b. Align with State and Territory public health requirements for pharmacy staff screening and exclusion periods.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.6-2_3_1_9-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 58,
+      "verified": true,
+      "locator": "c. Manage risks to pharmacy staff, patients and visitors, including for novel infections.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.6-2_3_1_9-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 58,
+      "verified": true,
+      "locator": "d. Promote non-attendance or remote attendance at work where possible when infection is present or suspected. Where non-attendance is unavoi",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.6-2_3_1_9-e",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 58,
+      "verified": true,
+      "locator": "e. Plan for, and manage, ongoing service provision during outbreaks and pandemics or events where there is increased risk of transmission of",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.6-2_3_1_10-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 59,
+      "verified": true,
+      "locator": "a. Processes for reprocessing that are consistent with relevant national or international standards, in conjunction with manufacturers' guid",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.6-2_3_1_10-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 59,
+      "verified": true,
+      "locator": "b. A process for critical equipment, instruments and devices that can identify:",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.6-2_3_1_10-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 59,
+      "verified": true,
+      "locator": "c. Processes to plan and manage reprocessing requirements and additional controls for novel and emerging infections.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.7-2_3_3_2-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 62,
+      "verified": true,
+      "locator": "a. Correctly match patients to their care",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.7-2_3_3_2-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 62,
+      "verified": true,
+      "locator": "b. Ensure essential information is documented in a patient's healthcare record.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.7-2_3_3_3-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 62,
+      "verified": true,
+      "locator": "a. Using structured communication processes.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.7-2_3_3_3-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 62,
+      "verified": true,
+      "locator": "b. Considering the patient's risks, goals and preferences for health care.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.7-2_3_3_3-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 62,
+      "verified": true,
+      "locator": "c. Communicating information that is current, comprehensive and accurate.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.7-2_3_3_4-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 62,
+      "verified": true,
+      "locator": "a. Relevant healthcare providers involved in the patient's care.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.7-2_3_3_4-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 62,
+      "verified": true,
+      "locator": "b. Patients, carers and families, in accordance with the patient's preferences.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.8-2_3_4_1-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 65,
+      "verified": true,
+      "locator": "a. Recognise deterioration in a patient's physical, mental or cognitive health.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.8-2_3_4_1-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 65,
+      "verified": true,
+      "locator": "b. Respond to a patient within their scope of practice and call for emergency assistance.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.8-2_3_4_1-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 65,
+      "verified": true,
+      "locator": "c. Notify a patient's other relevant healthcare providers, carers or family when their health care is escalated.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.8-2_3_4_2-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 65,
+      "verified": true,
+      "locator": "a. Have processes to respond to patients who are distressed, have expressed thoughts of self-harm or suicide, or have self-harmed.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.8-2_3_4_2-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 65,
+      "verified": true,
+      "locator": "b. Have processes to respond to patients who present a risk of harm to others.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.8-2_3_4_2-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 65,
+      "verified": true,
+      "locator": "c. Provide information on accessing other services to patients with healthcare needs beyond the scope of the pharmacy.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-2.8-2_3_4_2-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 65,
+      "verified": true,
+      "locator": "d. Have a process that supports crisis intervention that is aligned to legislation.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-3.1-1_1_5_1-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 68,
+      "verified": true,
+      "locator": "a. Use a Charter of Rights consistent with the Australian Charter of Healthcare Rights.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-3.1-1_1_5_1-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 68,
+      "verified": true,
+      "locator": "b. Have processes to support pharmacy staff to apply the principles of the Charter of Rights in the planning and delivery of health care.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-3.1-1_1_5_1-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 68,
+      "verified": true,
+      "locator": "c. Make the Charter of Rights easily accessible for patients and consumers.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-3.1-1_1_5_1-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 68,
+      "verified": true,
+      "locator": "d. Ensure its informed consent processes comply with legislation, Codes of Conduct and the needs of the community.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-3.1-1_1_5_2-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 69,
+      "verified": true,
+      "locator": "a. The capacity of a patient to make decisions about their own care.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-3.1-1_1_5_2-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 69,
+      "verified": true,
+      "locator": "b. A substitute decision-maker if a patient does not have the capacity to make decisions for themselves.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-3.2-1_1_6_1-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 72,
+      "verified": true,
+      "locator": "a. Is tailored to the patient's needs and preferences.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-3.2-1_1_6_1-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 72,
+      "verified": true,
+      "locator": "b. Is easily understood.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-3.2-1_1_6_1-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 72,
+      "verified": true,
+      "locator": "c. Addresses the need for ongoing health care.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-3.2-1_1_6_2-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 72,
+      "verified": true,
+      "locator": "a. The services available.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-3.2-1_1_6_2-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 72,
+      "verified": true,
+      "locator": "b. Opening hours and how to access healthcare.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-3.2-1_1_6_2-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 72,
+      "verified": true,
+      "locator": "c. Who can access the services.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-3.2-1_1_6_2-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 72,
+      "verified": true,
+      "locator": "d. Estimated costs of service delivery.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-3.2-1_1_6_2-e",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 72,
+      "verified": true,
+      "locator": "e. Alternative service when the pharmacy is unavailable.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-3.2-1_1_6_2-f",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 72,
+      "verified": true,
+      "locator": "f. Service location(s) and access details if relevant.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-3.2-1_1_6_2-g",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 72,
+      "verified": true,
+      "locator": "g. Mechanism for providing feedback and contact details for the appropriate healthcare complaints authority.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-3.4-2_3_2_1-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 76,
+      "verified": true,
+      "locator": "a. Collaborate with other healthcare providers involved in a patient's care.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-3.4-2_3_2_1-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 76,
+      "verified": true,
+      "locator": "b. Support collaboration with other care providers to develop a coordinated approach to the planning and delivery of health care.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-3.4-2_3_2_1-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 76,
+      "verified": true,
+      "locator": "c. Facilitate reporting to a patient's other relevant care providers.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-3.4-2_3_2_1-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 76,
+      "verified": true,
+      "locator": "d. Record collaboration, or attempts to collaborate, with other healthcare providers.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-3.4-2_3_2_3-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 76,
+      "verified": true,
+      "locator": "a. Check if a patient is of Aboriginal and/or Torres Strait Islander origin for services or settings where this is relevant or appropriate (",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-3.4-2_3_2_3-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 76,
+      "verified": true,
+      "locator": "b. Record this information in a relevant part of the patient's healthcare record (e.g., Australian Immunisation Register).",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-3.4-2_3_2_3-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 76,
+      "verified": true,
+      "locator": "c. Use this information to optimise the planning and delivery of healthcare.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-3.4-2_3_2_4-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 76,
+      "verified": true,
+      "locator": "a. With a disability.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-3.4-2_3_2_4-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 76,
+      "verified": true,
+      "locator": "b. From diverse populations.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-3.4-2_3_2_4-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 76,
+      "verified": true,
+      "locator": "c. Who are receiving palliative or end of life care.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.1-1_2_1_5-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 80,
+      "verified": true,
+      "locator": "a. Employee payroll tax.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.1-1_2_1_5-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 80,
+      "verified": true,
+      "locator": "b. Pay rates and conditions.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.1-1_2_1_5-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 80,
+      "verified": true,
+      "locator": "c. Superannuation payments.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.1-1_2_1_5-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 80,
+      "verified": true,
+      "locator": "d. Keeping staff records.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.1-1_2_1_5-e",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 80,
+      "verified": true,
+      "locator": "e. Workplace health and safety.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.1-1_2_1_5-f",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 80,
+      "verified": true,
+      "locator": "f. Leave entitlements.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.2-1_2_2_1-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 83,
+      "verified": true,
+      "locator": "a. The details of all pharmacy owners, business partnerships, shareholder or unit holders' agreements (as applicable).",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.2-1_2_2_1-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 83,
+      "verified": true,
+      "locator": "b. The details of the pharmacy model and any corporate, banner or not-for-profit entities associated with the pharmacy (as applicable).",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.2-1_2_2_1-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 83,
+      "verified": true,
+      "locator": "c. Reporting requirements to inform all owners of the performance of, and any risks to, the pharmacy business.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.2-1_2_2_2-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 83,
+      "verified": true,
+      "locator": "a. A business plan including the dispensary, retail and pharmacy services offered.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.2-1_2_2_2-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 83,
+      "verified": true,
+      "locator": "b. The resources (e.g., funds, finance, staff, stock, technology and equipment) required to execute the business plan.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.2-1_2_2_2-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 83,
+      "verified": true,
+      "locator": "c. A budget and forecast for the year ahead (at a minimum).",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.2-1_2_2_3-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 84,
+      "verified": true,
+      "locator": "a. Total business performance, including any issues identified from its analysis.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.2-1_2_2_3-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 84,
+      "verified": true,
+      "locator": "b. Financial and business trends.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.2-1_2_2_3-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 84,
+      "verified": true,
+      "locator": "c. Future financial commitments and budget forecasting.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.2-1_2_2_3-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 84,
+      "verified": true,
+      "locator": "d. Risks to the viability of the pharmacy business.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.4-1_2_4_1-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 88,
+      "verified": true,
+      "locator": "a. Ensure the pharmacy premises' lease is compliant with the business, and that the business complies with the lease's requirements.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.4-1_2_4_1-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 88,
+      "verified": true,
+      "locator": "b. If the pharmacy premises are owned, ensure the property is maintained at a standard that is appropriate to allow the safe and professiona",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.4-1_2_4_1-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 88,
+      "verified": true,
+      "locator": "c. Not enter, or be bound by, any contracts (including tenancy leases) that restrict the pharmacy's ability to stock products or provide ser",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.5-1_2_5_1-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 91,
+      "verified": true,
+      "locator": "a. Identifying and documenting potential risks and hazards, both physical and psychological.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.5-1_2_5_1-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 91,
+      "verified": true,
+      "locator": "b. Implementing measures to control, prevent or minimise potential risks and hazards.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.5-1_2_5_1-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 91,
+      "verified": true,
+      "locator": "c. Following a process to respond to any hazardous situations or emergencies if they occur.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.5-1_2_5_1-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 91,
+      "verified": true,
+      "locator": "d. Recording and reporting (if appropriate) the details of any hazardous situations or emergencies.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.5-1_2_5_1-e",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 91,
+      "verified": true,
+      "locator": "e. Monitoring, reviewing and evaluating preventative measures to ensure they remain effective.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.5-2_4_2_1-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 92,
+      "verified": true,
+      "locator": "a. Potential risks and hazards in the pharmacy and their role in controlling, preventing and minimising them.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.5-2_4_2_1-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 92,
+      "verified": true,
+      "locator": "b. How to report risks, dangerous and hazardous situations that may arise.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.5-2_4_2_2-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 92,
+      "verified": true,
+      "locator": "a. The pharmacy should have access to a defibrillator and ensure pharmacy staff are able to use the defibrillator in the case of an emergenc",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.6-1_2_6_1-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 95,
+      "verified": true,
+      "locator": "a. Are reputable and fit for purpose.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.6-1_2_6_1-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 95,
+      "verified": true,
+      "locator": "b. Incorporate safeguards against cyber intrusion.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.6-1_2_6_1-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 95,
+      "verified": true,
+      "locator": "c. Safeguard the integrity and confidentiality of data.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.6-1_2_6_1-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 95,
+      "verified": true,
+      "locator": "d. Comply with legislative requirements regarding data storage.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.6-1_2_6_1-e",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 95,
+      "verified": true,
+      "locator": "e. Protect the availability of the system.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.6-2_4_3_1-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 96,
+      "verified": true,
+      "locator": "a. Developing a cyber strategy, proactively overseen by the pharmacy owners and managers.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.6-2_4_3_1-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 96,
+      "verified": true,
+      "locator": "b. Setting clear roles and responsibilities in relation to cyber resilience.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.6-2_4_3_1-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 96,
+      "verified": true,
+      "locator": "c. Training pharmacy staff to ensure they have the knowledge and skills to utilise the IT systems in place and that they understand the impo",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.6-2_4_3_1-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 96,
+      "verified": true,
+      "locator": "d. Promoting strong cyber security practices.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.6-2_4_3_2-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 96,
+      "verified": true,
+      "locator": "a. Access to IT systems and data is restricted to authorised personnel.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.6-2_4_3_2-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 96,
+      "verified": true,
+      "locator": "b. There is no unauthorised or unsupervised access to confidential data held or accessed by the pharmacy.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.7-2_2_5_1-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 99,
+      "verified": true,
+      "locator": "a. Are consistent with the body of evidence applicable to the products.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.7-2_2_5_1-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 99,
+      "verified": true,
+      "locator": "b. Are clearly communicated and easily understood by the intended audience.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.7-2_2_5_1-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 99,
+      "verified": true,
+      "locator": "c. Identify and cite scientific or clinical research appropriately (as applicable).",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.7-2_2_5_2-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 99,
+      "verified": true,
+      "locator": "a. Accurate.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.7-2_2_5_2-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 99,
+      "verified": true,
+      "locator": "b. Balanced.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.7-2_2_5_2-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 99,
+      "verified": true,
+      "locator": "c. Not likely to mislead consumers.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.7-2_2_5_2-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 99,
+      "verified": true,
+      "locator": "d. Substantiated prior to dissemination.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.7-2_2_5_2-e",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 99,
+      "verified": true,
+      "locator": "e. Aligned with information held in the Australian Register of Therapeutic Goods.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.7-2_2_5_2-f",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 99,
+      "verified": true,
+      "locator": "f. Not promoting inappropriate or excessive use.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.7-2_2_5_2-g",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 99,
+      "verified": true,
+      "locator": "g. Not capable of leading consumers to unrealistic expectations.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.7-2_2_5_2-h",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 99,
+      "verified": true,
+      "locator": "h. Not inconsistent with public health campaigns.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.8-2_2_1_2-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 102,
+      "verified": true,
+      "locator": "a. Tobacco, or tobacco/smoking-related products or implements (this does not refer to therapeutic products used to aid smoking cessation).",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.8-2_2_1_2-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 102,
+      "verified": true,
+      "locator": "b. Alcoholic beverages, home brew or alcohol distilling kits, or products that promote the use of alcohol.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.8-2_2_1_2-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 102,
+      "verified": true,
+      "locator": "c. Products with no evidence-based therapeutic benefit which do not enhance the practice of pharmacy.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.8-2_2_1_4-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 102,
+      "verified": true,
+      "locator": "a. Ensure no product supplied, or consumables used for the delivery of services, are subject to a recall.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.8-2_2_1_4-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 102,
+      "verified": true,
+      "locator": "b. Maintain and follow a system for initiating, managing and reporting products subject to recall.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.8-2_2_1_5-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 103,
+      "verified": true,
+      "locator": "a. The identification of high-risk medicines within the pharmacy.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.8-2_2_1_5-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 103,
+      "verified": true,
+      "locator": "b. Safe and secure storage of medicines, including scheduled medicines, controlled medicines, cytotoxic medicines, medicines identified as h",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.8-2_2_1_5-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 103,
+      "verified": true,
+      "locator": "c. The stability of medicines while stored in the pharmacy.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.8-2_2_1_5-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 103,
+      "verified": true,
+      "locator": "d. Storage of temperature-sensitive medicines and cold chain management.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.8-2_2_1_5-e",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 103,
+      "verified": true,
+      "locator": "e. Storage and safe disposal of unused, unwanted or expired medicines including controlled drugs, high-risk medicines, cytotoxic medicines, ",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.9-2_4_1_1-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 106,
+      "verified": true,
+      "locator": "a. A recruitment procedure.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.9-2_4_1_1-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 106,
+      "verified": true,
+      "locator": "b. Developing position descriptions for all positions and using these as the basis for any selection process.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.9-2_4_1_1-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 106,
+      "verified": true,
+      "locator": "c. Maintaining records of interviews conducted with short-listed applicants.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.9-2_4_1_1-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 106,
+      "verified": true,
+      "locator": "d. Providing successful applicants with a written contract of employment defining the terms and conditions of engagement, prior to commencin",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.9-2_4_1_1-e",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 106,
+      "verified": true,
+      "locator": "e. Collecting and storing a signed copy of the contract of employment for all successful applicants.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.9-2_4_1_1-f",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 106,
+      "verified": true,
+      "locator": "f. Advising unsuccessful applicants that they have not been selected for employment.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.9-2_4_1_3-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 107,
+      "verified": true,
+      "locator": "a. An induction process that is completed within three months of a new member of the pharmacy staff commencing employment.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.9-2_4_1_3-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 107,
+      "verified": true,
+      "locator": "b. Assessing that new members of the pharmacy staff can apply all policies and procedures applicable to their role as outlined in the induct",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.9-2_4_1_3-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 107,
+      "verified": true,
+      "locator": "c. Supervising and managing the performance of new members of the pharmacy staff during their qualifying/probationary period.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.9-2_4_1_3-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 107,
+      "verified": true,
+      "locator": "d. A performance review process to monitor, inform and manage pharmacy staff performance.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.9-2_4_1_3-e",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 107,
+      "verified": true,
+      "locator": "e. Maintaining a pharmacy staff roster that provides sufficient capability to support the safe and appropriate provision of medicines and ph",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.9-2_4_1_3-f",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 107,
+      "verified": true,
+      "locator": "f. Seeking feedback from pharmacy staff on issues affecting them and/or their work environment.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.9-2_4_1_3-g",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 107,
+      "verified": true,
+      "locator": "g. A formal workplace grievance process that is utilised when required.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.9-2_4_1_3-h",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 107,
+      "verified": true,
+      "locator": "h. Developing and maintaining a personnel file for each member of the pharmacy staff, ensuring confidentiality and privacy of all personnel ",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.9-2_4_1_5-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 107,
+      "verified": true,
+      "locator": "a. Maintaining a training and development plan for each member of the pharmacy staff which outlines their training needs relevant to the pos",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.9-2_4_1_5-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 107,
+      "verified": true,
+      "locator": "b. Providing resources and opportunities for members of the pharmacy staff to meet their identified training needs.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.9-2_4_1_5-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 107,
+      "verified": true,
+      "locator": "c. Providing members of the pharmacy staff with continuous access to training on products, services and procedures relevant to the pharmacy'",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.9-2_4_1_5-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 107,
+      "verified": true,
+      "locator": "d. Maintaining a training record for each member of the pharmacy staff that details all training offered and undertaken.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.9-2_4_1_6-a",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 108,
+      "verified": true,
+      "locator": "a. Recording the reasons for dismissals or resignations.",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.9-2_4_1_6-b",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 108,
+      "verified": true,
+      "locator": "b. Offering all departing members of the pharmacy staff an exit interview, recording that the offer was made and keeping records of the inte",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.9-2_4_1_6-c",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 108,
+      "verified": true,
+      "locator": "c. Offering departing members of the pharmacy staff appropriate final documents including a statement of service and a copy of their trainin",
+      "note": ""
+    },
+    {
+      "id": "UAGKT-4.9-2_4_1_6-d",
+      "pdf": "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf",
+      "page": 108,
+      "verified": true,
+      "locator": "d. Retaining records of dismissals and resignations for the required period in accordance with legislation.",
+      "note": ""
+    },
+    {
+      "id": "RULE-1",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 1,
+      "verified": true,
+      "locator": "You and your staff will act in good faith and in a respectful and courteous manner in all dealings with authorised QSPP ",
+      "note": ""
+    },
+    {
+      "id": "RULE-2",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 1,
+      "verified": true,
+      "locator": "Accreditation can only be issued if the Program Materials are accepted by the Pharmacy Owner. These materials can be rev",
+      "note": ""
+    },
+    {
+      "id": "RULE-3",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 1,
+      "verified": true,
+      "locator": "The Accreditation Expiry Date may be permanently changed: a) by agreement between the owner and QSPP b) unilaterally by ",
+      "note": ""
+    },
+    {
+      "id": "RULE-4",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 1,
+      "verified": true,
+      "locator": "Pharmacies requesting to undertake an initial Assessment (whether because the Pharmacy has not previously been QSPP accr",
+      "note": ""
+    },
+    {
+      "id": "RULE-5",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 1,
+      "verified": true,
+      "locator": "All Re-accreditation Assessments must occur within three calendar months of their Accreditation Expiry Date unless other",
+      "note": ""
+    },
+    {
+      "id": "RULE-6",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 2,
+      "verified": true,
+      "locator": "The Pharmacy will be allocated an Assessment Date by the assessment services provider.",
+      "note": ""
+    },
+    {
+      "id": "RULE-7",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 2,
+      "verified": true,
+      "locator": "Where a Pharmacy Owner fails to schedule an onsite Accreditation Assessment within the time frame stipulated in Rule 10,",
+      "note": ""
+    },
+    {
+      "id": "RULE-8",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 2,
+      "verified": true,
+      "locator": "A Mid-Cycle Review will be undertaken as a remote assessment to check-in and assess ongoing compliance with the program.",
+      "note": ""
+    },
+    {
+      "id": "RULE-9",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 2,
+      "verified": true,
+      "locator": "The Pharmacy will be allocated an approved and independent QSPP Assessor by the QSPP's assessment services provider. A c",
+      "note": ""
+    },
+    {
+      "id": "RULE-10",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 2,
+      "verified": true,
+      "locator": "Pharmacies will be advised of their Assessment Date with reasonable notice. If QSPP incurs any expense because the Pharm",
+      "note": ""
+    },
+    {
+      "id": "RULE-11",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 2,
+      "verified": true,
+      "locator": "Assessments will be conducted using a compliant/non-compliant methodology. A Pharmacy is assessed as compliant where its",
+      "note": ""
+    },
+    {
+      "id": "RULE-12",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 2,
+      "verified": true,
+      "locator": "The Pharmacy must provide any information or assistance, and/or access to any part of the Pharmacy's premises, which is ",
+      "note": ""
+    },
+    {
+      "id": "RULE-13",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 3,
+      "verified": true,
+      "locator": "A Pharmacy Owner must be physically present at the Pharmacy premises for the duration of any scheduled onsite QSPP Asses",
+      "note": ""
+    },
+    {
+      "id": "RULE-14",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 3,
+      "verified": true,
+      "locator": "You must ensure that during the QSPP assessment, the QSPP assessor has access to and is able to sight (and, at their dis",
+      "note": ""
+    },
+    {
+      "id": "RULE-15",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 3,
+      "verified": true,
+      "locator": "If a sub domain within the QSPP User Assessment Guide is deemed to not be applicable to a particular pharmacy's business",
+      "note": ""
+    },
+    {
+      "id": "RULE-16",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 3,
+      "verified": true,
+      "locator": "All aspects of the operations of a Pharmacy (including the pharmacy premises) are subject to assessment against AS85000:",
+      "note": ""
+    },
+    {
+      "id": "RULE-17",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 3,
+      "verified": true,
+      "locator": "If a Pharmacy declares that a separate business is trading in stock or services in an area that is adjoining the Pharmac",
+      "note": ""
+    },
+    {
+      "id": "RULE-18",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 3,
+      "verified": true,
+      "locator": "Where all of the requirements specified in Rule 17 are not met, the space occupied by all adjoining entities and all asp",
+      "note": ""
+    },
+    {
+      "id": "RULE-19",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 4,
+      "verified": true,
+      "locator": "During an assessment an authorised attendee representing QSPP may accompany the assessor. The role of the authorised att",
+      "note": ""
+    },
+    {
+      "id": "RULE-20",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 4,
+      "verified": true,
+      "locator": "The QSPP User Assessment Guide provides guidance and examples of the sort of practical evidence required to be provided ",
+      "note": ""
+    },
+    {
+      "id": "RULE-21",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 4,
+      "verified": true,
+      "locator": "In some circumstances, the assessor will require evidence which may contain 'commercial in confidence' or 'personal' inf",
+      "note": ""
+    },
+    {
+      "id": "RULE-22",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 4,
+      "verified": true,
+      "locator": "Program Materials must be demonstrably accessible to all Pharmacy staff at each assessment.",
+      "note": ""
+    },
+    {
+      "id": "RULE-23",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 4,
+      "verified": true,
+      "locator": "The outcome of any previous assessment(s), sanction(s) or investigation(s) in respect of the pharmacy business (includin",
+      "note": ""
+    },
+    {
+      "id": "RULE-24",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 4,
+      "verified": true,
+      "locator": "Once Accredited, the pharmacy business may be required to participate in additional mandatory assessments. All additiona",
+      "note": ""
+    },
+    {
+      "id": "RULE-25",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 4,
+      "verified": true,
+      "locator": "Additional Assessments may be conducted: a) where QSPP imposes a sanction in accordance with Rule 44 that requires full ",
+      "note": ""
+    },
+    {
+      "id": "RULE-26",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 4,
+      "verified": true,
+      "locator": "Additional Assessments include the following: a) supplementary assessment – may consist of either onsite or virtual asse",
+      "note": ""
+    },
+    {
+      "id": "RULE-27",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 5,
+      "verified": true,
+      "locator": "Expansion of Services Assessment: Where a Pharmacy seeks to provide an additional category of service to their business ",
+      "note": ""
+    },
+    {
+      "id": "RULE-28",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 5,
+      "verified": true,
+      "locator": "The pharmacy business has 30 days from the interim report date to remediate any Non-Conformances identified during an as",
+      "note": ""
+    },
+    {
+      "id": "RULE-29",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 5,
+      "verified": true,
+      "locator": "If Corrective Actions to address Non-Conformances are not completed by the Pharmacy and verified to the satisfaction of ",
+      "note": ""
+    },
+    {
+      "id": "RULE-30",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 5,
+      "verified": true,
+      "locator": "The Pharmacy is liable for any costs associated with any additional assessment activity required to verify evidence requ",
+      "note": ""
+    },
+    {
+      "id": "RULE-31",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 5,
+      "verified": true,
+      "locator": "Evidence provided to address Non-Conformances must be in de-identified format. The authorised assessor will not consider",
+      "note": ""
+    },
+    {
+      "id": "RULE-32",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 5,
+      "verified": true,
+      "locator": "A Minor Non-Conformance may be closed at the time of an onsite assessment but will be recorded as an identified Non-Conf",
+      "note": ""
+    },
+    {
+      "id": "RULE-33",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 5,
+      "verified": true,
+      "locator": "A Major Non-Conformance cannot be closed while the assessor is on site at the assessment and will require the pharmacy b",
+      "note": ""
+    },
+    {
+      "id": "RULE-34",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 5,
+      "verified": true,
+      "locator": "If the same Non-Conformance is identified at two consecutive assessments this may result in a Mandatory Re-Assessment be",
+      "note": ""
+    },
+    {
+      "id": "RULE-35",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 6,
+      "verified": true,
+      "locator": "The Pharmacy owner's QSPP accreditation may lapse, be revoked or be suspended by QSPP if: a) The pharmacy owner fails to",
+      "note": ""
+    },
+    {
+      "id": "RULE-36",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 6,
+      "verified": true,
+      "locator": "Fees are payable at the following stages of accreditation and reaccreditation (as applicable to the pharmacy business): ",
+      "note": ""
+    },
+    {
+      "id": "RULE-37",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 6,
+      "verified": true,
+      "locator": "QSPP invoices are issued on strict 28-day terms.",
+      "note": ""
+    },
+    {
+      "id": "RULE-38",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 6,
+      "verified": true,
+      "locator": "A Customer Satisfaction Survey will be shared with pharmacies once the interim report is issued, and pharmacies are enco",
+      "note": ""
+    },
+    {
+      "id": "RULE-39",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 7,
+      "verified": true,
+      "locator": "Should a Pharmacy have concerns about an assessor and/or the assessment process as applied during a specific assessment,",
+      "note": ""
+    },
+    {
+      "id": "RULE-40",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 7,
+      "verified": true,
+      "locator": "Complaints lodged about an Accredited Pharmacy may be investigated at the discretion of QSPP.",
+      "note": ""
+    },
+    {
+      "id": "RULE-41",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 7,
+      "verified": true,
+      "locator": "All complaints lodged in relation to a Pharmacy meeting accreditation requirements will be investigated by QSPP and a wr",
+      "note": ""
+    },
+    {
+      "id": "RULE-42",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 7,
+      "verified": true,
+      "locator": "QSPP may investigate any matter which it considers may breach the Program Materials, or any other matter which may affec",
+      "note": ""
+    },
+    {
+      "id": "RULE-43",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 7,
+      "verified": true,
+      "locator": "The Pharmacy is liable for all of QSPP's costs and expenses incurred in connection with a sanction, including in respect",
+      "note": ""
+    },
+    {
+      "id": "RULE-44",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 7,
+      "verified": true,
+      "locator": "Failure to comply with a sanction within the designated time frame may result in a higher sanction being applied.",
+      "note": ""
+    },
+    {
+      "id": "RULE-45",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 7,
+      "verified": true,
+      "locator": "Pharmacy Owners have a right to appeal a Reviewable Decision on the grounds that the decision was not made in accordance",
+      "note": ""
+    },
+    {
+      "id": "RULE-46",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 7,
+      "verified": true,
+      "locator": "Any request for a review is to be made in writing via the QSPP Customer Portal or to support@qspp.com.",
+      "note": ""
+    },
+    {
+      "id": "RULE-47",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 7,
+      "verified": true,
+      "locator": "All appeals will be considered by the relevant authority as outlined in the Procedural Fairness and Impartiality Policy.",
+      "note": ""
+    },
+    {
+      "id": "RULE-48",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 8,
+      "verified": true,
+      "locator": "You are responsible for the use of the QSPP website, QSPP Knowledge Hub and QSPP Customer Portal and all other QSPP inte",
+      "note": ""
+    },
+    {
+      "id": "RULE-49",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 8,
+      "verified": true,
+      "locator": "Marketing and/or banner groups may only use the QSPP Brand on group branded collateral, both printed and electronic and ",
+      "note": ""
+    },
+    {
+      "id": "RULE-50",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 8,
+      "verified": true,
+      "locator": "Headings are inserted for convenience only and do not affect the interpretation of these Program Rules.",
+      "note": ""
+    },
+    {
+      "id": "RULE-51",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 8,
+      "verified": true,
+      "locator": "Where the context permits, words or expressions that are defined in the QSPP Terms and Conditions have",
+      "note": ""
+    },
+    {
+      "id": "TC-1",
+      "pdf": "QSPP-Terms-and-Conditions-V1.0-August-2026.pdf",
+      "page": 1,
+      "verified": true,
+      "locator": "Clause 1: The application of these Terms and Conditions",
+      "note": ""
+    },
+    {
+      "id": "TC-2",
+      "pdf": "QSPP-Terms-and-Conditions-V1.0-August-2026.pdf",
+      "page": 1,
+      "verified": true,
+      "locator": "Clause 2: Changes to the agreement",
+      "note": ""
+    },
+    {
+      "id": "TC-3",
+      "pdf": "QSPP-Terms-and-Conditions-V1.0-August-2026.pdf",
+      "page": 1,
+      "verified": true,
+      "locator": "Clause 3: Engagement",
+      "note": ""
+    },
+    {
+      "id": "TC-4",
+      "pdf": "QSPP-Terms-and-Conditions-V1.0-August-2026.pdf",
+      "page": 1,
+      "verified": true,
+      "locator": "Clause 4: Scope of accreditation",
+      "note": ""
+    },
+    {
+      "id": "TC-5",
+      "pdf": "QSPP-Terms-and-Conditions-V1.0-August-2026.pdf",
+      "page": 2,
+      "verified": true,
+      "locator": "Clause 5: Accreditation",
+      "note": ""
+    },
+    {
+      "id": "TC-6",
+      "pdf": "QSPP-Terms-and-Conditions-V1.0-August-2026.pdf",
+      "page": 2,
+      "verified": true,
+      "locator": "Clause 6: Accreditation period",
+      "note": ""
+    },
+    {
+      "id": "TC-7",
+      "pdf": "QSPP-Terms-and-Conditions-V1.0-August-2026.pdf",
+      "page": 2,
+      "verified": true,
+      "locator": "Clause 7: Assessing compliance",
+      "note": ""
+    },
+    {
+      "id": "TC-8",
+      "pdf": "QSPP-Terms-and-Conditions-V1.0-August-2026.pdf",
+      "page": 2,
+      "verified": true,
+      "locator": "Clause 8: Maintain compliance with AS85000:2024 during the",
+      "note": ""
+    },
+    {
+      "id": "TC-9",
+      "pdf": "QSPP-Terms-and-Conditions-V1.0-August-2026.pdf",
+      "page": 2,
+      "verified": true,
+      "locator": "Clause 9: You must notify us of changes and events",
+      "note": ""
+    },
+    {
+      "id": "TC-10",
+      "pdf": "QSPP-Terms-and-Conditions-V1.0-August-2026.pdf",
+      "page": 3,
+      "verified": true,
+      "locator": "Clause 10: Change in ownership of pharmacy business",
+      "note": ""
+    },
+    {
+      "id": "TC-11",
+      "pdf": "QSPP-Terms-and-Conditions-V1.0-August-2026.pdf",
+      "page": 3,
+      "verified": true,
+      "locator": "Clause 11: Provision of information to QSPP",
+      "note": ""
+    },
+    {
+      "id": "TC-12",
+      "pdf": "QSPP-Terms-and-Conditions-V1.0-August-2026.pdf",
+      "page": 3,
+      "verified": true,
+      "locator": "Clause 12: Use of QSPP Logo",
+      "note": ""
+    },
+    {
+      "id": "TC-13",
+      "pdf": "QSPP-Terms-and-Conditions-V1.0-August-2026.pdf",
+      "page": 4,
+      "verified": true,
+      "locator": "Clause 13: Fees",
+      "note": ""
+    },
+    {
+      "id": "TC-14",
+      "pdf": "QSPP-Terms-and-Conditions-V1.0-August-2026.pdf",
+      "page": 4,
+      "verified": true,
+      "locator": "Clause 14: Privacy",
+      "note": "multiple pages matched; chose best"
+    },
+    {
+      "id": "TC-15",
+      "pdf": "QSPP-Terms-and-Conditions-V1.0-August-2026.pdf",
+      "page": 4,
+      "verified": true,
+      "locator": "Clause 15: QSPP intellectual property",
+      "note": "multiple pages matched; chose best"
+    },
+    {
+      "id": "TC-16",
+      "pdf": "QSPP-Terms-and-Conditions-V1.0-August-2026.pdf",
+      "page": 4,
+      "verified": true,
+      "locator": "Clause 16: Confidential information",
+      "note": "multiple pages matched; chose best"
+    },
+    {
+      "id": "TC-17",
+      "pdf": "QSPP-Terms-and-Conditions-V1.0-August-2026.pdf",
+      "page": 5,
+      "verified": true,
+      "locator": "Clause 17: Return of QSPP intellectual property",
+      "note": "multiple pages matched; chose best"
+    },
+    {
+      "id": "TC-18",
+      "pdf": "QSPP-Terms-and-Conditions-V1.0-August-2026.pdf",
+      "page": 5,
+      "verified": true,
+      "locator": "Clause 18: Liability limitation",
+      "note": "multiple pages matched; chose best"
+    },
+    {
+      "id": "TC-19",
+      "pdf": "QSPP-Terms-and-Conditions-V1.0-August-2026.pdf",
+      "page": 6,
+      "verified": true,
+      "locator": "Clause 19: Changes to the Program Materials",
+      "note": ""
+    },
+    {
+      "id": "TC-20",
+      "pdf": "QSPP-Terms-and-Conditions-V1.0-August-2026.pdf",
+      "page": 6,
+      "verified": true,
+      "locator": "Clause 20: Assignment or novation by us",
+      "note": ""
+    },
+    {
+      "id": "TC-21",
+      "pdf": "QSPP-Terms-and-Conditions-V1.0-August-2026.pdf",
+      "page": 6,
+      "verified": true,
+      "locator": "Clause 21: Communications",
+      "note": ""
+    },
+    {
+      "id": "TC-22",
+      "pdf": "QSPP-Terms-and-Conditions-V1.0-August-2026.pdf",
+      "page": 6,
+      "verified": true,
+      "locator": "Clause 22: Survival",
+      "note": ""
+    },
+    {
+      "id": "TC-23",
+      "pdf": "QSPP-Terms-and-Conditions-V1.0-August-2026.pdf",
+      "page": 6,
+      "verified": true,
+      "locator": "Clause 23: Interpretation",
+      "note": ""
+    },
+    {
+      "id": "POLICY-accreditation-and-revocation",
+      "pdf": "QSPP-Accreditation-Revocation-Policy.pdf",
+      "page": 1,
+      "verified": true,
+      "locator": "This policy is designed to support and provide detail for the application of the Quality and Safety Pharmacy program (QS",
+      "note": ""
+    },
+    {
+      "id": "POLICY-assessments",
+      "pdf": "QSPP-Assessments-Policy.pdf",
+      "page": 1,
+      "verified": true,
+      "locator": "A requirement of the Joint Accreditation System of Australia & New Zealand (JASANZ) under which the Quality and Safety P",
+      "note": ""
+    },
+    {
+      "id": "POLICY-exceptional-circumstances",
+      "pdf": "QSPP-Exceptional-Circumstances-Policy.pdf",
+      "page": 1,
+      "verified": true,
+      "locator": "The purpose of this policy is to support QSPP Program Rules and describe circumstances under which an application for ex",
+      "note": ""
+    },
+    {
+      "id": "POLICY-failure-to-comply",
+      "pdf": "QSPP-Failure-to-Comply-Policy.pdf",
+      "page": 1,
+      "verified": true,
+      "locator": "This policy describes how the Quality and Safety Program (QSPP) will respond to non-compliance with any QSPP requirement",
+      "note": ""
+    },
+    {
+      "id": "POLICY-payment",
+      "pdf": "QSPP-Payment-Policy.pdf",
+      "page": 1,
+      "verified": true,
+      "locator": "This policy outlines the conditions surrounding the payment terms of Quality and Safety Pharmacy Program (QSPP) related ",
+      "note": ""
+    },
+    {
+      "id": "POLICY-privacy",
+      "pdf": "QSPP-Privacy-Policy.pdf",
+      "page": 1,
+      "verified": true,
+      "locator": "The purpose of this policy is to provide clear guidance about the Quality and Safety Pharmacy Program (QSPP)'s obligatio",
+      "note": ""
+    },
+    {
+      "id": "POLICY-procedural-fairness-and-impartiality",
+      "pdf": "QSPP-Procedural-Fairness-and-Impartiality-Policy.pdf",
+      "page": 1,
+      "verified": true,
+      "locator": "This policy provides clarification around the principles used to support procedural fairness and impartiality.",
+      "note": ""
+    },
+    {
+      "id": "POLICY-sanctions-management",
+      "pdf": "QSPP-Sanctions-Management-Policy.pdf",
+      "page": 1,
+      "verified": true,
+      "locator": "The purpose of this Policy is to establish a clear, consistent and fair framework for managing non‐compliance with the r",
+      "note": ""
+    },
+    {
+      "id": "OBL-annual-attestation",
+      "pdf": "QSPP-Terms-and-Conditions-V1.0-August-2026.pdf",
+      "page": 2,
+      "verified": true,
+      "locator": "the Attestation Statement being completed annually",
+      "note": ""
+    },
+    {
+      "id": "OBL-notification-change-events",
+      "pdf": "QSPP-Terms-and-Conditions-V1.0-August-2026.pdf",
+      "page": 2,
+      "verified": true,
+      "locator": "You must give us written notice of the occurrence of any of the following events or circumstances",
+      "note": ""
+    },
+    {
+      "id": "OBL-fees-invoices-28day",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 6,
+      "verified": true,
+      "locator": "QSPP invoices are issued on strict 28-day terms",
+      "note": ""
+    },
+    {
+      "id": "OBL-logo-use",
+      "pdf": "QSPP-Terms-and-Conditions-V1.0-August-2026.pdf",
+      "page": 3,
+      "verified": true,
+      "locator": "grant to you a limited, royalty-free, non-transferrable",
+      "note": ""
+    },
+    {
+      "id": "OBL-banner-group-brand",
+      "pdf": "QSPP-Program-Rules-V1.0-August-2026.pdf",
+      "page": 8,
+      "verified": true,
+      "locator": "Marketing and/or banner groups may only use the QSPP Brand on group branded collateral",
+      "note": ""
+    },
+    {
+      "id": "HITLIST-1",
+      "pdf": null,
+      "page": null,
+      "verified": false,
+      "locator": "",
+      "note": "pack-local planning list, no PDF"
+    },
+    {
+      "id": "HITLIST-2",
+      "pdf": null,
+      "page": null,
+      "verified": false,
+      "locator": "",
+      "note": "pack-local planning list, no PDF"
+    },
+    {
+      "id": "HITLIST-3",
+      "pdf": null,
+      "page": null,
+      "verified": false,
+      "locator": "",
+      "note": "pack-local planning list, no PDF"
+    },
+    {
+      "id": "HITLIST-4",
+      "pdf": null,
+      "page": null,
+      "verified": false,
+      "locator": "",
+      "note": "pack-local planning list, no PDF"
+    },
+    {
+      "id": "HITLIST-5",
+      "pdf": null,
+      "page": null,
+      "verified": false,
+      "locator": "",
+      "note": "pack-local planning list, no PDF"
+    },
+    {
+      "id": "HITLIST-6",
+      "pdf": null,
+      "page": null,
+      "verified": false,
+      "locator": "",
+      "note": "pack-local planning list, no PDF"
+    },
+    {
+      "id": "HITLIST-7",
+      "pdf": null,
+      "page": null,
+      "verified": false,
+      "locator": "",
+      "note": "pack-local planning list, no PDF"
+    },
+    {
+      "id": "HITLIST-8",
+      "pdf": null,
+      "page": null,
+      "verified": false,
+      "locator": "",
+      "note": "pack-local planning list, no PDF"
+    },
+    {
+      "id": "HITLIST-9",
+      "pdf": null,
+      "page": null,
+      "verified": false,
+      "locator": "",
+      "note": "pack-local planning list, no PDF"
+    },
+    {
+      "id": "HITLIST-10",
+      "pdf": null,
+      "page": null,
+      "verified": false,
+      "locator": "",
+      "note": "pack-local planning list, no PDF"
+    },
+    {
+      "id": "HITLIST-11",
+      "pdf": null,
+      "page": null,
+      "verified": false,
+      "locator": "",
+      "note": "pack-local planning list, no PDF"
+    },
+    {
+      "id": "HITLIST-12",
+      "pdf": null,
+      "page": null,
+      "verified": false,
+      "locator": "",
+      "note": "pack-local planning list, no PDF"
+    },
+    {
+      "id": "HITLIST-13",
+      "pdf": null,
+      "page": null,
+      "verified": false,
+      "locator": "",
+      "note": "pack-local planning list, no PDF"
+    },
+    {
+      "id": "HITLIST-14",
+      "pdf": null,
+      "page": null,
+      "verified": false,
+      "locator": "",
+      "note": "pack-local planning list, no PDF"
+    }
+  ]
+}
