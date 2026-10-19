@@ -1,0 +1,28 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="QsppManager.Desktop.Views.OnboardingView">
+  <ScrollViewer>
+    <StackPanel Margin="40,32" Spacing="14" MaxWidth="720" HorizontalAlignment="Left">
+      <TextBlock Classes="h1">Welcome to QSPP Manager</TextBlock>
+      <TextBlock Classes="lead" TextWrapping="Wrap">Set up your pharmacy profile and the first Owner / Admin account. Everything stays on this computer: the reference corpus sits beside the program, and your records live in the application data folder.</TextBlock>
+      <TextBlock Classes="label" Margin="0,6,0,0">PHARMACY</TextBlock>
+      <TextBox x:Name="PharmacyName" Text="Burke Road Compounding" />
+      <TextBlock Classes="label" Margin="0,6,0,0">JURISDICTION · TIME ZONE</TextBlock>
+      <ComboBox x:Name="Jur" SelectedIndex="0" HorizontalAlignment="Left">
+        <ComboBoxItem>VIC · Australia/Melbourne</ComboBoxItem>
+        <ComboBoxItem>NSW · Australia/Sydney</ComboBoxItem>
+        <ComboBoxItem>QLD · Australia/Brisbane</ComboBoxItem>
+        <ComboBoxItem>WA · Australia/Perth</ComboBoxItem>
+        <ComboBoxItem>SA · Australia/Adelaide</ComboBoxItem>
+      </ComboBox>
+      <TextBlock Classes="small" Text="Accreditation dates can stay unknown — decide later; the program will create a follow-up task instead of guessing." TextWrapping="Wrap" />
+      <TextBlock Classes="label" Margin="0,10,0,0">FIRST OWNER / ADMIN ACCOUNT</TextBlock>
+      <TextBox x:Name="DisplayName" Watermark="Full name" />
+      <TextBox x:Name="UserName" Watermark="User name" Text="owner" />
+      <TextBox x:Name="Passphrase" Watermark="Passphrase (minimum 8 characters)" PasswordChar="•" />
+      <TextBlock x:Name="Message" Classes="small" TextWrapping="Wrap" />
+      <Button x:Name="CreateBtn" Classes="primary" HorizontalAlignment="Left" Content="Create account and continue" Height="44" />
+      <TextBlock Classes="small" TextWrapping="Wrap">QSPP Manager does not award accreditation and is not an official program system. Program requirements live in the packed source documents; the Library lists every imported version.</TextBlock>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

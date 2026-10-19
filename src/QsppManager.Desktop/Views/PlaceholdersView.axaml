@@ -1,0 +1,11 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="QsppManager.Desktop.Views.PlaceholdersView">
+  <ScrollViewer>
+    <StackPanel Margin="32,28" Spacing="12" MaxWidth="760" HorizontalAlignment="Left">
+      <TextBlock Classes="h1" Text="{Binding $parent[UserControl].((vm:PlaceholderModel)DataContext).Title}" />
+      <TextBlock Classes="lead" Text="{Binding $parent[UserControl].((vm:PlaceholderModel)DataContext).Text}" TextWrapping="Wrap" />
+      <TextBlock Classes="small" Text="This destination is planned in docs/milestones.md — nothing is hidden behind it in Milestone 1." TextWrapping="Wrap" />
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

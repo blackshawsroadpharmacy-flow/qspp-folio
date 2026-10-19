@@ -1,0 +1,88 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="QsppManager.Desktop.MainWindow"
+        xmlns:vm="using:QsppManager.Desktop.ViewModels"
+        Title="QSPP Manager" Width="1280" Height="800" MinWidth="1024" MinHeight="660"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource Brush.Paper}">
+
+  <Grid RowDefinitions="52,*,28">
+    <!-- Top bar -->
+    <Border Grid.Row="0" Background="{StaticResource Brush.Paper}" BorderBrush="{StaticResource Brush.Divider}" BorderThickness="0,0,0,1">
+      <Grid ColumnDefinitions="Auto,*,240,Auto" Margin="16,0">
+        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+          <Border Width="22" Height="22" Background="{StaticResource Brush.Ink}">
+            <TextBlock Text="+" Foreground="{StaticResource Brush.Acid}" FontSize="16" FontWeight="Bold" TextAlignment="Center" Margin="0,-2,0,0" />
+          </Border>
+          <TextBlock Margin="10,0,0,0" VerticalAlignment="Center" FontSize="14" FontWeight="Medium">QSPP Manager</TextBlock>
+          <TextBlock Margin="10,0,0,0" VerticalAlignment="Center" Classes="small" Text="Burke Road Compounding" />
+        </StackPanel>
+
+        <TextBox Grid.Column="2" VerticalAlignment="Center" Height="30" Watermark="Search requirements, evidence, documents (Ctrl+K)"
+                 Text="{Binding SearchText}" />
+
+        <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Spacing="8">
+          <Border Classes="tag" IsVisible="{Binding SignedIn}">
+            <TextBlock Text="{Binding SessionLabel}" />
+          </Border>
+          <Button Content="Sign out" Command="{Binding SignOutCommand}" IsVisible="{Binding SignedIn}" Height="30" />
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <!-- Body: sidebar + content -->
+    <Grid Grid.Row="1" ColumnDefinitions="248,*">
+      <Border Grid.Column="0" Background="{StaticResource Brush.Sage}" BorderBrush="{StaticResource Brush.Divider}" BorderThickness="0,0,1,0">
+        <DockPanel>
+          <StackPanel DockPanel.Dock="Bottom" Margin="12,10">
+            <TextBlock Classes="small" Text="{Binding DataViewLabel}" TextWrapping="Wrap" />
+            <TextBlock Classes="small" Margin="0,4,0,0" Text="Local-only database. Cloud sync is off." TextWrapping="Wrap" />
+          </StackPanel>
+          <ListBox Classes="nav" ItemsSource="{Binding NavItems}" SelectedItem="{Binding SelectedNav}"
+                   Margin="0,12,0,0">
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </DockPanel>
+      </Border>
+
+      <ContentControl Grid.Column="1" Content="{Binding CurrentPage}" Margin="0" />
+
+      <!-- Command palette overlay -->
+      <Border Grid.Column="1" IsVisible="{Binding PaletteOpen}" Background="#AA163F35" ZIndex="100">
+        <ScrollViewer>
+          <Border Background="{StaticResource Brush.White}" BorderBrush="{StaticResource Brush.Ink}" BorderThickness="1"
+                  Margin="160,60,160,0" Padding="20">
+            <StackPanel>
+              <TextBox Text="{Binding SearchText}" Watermark="Find a requirement, evidence item or document…" FontSize="15" Height="44" />
+              <TextBlock Classes="label" Margin="0,12,0,4">RESULTS</TextBlock>
+              <ListBox ItemsSource="{Binding SearchResults}" Height="300"
+                       SelectedItem="{Binding SelectedSearchResult}" BorderBrush="{StaticResource Brush.Divider}" BorderThickness="0,0,0,1">
+                <ListBox.ItemTemplate>
+                  <DataTemplate>
+                    <StackPanel Margin="2,4">
+                      <TextBlock Text="{Binding Title}" />
+                      <TextBlock Classes="small" Text="{Binding Meta}" />
+                    </StackPanel>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+              <TextBlock Classes="small" Margin="0,8,0,0" Text="Enter opens · Escape closes" />
+            </StackPanel>
+          </Border>
+        </ScrollViewer>
+      </Border>
+    </Grid>
+
+    <!-- Status bar -->
+    <Border Grid.Row="2" Background="{StaticResource Brush.Sage}" BorderBrush="{StaticResource Brush.Divider}" BorderThickness="0,1,0,0">
+      <Grid ColumnDefinitions="*,Auto" Margin="16,0">
+        <TextBlock Grid.Column="0" Classes="small" VerticalAlignment="Center" Text="{Binding StatusBar}" />
+        <TextBlock Grid.Column="1" Classes="small" VerticalAlignment="Center" Text="{Binding StatusRight}" />
+      </Grid>
+    </Border>
+  </Grid>
+</Window>

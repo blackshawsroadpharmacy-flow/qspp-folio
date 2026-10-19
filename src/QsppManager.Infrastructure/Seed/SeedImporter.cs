@@ -1,0 +1,306 @@
+using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
+using QsppManager.Domain;
+using QsppManager.Domain.Entities;
+using QsppManager.Infrastructure.Persistence;
+using QsppManager.Infrastructure.Services;
+using QsppManager.Infrastructure.Storage;
+
+namespace QsppManager.Infrastructure.Seed;
+
+/// <summary>First-run importer: corpus requirements, interpretation issues, source documents.
+/// Idempotent — safe to run on every start. Re-runs update nothing already imported
+/// (requirements are keyed by derived deterministic IDs and skipped when present).</summary>
+public class SeedImporter(QsppDbContext db, AttachmentStore store, AuditService audit, string repoRoot)
+{
+    private static Guid DeterministicId(string kind, string key)
+    {
+        var bytes = System.Security.Cryptography.MD5.HashData(
+            System.Text.Encoding.UTF8.GetBytes($"qspp-manager:{kind}:{key.ToLowerInvariant()}"));
+        return new Guid(bytes.Take(16).ToArray());
+    }
+
+    private static string PackRoot => "/home/vpnhugh/Projects/qspp-pack";
+
+    public (int reqs, int examples, int issues, int docs) ImportAll(CancellationToken ct = default)
+    {
+        var results = (ImportRequirements(ct), ImportIssues(ct), ImportDocuments(ct));
+        return (results.Item1.reqs, results.Item1.examples, results.Item2, results.Item3);
+    }
+
+    // ---------- requirements ----------
+    private (int reqs, int examples) ImportRequirements(CancellationToken ct)
+    {
+        if (db.Requirements.Any()) return (db.Requirements.Count(), db.RequirementEvidenceExamples.Count());
+        var path = Path.Combine(repoRoot, "seed", "requirements.json");
+        if (!File.Exists(path)) return (0, 0);
+
+        using var doc = JsonDocument.Parse(File.ReadAllText(path), new JsonDocumentOptions { AllowTrailingCommas = true });
+        var reqs = doc.RootElement.ValueKind == JsonValueKind.Array
+            ? doc.RootElement.EnumerateArray()
+            : doc.RootElement.GetProperty("requirements").EnumerateArray();
+
+        var examples = 0;
+        foreach (var el in reqs)
+        {
+            var kind = ParseEnum<RefKind>(el.GetProperty("refKind").GetString() ?? "Std");
+            var refKey = el.GetProperty("ref").GetString() ?? "";
+            var id = el.TryGetProperty("id", out var idEl) && idEl.ValueKind == JsonValueKind.String && Guid.TryParse(idEl.GetString(), out var g)
+                ? g : DeterministicId($"{kind}", $"{el.GetProperty("sourceDoc").GetString() ?? ""}:{refKey}");
+
+            if (db.Requirements.IgnoreQueryFilters().Any(r => r.Id == id)) continue;
+
+            var r = new Requirement
+            {
+                Id = id,
+                RefKind = kind,
+                Ref = refKey,
+                Title = S(el, "title"),
+                PlainSummary = S(el, "summary"),
+                SourceDocFile = S(el, "sourceDoc"),
+                SourceVersion = S(el, "sourceVersion"),
+                WordingExcerpt = S(el, "wording"),
+                Domain = ParseEnum<DomainPart>(el.TryGetProperty("domain", out var dEl) ? (dEl.ValueKind == JsonValueKind.Number ? dEl.GetInt32().ToString() : dEl.GetString() ?? "Program") : "Program"),
+                ApplicabilityHint = ParseEnum<ApplicabilityHint>(el.TryGetProperty("applicabilityHint", out var aEl) && aEl.ValueKind == JsonValueKind.String ? aEl.GetString()! : "Unknown"),
+                AnchorFile = "",
+                AnchorLines = "",
+                InterpretationFlagsJson = el.TryGetProperty("interpretationFlags", out var fEl) && fEl.ValueKind == JsonValueKind.Array
+                    ? JsonSerializer.Serialize(fEl) : "[]",
+                Priority = S(el, "priority"),
+                ExtraJson = el.ValueKind == JsonValueKind.Object ? JsonSerializer.Serialize(el, new JsonSerializerOptions { WriteIndented = false }) : "{}",
+            };
+            if (el.TryGetProperty("anchor", out var anchor) && anchor.ValueKind == JsonValueKind.Object)
+            {
+                r.AnchorFile = S(anchor, "file");
+                r.AnchorApproximate = !anchor.TryGetProperty("approximate", out var ap) || ap.ValueKind != JsonValueKind.False;
+                if (anchor.TryGetProperty("approxLines", out var al) && al.ValueKind == JsonValueKind.Array)
+                    r.AnchorLines = string.Join("-", al.EnumerateArray().Select(x => x.GetInt32().ToString()));
+            }
+            db.Requirements.Add(r);
+
+            if (el.TryGetProperty("evidenceExamples", out var ev) && ev.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var e in ev.EnumerateArray().Take(12))
+                {
+                    var text = e.ValueKind == JsonValueKind.String ? e.GetString()! : S(e, "text");
+                    if (string.IsNullOrWhiteSpace(text)) continue;
+                    db.RequirementEvidenceExamples.Add(new RequirementEvidenceExample
+                    {
+                        RequirementId = id,
+                        Text = text[..Math.Min(text.Length, 280)],
+                        Mandatory = e.ValueKind == JsonValueKind.Object && e.TryGetProperty("mandatory", out var m) && m.ValueKind == JsonValueKind.True,
+                    });
+                    examples++;
+                }
+            }
+        }
+        db.SaveChanges();
+        if (db.Requirements.Any())
+            audit.Append("system", null, "corpus.imported", "requirements", "*", $"Imported {db.Requirements.Count()} requirements, {db.RequirementEvidenceExamples.Count()} evidence examples from seed");
+        return (db.Requirements.Count(), db.RequirementEvidenceExamples.Count());
+    }
+
+    // ---------- interpretation issues ----------
+    private int ImportIssues(CancellationToken ct)
+    {
+        if (db.InterpretationIssues.Any()) return db.InterpretationIssues.Count();
+        var path = Path.Combine(repoRoot, "seed", "issues.json");
+        if (File.Exists(path))
+        {
+            using var doc = JsonDocument.Parse(File.ReadAllText(path), new JsonDocumentOptions { AllowTrailingCommas = true });
+            var arr = doc.RootElement.ValueKind == JsonValueKind.Array
+                ? doc.RootElement : doc.RootElement.GetProperty("issues");
+            foreach (var el in arr.EnumerateArray())
+            {
+                db.InterpretationIssues.Add(new InterpretationIssue
+                {
+                    Key = S(el, "key") != "" ? S(el, "key") : S(el, "id"),
+                    Title = S(el, "title"),
+                    ConservativePlanning = S(el, "conservativePlanning"),
+                    Status = S(el, "status") != "" ? S(el, "status") : "unresolved",
+                    SourcesJson = el.TryGetProperty("sources", out var s) ? JsonSerializer.Serialize(s, new JsonSerializerOptions { WriteIndented = true }) : "[]",
+                    RetrievedDate = S(el, "retrievedDate"),
+                    PackVersion = S(el, "packVersion"),
+                });
+            }
+            db.SaveChanges();
+            return db.InterpretationIssues.Count();
+        }
+
+        // Fallback seed (from the reference pack analysis, retrieved 2026-10-19)
+        const string packVersion = "qspp-pack 26 Sep 2026";
+        var issues = new[]
+        {
+            new InterpretationIssue
+            {
+                Key = "ISSUE-CANCELWINDOW",
+                Title = "Assessment cancellation window: 10 business days vs 10 calendar days",
+                ConservativePlanning = "10 business days (Program Rule 10) — the strictest reading; planning only while unresolved",
+                Status = "unresolved",
+                SourcesJson = JsonSerializer.Serialize(new object[]
+                {
+                    new { reference = "Program Rules V1.0 Rule 10", text = "If an assessment is cancelled and/or rescheduled within ten (10) business days of the Assessment Date ... the full cost of one (1) assessment plus any travel expenses ... will be paid by and invoiced to the Pharmacy", file = "extracted/QSPP-Program-Rules-V1.0-Aug2026.txt", approxLines = "70-74" },
+                    new { reference = "Assessments Policy 2.1", text = "Should an assessment date booking be changed or cancelled ... with less than 10 calendar days' notice, a pharmacy will: forfeit their QSPP Assessment ... or a cancellation fee equivalent to the current assessment fee", file = "extracted/QSPP-Policy-Assessments.txt", approxLines = "29-41" },
+                    new { reference = "QSPP Fees page", text = "Replacement assessment (late cancellation) $1,595 — If you cancel a scheduled on-site assessment within 10 calendar days of the scheduled date", file = "website-scrape/pages/knowledge-hub__resources__fees.json", approxLines = "-" },
+                }, new JsonSerializerOptions { WriteIndented = true }),
+                RetrievedDate = "2026-10-19", PackVersion = packVersion,
+            },
+            new InterpretationIssue
+            {
+                Key = "ISSUE-MIDCYCLE",
+                Title = "Mid-Cycle Review window wording differs across sources (months 13-24 vs 15-21 vs approx 18 months)",
+                ConservativePlanning = "Schedule within months 15-21 of the 36-month cycle (Program Rule 8 + T&C definition); hub wording is approximate; planning only while unresolved",
+                Status = "unresolved",
+                SourcesJson = JsonSerializer.Serialize(new object[]
+                {
+                    new { reference = "Program Rules V1.0 Rule 8", text = "This assessment is to be scheduled within the second year of the accreditation cycle (month 15 - month 21 of the 36-month accreditation cycle)", file = "extracted/QSPP-Program-Rules-V1.0-Aug2026.txt", approxLines = "52-57" },
+                    new { reference = "Program Rules definitions", text = "Mid-Cycle Review: A virtual review conducted remotely between months 13 and 24 of the 36-month accreditation cycle to assess ongoing compliance", file = "extracted/QSPP-Program-Rules-V1.0-Aug2026.txt", approxLines = "476-480" },
+                    new { reference = "T&Cs V1.0 definitions", text = "Mid-cycle Review: A virtual review conducted between months 15 and 21 of the 36-month accreditation cycle to assess ongoing compliance", file = "extracted/QSPP-Terms-Conditions-V1.0-Aug2026.txt", approxLines = "392-396" },
+                    new { reference = "Knowledge Hub (assessment types)", text = "One Mid-cycle Review approximately 18 months after the Onsite Assessment", file = "website-scrape/pages/knowledge-hub__assessments__assessment-types.json", approxLines = "-" },
+                }, new JsonSerializerOptions { WriteIndented = true }),
+                RetrievedDate = "2026-10-19", PackVersion = packVersion,
+            },
+            new InterpretationIssue
+            {
+                Key = "ISSUE-POTENCY",
+                Title = "Potency testing cadence wording — confirm interpretation with the pharmacist manager",
+                ConservativePlanning = "Per PERSON per year: each compounding technician and each compounding pharmacist performs testing on two (2) different drugs across two (2) different dosage forms. This is per-person coverage, not four drug/form combinations.",
+                Status = "unresolved",
+                SourcesJson = JsonSerializer.Serialize(new object[]
+                {
+                    new { reference = "UAG section 2.4 (key tasks, around potency cadence)", text = "two (2) different drugs and two (2) different dosage forms per compounding technician, and per compounding pharmacist, per year", file = "extracted/UAG-V1.1-full.txt", approxLines = "3140-3200" },
+                }, new JsonSerializerOptions { WriteIndented = true }),
+                RetrievedDate = "2026-10-19", PackVersion = packVersion,
+            },
+        };
+        db.InterpretationIssues.AddRange(issues);
+        db.SaveChanges();
+        audit.Append("system", null, "issues.seeded", "interpretation-issue", "*", $"Seeded {issues.Length} interpretation issues (fallback set)");
+        return issues.Length;
+    }
+
+    // ---------- source documents ----------
+    private int ImportDocuments(CancellationToken ct)
+    {
+        if (db.SourceDocuments.Any()) return db.SourceDocuments.Count();
+        var docsPath = Path.Combine(repoRoot, "seed", "documents.json");
+        var manifestPath = Path.Combine(PackRoot, "website-scrape", "downloads", "manifest.json");
+        var count = 0;
+
+        if (File.Exists(docsPath))
+        {
+            using var doc = JsonDocument.Parse(File.ReadAllText(docsPath), new JsonDocumentOptions { AllowTrailingCommas = true });
+            var arr = doc.RootElement.ValueKind == JsonValueKind.Array ? doc.RootElement : doc.RootElement.GetProperty("documents");
+            foreach (var el in arr.EnumerateArray())
+            {
+                var rel = S(el, "sourcePath");
+                if (string.IsNullOrWhiteSpace(rel) || el.TryGetProperty("excluded", out var ex) && ex.ValueKind == JsonValueKind.True) continue;
+                count += ImportOne(Path.Combine(PackRoot, rel), S(el, "displayName"), S(el, "role"), S(el, "sourceVersion"), S(el, "sha256"), S(el, "provenanceNote"));
+            }
+        }
+        else if (File.Exists(manifestPath))
+        {
+            using var doc = JsonDocument.Parse(File.ReadAllText(manifestPath));
+            foreach (var m in doc.RootElement.EnumerateArray())
+            {
+                if (m.TryGetProperty("kind", out var k) && k.GetString() == "error") continue;
+                var url = m.GetProperty("url").GetString() ?? "";
+                var packFile = m.GetProperty("path").GetString() ?? "";
+                if (Path.GetExtension(packFile).ToLowerInvariant() is not ".pdf" and not ".png") continue;
+                var sha = m.TryGetProperty("sha256", out var sh) ? sh.GetString() ?? "" : "";
+                var size = m.TryGetProperty("size", out var sz) ? sz.GetInt64() : 0;
+                _ = ImportFromBytes(packFile, File.ReadAllBytes(packFile), DisplayNameFor(packFile), RoleFor(packFile), VersionFor(packFile), sha, $"Scraped from {url} on 2026-10-19, qspp-pack manifest");
+                count++;
+            }
+        }
+        return count;
+
+        int ImportOne(string absPath, string display, string role, string version, string expectedSha, string provenance)
+            => File.Exists(absPath) ? ImportFromBytes(absPath, File.ReadAllBytes(absPath), display, role, version, expectedSha, provenance) : 0;
+    }
+
+    private int ImportFromBytes(string originPath, byte[] bytes, string display, string role, string version, string expectedSha, string provenance)
+    {
+        var fileName = Path.GetFileName(originPath);
+        var head = bytes.AsSpan(0, Math.Min(bytes.Length, 10240)).ToArray();
+        var (ok, err, _) = AttachmentStore.ValidateSignature(fileName, head);
+        if (!ok)
+        {
+            audit.Append("system", null, "document.import_rejected", "source-document", fileName, err);
+            return 0;
+        }
+        var sha = AttachmentStore.Sha256Hex(bytes);
+        if (!string.IsNullOrWhiteSpace(expectedSha) && !expectedSha.Equals(sha, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException($"Checksum mismatch for {fileName}: expected {expectedSha}, got {sha}.");
+
+        var (rel, _, sizeB) = store.StoreBytes(fileName, bytes);
+        var doc = new SourceDocument
+        {
+            DisplayName = display,
+            FileName = fileName,
+            Role = role,
+            SourceVersion = version,
+            OriginPath = originPath,
+            StoredRelativePath = rel,
+            Sha256Hex = sha,
+            FileBytes = sizeB,
+            ProvenanceNote = provenance,
+            RetrievedDate = "2026-10-19",
+            PackVersion = "qspp-pack 26 Sep 2026",
+        };
+        if (!db.SourceDocuments.Any(d => d.Sha256Hex == sha))
+        {
+            db.SourceDocuments.Add(doc);
+            db.SaveChanges();
+            audit.Append("system", null, "document.imported", "source-document", doc.Id.ToString(), $"{display} ({fileName}, sha256 {sha[..12]}…)");
+            return 1;
+        }
+        return 0;
+    }
+
+    private static string DisplayNameFor(string path) => Path.GetFileName(path) switch
+    {
+        "as85000-2024.pdf" or "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf" => "AS 85000:2024 Australian Community Pharmacy Standard",
+        "Guide_V1.12.pdf" => "User Assessment Guide — hub copy (Guide_V1.12.pdf; cover says V1.1, Sep 2026)",
+        "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf" => "QSPP User Assessment Guide V1.1 (Sep 2026, origin copy)",
+        "QSPP-Program-Rules-V1.0-August-2026.pdf" => "QSPP Program Rules V1.0 (Aug 2026)",
+        "QSPP-Terms-and-Conditions-V1.0-August-2026.pdf" => "QSPP Terms and Conditions V1.0 (Aug 2026)",
+        var f when f.StartsWith("QSPP-") && f.Contains("Policy") => $"QSPP Policy — {Path.GetFileNameWithoutExtension(f).Replace("QSPP-", "").Replace("-Policy", "").Replace("-", " ")}",
+        "QSPP-Training-requirements.pdf" => "S2/S3 Training Requirements fact sheet",
+        "QSPP-Approved-Refresher-Training-List-6-October-2026.pdf" => "QSPP Approved Refresher Training List (6 Oct 2026)",
+        "Code-of-Ethics_Digital.pdf" => "PSA Code of Ethics for Pharmacists (2026)",
+        "Australian-Open-Disclosure-Framework_1.pdf" or "open-disclosure-fact-sheet-when-and-how-do-it.pdf" => "Australian Open Disclosure Framework (ACSQHC, Jun 2026)",
+        "G.U.I.D.E-Framework.pdf" => "PSA G.U.I.D.E. ethical decision-making framework (v6)",
+        "communicating.pdf" => "Communicating effectively with Aboriginal and Torres Strait Islander people (Qld Health)",
+        "QC2020-Program-Rules-1.3-October-22.pdf" or "QC2020-Requirements_V1.1_outgoing.pdf" => "QC2020 Requirements/Program Rules (outgoing)",
+        _ => Path.GetFileNameWithoutExtension(path),
+    };
+
+    private static string RoleFor(string path) => Path.GetFileName(path) switch
+    {
+        "as85000-2024.pdf" or "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf" => "standard",
+        var f when f.Contains("Guide") => "guide",
+        "QSPP-Program-Rules-V1.0-August-2026.pdf" => "rules",
+        "QSPP-Terms-and-Conditions-V1.0-August-2026.pdf" => "terms",
+        "QC2020-Program-Rules-1.3-October-22.pdf" or "QC2020-Requirements_V1.1_outgoing.pdf" => "reference",
+        var f when f.Contains("Policy") => "policy",
+        var f when f.Contains("Training") || f.Contains("Refresher") => "guidance",
+        _ => "guidance",
+    };
+
+    private static string VersionFor(string path) => Path.GetFileName(path) switch
+    {
+        "QSPP-Program-Rules-V1.0-August-2026.pdf" or "QSPP-Terms-and-Conditions-V1.0-August-2026.pdf" => "V1.0, Aug 2026",
+        "QSPP-User-Assessment-Guide_V1.1_Sep2026.pdf" or "Guide_V1.12.pdf" => "V1.1, Sep 2026",
+        "AS85000-2024_Australian-Community-Pharmacy-Standard.pdf" or "as85000-2024.pdf" => "AS 85000:2024 (Jun 2024)",
+        "QC2020-Requirements_V1.1_outgoing.pdf" => "V1.1 (outgoing)",
+        "QSPP-Approved-Refresher-Training-List-6-October-2026.pdf" => "List updated 6 Oct 2026",
+        _ => "",
+    };
+
+    private static string S(JsonElement el, string prop)
+        => el.TryGetProperty(prop, out var p) && p.ValueKind == JsonValueKind.String ? p.GetString() ?? "" : "";
+
+    private static T ParseEnum<T>(string raw) where T : struct, Enum
+        => Enum.TryParse<T>(raw, ignoreCase: true, out var v) ? v : default;
+}

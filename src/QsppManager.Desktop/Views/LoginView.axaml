@@ -1,0 +1,13 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="QsppManager.Desktop.Views.LoginView">
+  <StackPanel Margin="60,60" Spacing="12" MaxWidth="420" HorizontalAlignment="Left">
+    <TextBlock Classes="h2">Sign in</TextBlock>
+    <TextBlock Classes="small" TextWrapping="Wrap">Accounts are local to this computer. Roles decide who can verify evidence and change readiness.</TextBlock>
+    <TextBox x:Name="UserName" Watermark="User name" Margin="0,8,0,0" />
+    <TextBox x:Name="Passphrase" Watermark="Passphrase" PasswordChar="•" />
+    <TextBlock x:Name="Message" Classes="small" TextWrapping="Wrap" />
+    <Button x:Name="LoginBtn" Classes="primary" Content="Sign in" Height="40" Margin="0,6,0,0" />
+    <TextBlock Classes="small" TextWrapping="Wrap">Forgot the passphrase? Account recovery and role management arrive with Settings (Milestone 4).</TextBlock>
+  </StackPanel>
+</UserControl>

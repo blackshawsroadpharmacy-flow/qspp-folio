@@ -5,6 +5,7 @@
     <RootNamespace>QsppManager.Desktop</RootNamespace>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,6 +17,14 @@
     <AvaloniaResource Include="Assets\Fonts\**" />
     <AvaloniaResource Include="Assets\Icons\**" />
     <AvaloniaResource Include="Assets\Notices\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="12.1.4" />
+    <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.3.22" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.4" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.4" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
   </ItemGroup>
 
   <!-- Avalonia + Fluent + DataGrid + Diagnostics(debug) added via CLI. -->

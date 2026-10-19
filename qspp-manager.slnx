@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/QsppManager.Application/QsppManager.Application.csproj" />
+    <Project Path="src/QsppManager.Desktop/QsppManager.Desktop.csproj" />
+    <Project Path="src/QsppManager.Domain/QsppManager.Domain.csproj" />
+    <Project Path="src/QsppManager.Infrastructure/QsppManager.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/QsppManager.Domain.Tests/QsppManager.Domain.Tests.csproj" />
+    <Project Path="tests/QsppManager.Integration.Tests/QsppManager.Integration.Tests.csproj" />
+  </Folder>
+</Solution>

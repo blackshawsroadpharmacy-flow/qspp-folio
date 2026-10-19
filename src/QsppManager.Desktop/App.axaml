@@ -1,0 +1,174 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="QsppManager.Desktop.App"
+             xmlns:dg="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls.DataGrid"
+             RequestedThemeVariant="Light">
+
+  <Application.Resources>
+
+    <!-- OpenScript design tokens (owner-mandated; see design skill spec §4.1, §4.2, §4.3) -->
+    <Color x:Key="Color.Paper">#F5F5EB</Color>
+    <Color x:Key="Color.White">#FFFEF8</Color>
+    <Color x:Key="Color.Sage">#E4EADC</Color>
+    <Color x:Key="Color.Ink">#163F35</Color>
+    <Color x:Key="Color.Green">#23614D</Color>
+    <Color x:Key="Color.Muted">#52685C</Color>
+    <Color x:Key="Color.Divider">#A9B7A3</Color>
+    <Color x:Key="Color.ControlBorder">#6F8570</Color>
+    <Color x:Key="Color.Acid">#DBE76B</Color>
+    <Color x:Key="Color.Focus">#AB5537</Color>
+    <Color x:Key="Color.Alert">#9A3F1F</Color>
+    <Color x:Key="Color.Caution">#7A5200</Color>
+    <Color x:Key="Color.Error">#A32A2A</Color>
+    <Color x:Key="Color.RowHover">#EDF0DF</Color>
+
+    <SolidColorBrush x:Key="Brush.Paper" Color="{StaticResource Color.Paper}" />
+    <SolidColorBrush x:Key="Brush.White" Color="{StaticResource Color.White}" />
+    <SolidColorBrush x:Key="Brush.Sage" Color="{StaticResource Color.Sage}" />
+    <SolidColorBrush x:Key="Brush.Ink" Color="{StaticResource Color.Ink}" />
+    <SolidColorBrush x:Key="Brush.Green" Color="{StaticResource Color.Green}" />
+    <SolidColorBrush x:Key="Brush.Muted" Color="{StaticResource Color.Muted}" />
+    <SolidColorBrush x:Key="Brush.Divider" Color="{StaticResource Color.Divider}" />
+    <SolidColorBrush x:Key="Brush.ControlBorder" Color="{StaticResource Color.ControlBorder}" />
+    <SolidColorBrush x:Key="Brush.Acid" Color="{StaticResource Color.Acid}" />
+    <SolidColorBrush x:Key="Brush.Focus" Color="{StaticResource Color.Focus}" />
+    <SolidColorBrush x:Key="Brush.Alert" Color="{StaticResource Color.Alert}" />
+    <SolidColorBrush x:Key="Brush.Caution" Color="{StaticResource Color.Caution}" />
+    <SolidColorBrush x:Key="Brush.Error" Color="{StaticResource Color.Error}" />
+    <SolidColorBrush x:Key="Brush.RowHover" Color="{StaticResource Color.RowHover}" />
+
+    <!-- Fonts: Host Grotesk (OFL) primary, JetBrains Mono (OFL) for codes/ids/numbers -->
+    <FontFamily x:Key="Font.Ui">avares://qsppmanager/Assets/Fonts/HostGrotesk.ttf?#Host Grotesk, Helvetica, Arial, sans-serif</FontFamily>
+    <FontFamily x:Key="Font.Mono">avares://qsppmanager/Assets/Fonts/JetBrainsMono-Regular.ttf?#JetBrains Mono</FontFamily>
+
+  </Application.Resources>
+
+  <Application.Styles>
+    <FluentTheme />
+
+    <!-- Base window typography -->
+    <Style Selector="Window, UserControl">
+      <Setter Property="FontFamily" Value="{StaticResource Font.Ui}" />
+      <Setter Property="FontSize" Value="14" />
+      <Setter Property="Foreground" Value="{StaticResource Brush.Ink}" />
+      <Setter Property="Background" Value="{StaticResource Brush.Paper}" />
+    </Style>
+
+    <!-- Headings/type scale (spec §5.2) -->
+    <Style Selector="TextBlock.h1"><Setter Property="FontSize" Value="28" /><Setter Property="FontWeight" Value="Medium" /><Setter Property="LetterSpacing" Value="-0.35" /></Style>
+    <Style Selector="TextBlock.h2"><Setter Property="FontSize" Value="20" /><Setter Property="FontWeight" Value="Medium" /><Setter Property="LetterSpacing" Value="-0.25" /></Style>
+    <Style Selector="TextBlock.h3"><Setter Property="FontSize" Value="16" /><Setter Property="FontWeight" Value="Medium" /><Setter Property="LetterSpacing" Value="-0.1" /></Style>
+    <Style Selector="TextBlock.lead"><Setter Property="FontSize" Value="15" /></Style>
+    <Style Selector="TextBlock.small"><Setter Property="FontSize" Value="12" /><Setter Property="Foreground" Value="{StaticResource Brush.Muted}" /></Style>
+    <Style Selector="TextBlock.label"><Setter Property="FontSize" Value="11" /><Setter Property="FontWeight" Value="Medium" /><Setter Property="LetterSpacing" Value="0.6" /><Setter Property="Foreground" Value="{StaticResource Brush.Muted}" /></Style>
+    <Style Selector="TextBlock.mono"><Setter Property="FontFamily" Value="{StaticResource Font.Mono}" /><Setter Property="FontSize" Value="12" /></Style>
+
+    <!-- Buttons (spec §7.1): zero radius, ink primary, green hover -->
+    <Style Selector="Button">
+      <Setter Property="CornerRadius" Value="0" />
+      <Setter Property="Height" Value="36" />
+      <Setter Property="Padding" Value="14,0" />
+      <Setter Property="Background" Value="{StaticResource Brush.White}" />
+      <Setter Property="BorderBrush" Value="{StaticResource Brush.ControlBorder}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Foreground" Value="{StaticResource Brush.Ink}" />
+      <Setter Property="FontWeight" Value="Medium" />
+    </Style>
+    <Style Selector="Button.primary">
+      <Setter Property="Background" Value="{StaticResource Brush.Ink}" />
+      <Setter Property="Foreground" Value="{StaticResource Brush.White}" />
+      <Setter Property="BorderBrush" Value="{StaticResource Brush.Ink}" />
+    </Style>
+    <Style Selector="Button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource Brush.Green}" />
+    </Style>
+    <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource Brush.Sage}" />
+    </Style>
+    <Style Selector="Button:disabled">
+      <Setter Property="Background" Value="{StaticResource Brush.Paper}" />
+      <Setter Property="Foreground" Value="{StaticResource Brush.Muted}" />
+    </Style>
+    <Style Selector="Button.destructive">
+      <Setter Property="Background" Value="{StaticResource Brush.Alert}" />
+      <Setter Property="Foreground" Value="{StaticResource Brush.White}" />
+      <Setter Property="BorderBrush" Value="{StaticResource Brush.Alert}" />
+    </Style>
+
+    <!-- Inputs (spec §7.2) -->
+    <Style Selector="TextBox">
+      <Setter Property="CornerRadius" Value="0" />
+      <Setter Property="Height" Value="36" />
+      <Setter Property="Background" Value="{StaticResource Brush.White}" />
+      <Setter Property="BorderBrush" Value="{StaticResource Brush.ControlBorder}" />
+      <Setter Property="Foreground" Value="{StaticResource Brush.Ink}" />
+      <Setter Property="Padding" Value="12,7" />
+      <Setter Property="MinHeight" Value="36" />
+    </Style>
+    <Style Selector="ComboBox">
+      <Setter Property="CornerRadius" Value="0" />
+      <Setter Property="MinHeight" Value="36" />
+      <Setter Property="Background" Value="{StaticResource Brush.White}" />
+      <Setter Property="BorderBrush" Value="{StaticResource Brush.ControlBorder}" />
+    </Style>
+
+    <!-- Sidebar navigation (spec §6.5): sage rail, ink selected card with 2px offset shadow -->
+    <Style Selector="ListBox.nav">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="0" />
+    </Style>
+    <Style Selector="ListBoxItem.nav">
+      <Setter Property="Height" Value="36" />
+      <Setter Property="CornerRadius" Value="0" />
+      <Setter Property="Padding" Value="12,0" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="{StaticResource Brush.Ink}" />
+      <Setter Property="FontSize" Value="14" />
+      <Setter Property="Margin" Value="8,2" />
+    </Style>
+    <Style Selector="ListBoxItem.nav:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource Brush.Paper}" />
+    </Style>
+    <Style Selector="ListBoxItem.nav:selected /template/ ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource Brush.White}" />
+      <Setter Property="BorderBrush" Value="{StaticResource Brush.Ink}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="BoxShadow" Value="2 2 0 0 #163F35" />
+    </Style>
+
+    <!-- DataGrid (spec §13.6): horizontal hairlines only, sage header, hover row -->
+    <Style Selector="dg|DataGrid">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="RowBackground" Value="{StaticResource Brush.White}" />
+      <Setter Property="GridLinesVisibility" Value="Horizontal" />
+      <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource Brush.Divider}" />
+      <Setter Property="VerticalGridLinesBrush" Value="Transparent" />
+      <Setter Property="RowHeight" Value="40" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="HeadersVisibility" Value="Column" />
+      <Setter Property="CanUserReorderColumns" Value="False" />
+    </Style>
+    <Style Selector="dg|DataGridColumnHeader">
+      <Setter Property="Background" Value="{StaticResource Brush.Sage}" />
+      <Setter Property="Foreground" Value="{StaticResource Brush.Muted}" />
+      <Setter Property="Padding" Value="10,8" />
+      <Setter Property="BorderThickness" Value="0" />
+    </Style>
+
+    <!-- Status tags: rectangles, no radius (spec §7.8). In Avalonia 12 font properties
+         are TextElement-attached: tags inherit the app-wide 14/20 scale (density debt noted in ledger). -->
+    <Style Selector="Border.tag">
+      <Setter Property="CornerRadius" Value="0" />
+      <Setter Property="Padding" Value="8,4" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="BorderBrush" Value="{StaticResource Brush.Divider}" />
+      <Setter Property="Background" Value="{StaticResource Brush.Sage}" />
+    </Style>
+
+    <!-- Keyboard focus visibility is Fluent's default; sharpen ring colour: -->
+    <Style Selector=":is(Control):focus /template/ Border#PART_FocusVisual">
+      <Setter Property="BorderBrush" Value="{StaticResource Brush.Focus}" />
+    </Style>
+  </Application.Styles>
+</Application>

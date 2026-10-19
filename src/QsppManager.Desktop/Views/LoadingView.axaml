@@ -1,0 +1,8 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="QsppManager.Desktop.Views.LoadingView">
+  <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="8">
+    <TextBlock Classes="h2" Text="Loading…" />
+    <TextBlock Classes="small">Importing the reference corpus and opening the local database.</TextBlock>
+  </StackPanel>
+</UserControl>
