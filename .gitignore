@@ -24,5 +24,8 @@ tmp/
 
 # OS
 .DS_Store
-Thumbs.dbdist/
+Thumbs.db
+
+# Build output (bundled .app lives here)
+dist/
 Contents/Resources/
