@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# Build the QSPP Manager macOS .app bundle (osx-arm64, self-contained).
+# Output: <repo>/dist/QSPP Manager.app
+#
+# Run from the repo root:  scripts/package-app.sh
+# Optional env:
+#   QSPP_DATA_DIR — keep unset for normal users (defaults to
+#   ~/Library/Application Support/QsppManager); set only for disposable test runs.
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+ROOT="$(pwd)"
+APP_NAME="QSPP Manager"
+DIST="$ROOT/dist"
+CONTENTS="$DIST/$APP_NAME.app/Contents"
+PLIST_BUDDY="/usr/libexec/PlistBuddy"
+
+echo "→ dotnet publish (osx-arm64, self-contained)"
+export PATH="$HOME/.dotnet:$PATH" DOTNET_ROOT="$HOME/.dotnet"
+dotnet publish src/QsppManager.Desktop/QsppManager.Desktop.csproj \
+  -c Release -r osx-arm64 --self-contained true \
+  -p:PublishSingleFile=false -p:PublishTrimmed=false -o "$DIST/payload" --nologo
+
+echo "→ assembling bundle"
+rm -rf "$DIST/$APP_NAME.app"
+mkdir -p "$CONTENTS/MacOS" "$CONTENTS/Resources"
+cp -R "$DIST/payload/" "$CONTENTS/MacOS/"
+rm -rf "$DIST/payload"
+chmod +x "$CONTENTS/MacOS/QsppManager.Desktop"
+
+cp assets/art/QsppManager.icns "$CONTENTS/Resources/"
+
+# Bundle the verified corpus pack so the app finds its sources on any machine
+# (discovery order: QSPP_PACK_ROOT → Settings override → vendored repo → bundled Resources).
+PACK_SRC="$ROOT/vendor/qspp-pack"
+[ -d "$PACK_SRC" ] || PACK_SRC="$(dirname "$ROOT")/vendor/qspp-pack"
+if [ -d "$PACK_SRC" ]; then
+  cp -R "$PACK_SRC" "$CONTENTS/Resources/qspp-pack"
+else
+  echo "  (no vendor pack found at $PACK_SRC — app will rely on Settings override)"
+fi
+
+cat > "$CONTENTS/Info.plist" <<'PLIST'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key><string>QSPP Manager</string>
+    <key>CFBundleDisplayName</key><string>QSPP Manager</string>
+    <key>CFBundleIdentifier</key><string>au.com.burkeroadpharmacy.qsppmanager</string>
+    <key>CFBundleVersion</key><string>1.0.0</string>
+    <key>CFBundleShortVersionString</key><string>1.0.0</string>
+    <key>CFBundlePackageType</key><string>APPL</string>
+    <key>CFBundleExecutable</key><string>QsppManager.Desktop</string>
+    <key>CFBundleIconFile</key><string>QsppManager</string>
+    <key>LSMinimumSystemVersion</key><string>11.0</string>
+    <key>LSArchitecturePriority</key>
+    <array><string>arm64</string></array>
+    <key>NSHighResolutionCapable</key><true/>
+    <key>NSHumanReadableCopyright</key><string>© 2026 Burke Road Compounding Pharmacy</string>
+    <key>NSPrincipalClass</key><string>NSApplication</string>
+</dict>
+</plist>
+$PLIST_BUDDY -c "Print" "$CONTENTS/Info.plist" >/dev/null
+
+echo "→ ad-hoc code signature"
+codesign --force --deep --sign - "$DIST/$APP_NAME.app" 2>/dev/null || echo "(codesign skipped)"
+
+echo "✓ built: $DIST/$APP_NAME.app"
+echo "  launch with: open \"$DIST/$APP_NAME.app\""
