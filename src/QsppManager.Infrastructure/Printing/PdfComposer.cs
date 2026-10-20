@@ -78,7 +78,7 @@ public class PdfComposer(string fontsDirectory)
                         r.RelativeItem().Column(c =>
                         {
                             c.Item().Text(m.PharmacyName).FontSize(15).SemiBold();
-                            c.Item().Text("Requirement checklist — QSPP Manager").FontSize(9).FontColor(Muted);
+                            c.Item().Text("Requirement checklist — Hugh's QSPP Manager").FontSize(9).FontColor(Muted);
                         });
                         r.AutoItem().AlignRight().Column(c2 =>
                         {
@@ -195,7 +195,7 @@ public class PdfComposer(string fontsDirectory)
 
                 page.Footer().Row(r =>
                 {
-                    r.RelativeItem().Text($"QSPP Manager · Requirement checklist · {m.RequirementRef} · Printing a document does not approve it. Draft/superseded status must remain visible.").FontSize(8).FontColor(Muted);
+                    r.RelativeItem().Text($"Hugh's QSPP Manager · Requirement checklist · {m.RequirementRef} · Printing a document does not approve it. Draft/superseded status must remain visible.").FontSize(8).FontColor(Muted);
                     r.AutoItem().Text(t =>
                     {
                         t.Span("Page ").FontSize(8).FontColor(Muted);

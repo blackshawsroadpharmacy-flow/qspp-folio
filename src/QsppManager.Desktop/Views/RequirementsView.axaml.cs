@@ -68,7 +68,7 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
             _items.Add(new RequirementItem(r));
         }
         ReqList.ItemsSource = _items;
-        CountLabel.Text = $"{_items.Count} requirements in the imported corpus";
+        CountLabel.Text = $"{_items.Count} requirement{(_items.Count == 1 ? "" : "s")} in the imported corpus";
     }
 
     private void LoadDetail(Guid id)
@@ -167,7 +167,7 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
 
     private Control OverviewBody(RequirementDetail d)
     {
-        var st = new StackPanel { Spacing = 8 };
+        var st = new StackPanel { Spacing = 10 };
         st.Children.Add(new TextBlock { Text = "What the source requires (verbatim excerpt)", Classes = { "label" } });
         st.Children.Add(new TextBox
         {
@@ -199,11 +199,11 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
             Reload();
         };
         st.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { combo, apply } });
-        st.Children.Add(reason);
+        st.Children.Add(Ui.FormField("REASON FOR THE DECISION", reason));
 
         st.Children.Add(new TextBlock { Text = "Next action", Classes = { "h3" } });
         var next = new TextBox { Text = d.State.NextAction, Watermark = "What must happen next, and why it matters" };
-        st.Children.Add(next);
+        st.Children.Add(Ui.FormField("NEXT ACTION", next));
         var savenext = new Button { Content = "Save next action", Height = 32 };
         savenext.Click += (_, _) => { var r = App.Workspace.SetNextAction(d.Requirement.Id, next.Text ?? "", App.Session!); ShowResult(r.Ok ? "Next action saved." : r.Error); Reload(); };
         st.Children.Add(savenext);

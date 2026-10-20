@@ -18,6 +18,7 @@
          Avalonia blob so avares://QsppManager.Desktop/Assets/... URIs resolve. -->
     <AvaloniaResource Include="../../assets/fonts/*.ttf" Link="Assets/Fonts/%(Filename)%(Extension)" />
     <AvaloniaResource Include="../../assets/icons/*.svg" Link="Assets/Icons/%(Filename)%(Extension)" />
+    <AvaloniaResource Include="../../assets/art/HughLogo.png" Link="Assets/Art/HughLogo.png" />
   </ItemGroup>
 
   <ItemGroup>

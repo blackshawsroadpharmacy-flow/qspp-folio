@@ -157,6 +157,18 @@ public static class Ui
         return sp;
     }
 
+    /// <summary>A small-caps label above its field with breathing room. Use wherever a
+    /// labelled input is built by hand — a bare `StackPanel { labels + field }` has no
+    /// spacing and reads cramped (the mistake seen across v1 dialogs); every labelled
+    /// field in the app must go through this so the rhythm stays consistent.</summary>
+    public static StackPanel FormField(string label, Control field)
+    {
+        var sp = new StackPanel { Spacing = 6 };
+        sp.Children.Add(Ui.Label(label));
+        sp.Children.Add(field);
+        return sp;
+    }
+
     public static Grid FormGrid(int labelWidth, params (string label, Control field)[] rows)
     {
         var g = new Avalonia.Controls.Grid

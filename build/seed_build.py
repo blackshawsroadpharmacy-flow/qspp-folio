@@ -1,4 +1,4 @@
-# Build seed corpus JSON for the QSPP Manager app (Milestone-1 seed data).
+# Build seed corpus JSON for the Hugh's QSPP Manager app (Milestone-1 seed data).
 # Reads ONLY from ~/Projects/qspp-pack (read-only source). Writes into ~/Projects/qspp-manager.
 import re, json, hashlib, os, io
 

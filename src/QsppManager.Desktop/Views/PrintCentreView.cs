@@ -69,7 +69,7 @@ public partial class PrintCentreView : UserControl
             b.Click += (_, _) => { LoadPrinters(); _resultBar.Text = ""; };
         }));
         printerRow.Children.Add(_duplex);
-        printerRow.Children.Add(new StackPanel { Children = { new TextBlock { Classes = { "label" }, Text = "COPIES" }, _copies } });
+        printerRow.Children.Add(Ui.FormField("COPIES", _copies));
         sp.Children.Add(Ui.Section("Printer", printerRow));
 
         sp.Children.Add(_resultBar);

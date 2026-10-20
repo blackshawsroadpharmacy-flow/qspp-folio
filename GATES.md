@@ -1,4 +1,4 @@
-# QSPP Manager — M5 macOS modernization: acceptance gates
+# Hugh's QSPP Manager — M5 macOS modernization: acceptance gates
 
 Working repo: `/Users/hughn/AI/qspp-manager-omarch/qspp-manager` (branch `master`).
 Dev data dir (disposable): `$HOME/.hermes/cache/scratch/qspp-dev-a`. Pack: `/Users/hughn/AI/qspp-manager-omarch/vendor/qspp-pack`.

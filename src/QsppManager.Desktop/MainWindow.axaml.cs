@@ -212,13 +212,13 @@ public partial class MainWindow : Window
     private void BuildNativeMenu()
     {
         var appMenu = new NativeMenu();
-        appMenu.Items.Add(Mi("About QSPP Manager", ShowAbout));
+        appMenu.Items.Add(Mi("About Hugh's QSPP Manager", ShowAbout));
         appMenu.Items.Add(Sep());
         appMenu.Items.Add(Mi("Settings…", Key.OemComma, KeyModifiers.Meta, () => _shell.Navigate(ShellPage.Settings)));
         appMenu.Items.Add(Sep());
-        appMenu.Items.Add(Mi("Hide QSPP Manager", Key.H, KeyModifiers.Meta, Hide));
+        appMenu.Items.Add(Mi("Hide Hugh's QSPP Manager", Key.H, KeyModifiers.Meta, Hide));
         appMenu.Items.Add(Sep());
-        appMenu.Items.Add(Mi("Quit QSPP Manager", Key.Q, KeyModifiers.Meta, ShutdownApp));
+        appMenu.Items.Add(Mi("Quit Hugh's QSPP Manager", Key.Q, KeyModifiers.Meta, ShutdownApp));
 
         var fileMenu = new NativeMenu();
         fileMenu.Items.Add(Mi("Print…", Key.P, KeyModifiers.Meta, _shell.RequestPrint));
@@ -269,7 +269,7 @@ public partial class MainWindow : Window
         helpMenu.Items.Add(Mi("Go to Library", () => _shell.Navigate(ShellPage.Library)));
 
         var root = new NativeMenu();
-        root.Items.Add(new NativeMenuItem("QSPP Manager") { Menu = appMenu });
+        root.Items.Add(new NativeMenuItem("Hugh's QSPP Manager") { Menu = appMenu });
         root.Items.Add(new NativeMenuItem("File") { Menu = fileMenu });
         root.Items.Add(new NativeMenuItem("Edit") { Menu = editMenu });
         root.Items.Add(new NativeMenuItem("View") { Menu = viewMenu });
@@ -393,32 +393,57 @@ public partial class MainWindow : Window
 
     // ==================== about ====================
 
+    /// <summary>Decode an embedded (avares://) image asset, downscaled to `width` px.</summary>
+    private static Avalonia.Media.Imaging.Bitmap LoadEmbeddedImage(string uri, int width = 256)
+    {
+        using var s = Avalonia.Platform.AssetLoader.Open(new Uri(uri));
+        return Avalonia.Media.Imaging.Bitmap.DecodeToWidth(s, width);
+    }
+
     private void ShowAbout()
     {
         var win = new Window
         {
-            Title = "About QSPP Manager",
+            Title = "About Hugh's QSPP Manager",
             Width = 480,
             SizeToContent = SizeToContent.Height,
             SystemDecorations = Avalonia.Controls.WindowDecorations.Full,
         };
 
-        var stack = new StackPanel { Margin = new Thickness(24) };
-        stack.Children.Add(new TextBlock
+        // Avatar mark: circular crop of the client logo with the brand-green keyline.
+        var avatar = new Avalonia.Controls.Image
         {
-            Text = "QSPP Manager",
+            Source = LoadEmbeddedImage("avares://QsppManager.Desktop/Assets/Art/HughLogo.png"),
+            Width = 64, Height = 64,
+        };
+        var avatarRing = new Avalonia.Controls.Border
+        {
+            Width = 64, Height = 64, CornerRadius = new CornerRadius(32),
+            ClipToBounds = true, BorderBrush = Helpers.Brush("Brush.Green"), BorderThickness = new Thickness(2),
+            Child = avatar,
+        };
+
+        var header = new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 12, Margin = new Thickness(0, 0, 0, 16) };
+        header.Children.Add(avatarRing);
+        var headerText = new StackPanel { VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center };
+        headerText.Children.Add(new TextBlock
+        {
+            Text = "Hugh's QSPP Manager",
             FontWeight = FontWeight.SemiBold,
             FontSize = 21,
             Margin = new Thickness(0, 0, 0, 4),
         });
         var ver = typeof(MainWindow).Assembly.GetName().Version?.ToString(3) ?? "0.0";
-        stack.Children.Add(new TextBlock
+        headerText.Children.Add(new TextBlock
         {
             Text = $"Version {ver} · M5 (macOS refinement)",
             FontSize = 11.5,
             Foreground = Helpers.Brush("Brush.Muted"),
-            Margin = new Thickness(0, 0, 0, 16),
         });
+        header.Children.Add(headerText);
+
+        var stack = new StackPanel { Margin = new Thickness(24) };
+        stack.Children.Add(header);
         stack.Children.Add(Ui.InfoLine("Data folder", AppData.Root));
         stack.Children.Add(Ui.InfoLine("Sources pack", SeedImporter.PackRoot() ?? "(pack not found — set it in Settings)"));
         stack.Children.Add(new TextBlock
@@ -429,7 +454,7 @@ public partial class MainWindow : Window
         });
         stack.Children.Add(new TextBlock
         {
-            Text = "QSPP Manager is an internal compliance workspace for the Victorian Quality Service Pharmacy Program (QSPP). Program documents belong to the Pharmacy Guild of Australia; requirements shown here are working aids, not the source text.",
+            Text = "Hugh's QSPP Manager is an internal compliance workspace for the Victorian Quality Service Pharmacy Program (QSPP). Program documents belong to the Pharmacy Guild of Australia; requirements shown here are working aids, not the source text.",
             FontSize = 11.5, Foreground = Helpers.Brush("Brush.Muted"),
             Margin = new Thickness(0, 8, 0, 16), TextWrapping = TextWrapping.Wrap,
         });

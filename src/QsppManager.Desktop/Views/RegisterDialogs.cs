@@ -28,7 +28,7 @@ public abstract class RegisterDialogBase : Window
         save.Click += (_, _) => { if (OnSave(message)) { _tcs.TrySetResult(true); Close(); } };
         cancel.Click += (_, _) => { _tcs.TrySetResult(false); Close(); };
 
-        Content = new StackPanel { Margin = new(20), Spacing = 10, Children =
+        Content = new StackPanel { Margin = new(20), Spacing = 12, Children =
         {
             new TextBlock { Classes = { "h3" }, Text = title },
             BuildBody(),
@@ -59,23 +59,23 @@ public sealed class ScheduleDialog : RegisterDialogBase
     public DateOnly Anchor = DateOnly.FromDateTime(DateTime.Today);
     public Guid AssignedTo;
 
-    private readonly TextBox _title = new() { Watermark = "Schedule title (required)" };
-    private readonly TextBox _details = new() { Watermark = "What to do each time (carried onto every occurrence)", AcceptsReturn = true, MinHeight = 60, TextWrapping = TextWrapping.Wrap };
+    private readonly TextBox _title = new() { Watermark = "e.g. Fridge temperature checks, cleaning log" };
+    private readonly TextBox _details = new() { Watermark = "Carried onto every occurrence", AcceptsReturn = true, MinHeight = 60, TextWrapping = TextWrapping.Wrap };
     private readonly ComboBox _cadence = new() { SelectedIndex = 2, MinWidth = 170, ItemsSource = new[] { "Weekly", "Fortnightly", "Monthly", "Quarterly", "Yearly", "Custom days" } };
     private readonly TextBox _custom = new() { Text = "30", MinWidth = 90 };
     private readonly DatePicker _anchor = new() { SelectedDate = DateTimeOffset.Now };
 
     public ScheduleDialog() : base("New recurring schedule") { }
 
-    protected override Control BuildBody() => new StackPanel { Spacing = 8, Children =
+    protected override Control BuildBody() => new StackPanel { Spacing = 12, Children =
     {
-        _title,
-        _details,
-        new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, Children =
+        Ui.FormField("SCHEDULE TITLE", _title),
+        Ui.FormField("WHAT TO DO EACH TIME", _details),
+        new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, Children =
         {
-            new StackPanel { Children = { new TextBlock { Classes = { "label" }, Text = "CADENCE" }, _cadence } },
-            new StackPanel { Children = { new TextBlock { Classes = { "label" }, Text = "CUSTOM DAYS" }, _custom } },
-            new StackPanel { Children = { new TextBlock { Classes = { "label" }, Text = "FIRST DUE" }, _anchor } },
+            Ui.FormField("CADENCE", _cadence),
+            Ui.FormField("CUSTOM DAYS", _custom),
+            Ui.FormField("FIRST DUE", _anchor),
         } },
         new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
             Text = "Occurrence dates keep the anchor day through shorter months (31 Jan monthly → 28/29 Feb → 31 Mar). The task is assigned to you; reassign in Tasks. Generation is idempotent — reopening the app never duplicates." },
@@ -113,20 +113,20 @@ public sealed class IncidentDialog : RegisterDialogBase
 
     private readonly DatePicker _date = new() { SelectedDate = DateTimeOffset.Now };
     private readonly TextBox _severity = new() { Watermark = "Severity (free text — the register doesn't invent a taxonomy)" };
-    private readonly TextBox _desc = new() { Watermark = "What happened", AcceptsReturn = true, MinHeight = 90, TextWrapping = TextWrapping.Wrap };
-    private readonly TextBox _action = new() { Watermark = "Immediate action taken (optional now; required to close)", AcceptsReturn = true, MinHeight = 60, TextWrapping = TextWrapping.Wrap };
+    private readonly TextBox _desc = new() { Watermark = "Describe what happened as it occurred", AcceptsReturn = true, MinHeight = 90, TextWrapping = TextWrapping.Wrap };
+    private readonly TextBox _action = new() { Watermark = "Optional now (required to close)", AcceptsReturn = true, MinHeight = 60, TextWrapping = TextWrapping.Wrap };
 
     public IncidentDialog() : base("Report incident") { }
 
-    protected override Control BuildBody() => new StackPanel { Spacing = 8, Children =
+    protected override Control BuildBody() => new StackPanel { Spacing = 12, Children =
     {
-        new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, Children =
+        new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, Children =
         {
-            new StackPanel { Children = { new TextBlock { Classes = { "label" }, Text = "DATE" }, _date } },
-            new StackPanel { Children = { new TextBlock { Classes = { "label" }, Text = "SEVERITY (FREE TEXT)" }, _severity, } },
+            Ui.FormField("DATE", _date),
+            Ui.FormField("SEVERITY (FREE TEXT)", _severity),
         } },
-        _desc,
-        _action,
+        Ui.FormField("WHAT HAPPENED", _desc),
+        Ui.FormField("IMMEDIATE ACTION TAKEN", _action),
         new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
             Text = "The record links to requirement 1.1.2.4 (incidents reported to a person responsible). Closing requires a corrective action." },
     } };
@@ -154,25 +154,24 @@ public sealed class PotencyDialog : RegisterDialogBase
     private readonly TextBox _drug = new() { Watermark = "Drug tested (e.g. hydrocortisone)" };
     private readonly TextBox _form = new() { Watermark = "Dosage form (e.g. cream, suspension, ointment)" };
     private readonly DatePicker _date = new() { SelectedDate = DateTimeOffset.Now };
-    private readonly TextBox _outcome = new() { Watermark = "Outcome / action (pass, fail + what was done)" };
+    private readonly TextBox _outcome = new() { Watermark = "pass, fail + what was done" };
 
     public PotencyDialog() : base("Record potency testing") { }
 
-    protected override Control BuildBody() => new StackPanel { Spacing = 8, Children =
+    protected override Control BuildBody() => new StackPanel { Spacing = 12, Children =
     {
-        _staff,
-        new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, Children =
+        new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, Children =
         {
-            new StackPanel { Children = { new TextBlock { Classes = { "label" }, Text = "PERSON" }, _staff } },
-            new StackPanel { Children = { new TextBlock { Classes = { "label" }, Text = "ROLE" }, _role } },
+            Ui.FormField("PERSON", _staff),
+            Ui.FormField("ROLE", _role),
         } },
-        new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, Children =
+        new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, Children =
         {
-            new StackPanel { Children = { new TextBlock { Classes = { "label" }, Text = "DRUG" }, _drug } },
-            new StackPanel { Children = { new TextBlock { Classes = { "label" }, Text = "DOSAGE FORM" }, _form } },
-            new StackPanel { Children = { new TextBlock { Classes = { "label" }, Text = "TESTED ON" }, _date } },
+            Ui.FormField("DRUG", _drug),
+            Ui.FormField("DOSAGE FORM", _form),
+            Ui.FormField("TESTED ON", _date),
         } },
-        _outcome,
+        Ui.FormField("OUTCOME / ACTION", _outcome),
         new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
             Text = "Add staff first under People & training. The cadence interpretation stays open (ISSUE-POTENCY): the app tracks per-person coverage — two different drugs across two different dosage forms per year is the conservative planning reading, not a settled rule." },
     } };
@@ -205,11 +204,11 @@ public sealed class TrainingDialog : RegisterDialogBase
 
     public TrainingDialog() : base("Record S2/S3 training") { }
 
-    protected override Control BuildBody() => new StackPanel { Spacing = 8, Children =
+    protected override Control BuildBody() => new StackPanel { Spacing = 12, Children =
     {
-        new StackPanel { Children = { new TextBlock { Classes = { "label" }, Text = "FIRST SCHEDULE 2/3 SUPPLY DATE" }, _supply } },
-        new StackPanel { Children = { new TextBlock { Classes = { "label" }, Text = "INITIAL TRAINING COMPLETED" }, _initial } },
-        new StackPanel { Children = { new TextBlock { Classes = { "label" }, Text = "REFRESHER COMPLETED" }, _refresher } },
+        Ui.FormField("FIRST SCHEDULE 2/3 SUPPLY DATE", _supply),
+        Ui.FormField("INITIAL TRAINING COMPLETED", _initial),
+        Ui.FormField("REFRESHER COMPLETED", _refresher),
         new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
             Text = "Fill only dates you hold evidence for; a picker left untouched keeps its current value. Status lines update immediately." },
     } };

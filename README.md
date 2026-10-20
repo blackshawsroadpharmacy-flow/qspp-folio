@@ -1,4 +1,4 @@
-# QSPP Manager
+# Hugh's QSPP Manager
 
 Desktop companion for Australian community pharmacies working through the
 Quality & Safety Pharmacy Program (QSPP) — understand the requirements, prepare
@@ -39,9 +39,9 @@ Data lives in `~/Library/Application Support/QsppManager/` by default on macOS;
 ## Packaged app
 
 ```bash
-scripts/package-app.sh          # → dist/QSPP Manager.app (osx-arm64, self-contained)
+scripts/package-app.sh          # → dist/Hugh's QSPP Manager.app (osx-arm64, self-contained)
 python3 scripts/make-icon.py    # regenerates assets/art/QsppManager.icns (needs Pillow)
-open "dist/QSPP Manager.app"
+open "dist/Hugh's QSPP Manager.app"
 ```
 
 The bundle embeds the verified corpus pack at `Contents/Resources/qspp-pack`,

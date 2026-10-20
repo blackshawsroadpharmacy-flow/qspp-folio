@@ -84,19 +84,19 @@ public sealed class EvidenceDialog : Window
         Content = new StackPanel
         {
             Margin = new(20),
-            Spacing = 10,
+            Spacing = 12,
             Children =
             {
                 new TextBlock { Classes = { "h3" }, Text = "Attach evidence" },
                 _title,
-                new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, Children = { _kind, _scope } },
+                new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, Children = { _kind, _scope } },
                 new StackPanel
                 {
-                    Orientation = Orientation.Horizontal, Spacing = 10,
+                    Orientation = Orientation.Horizontal, Spacing = 12,
                     Children =
                     {
-                        new StackPanel { Children = { new TextBlock { Classes = { "label" }, Text = "EFFECTIVE FROM" }, _from } },
-                        new StackPanel { Children = { new TextBlock { Classes = { "label" }, Text = "EFFECTIVE TO (OPTIONAL)" }, _to } },
+                        Ui.FormField("EFFECTIVE FROM", _from),
+                        Ui.FormField("EFFECTIVE TO (OPTIONAL)", _to),
                     },
                 },
                 _patientData,
@@ -163,7 +163,7 @@ public sealed class EvidencePickerDialog : Window
         };
         _message.Text = "Retired (superseded) items are excluded by the service; drafts need a rationale when linked.";
 
-        Content = new StackPanel { Margin = new(16), Spacing = 10, Children = { new TextBlock { Classes = { "h3" }, Text = "Choose an evidence item" }, _grid, _message, new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Spacing = 8, Children = { cancel, ok } } } };
+        Content = new StackPanel { Margin = new(20), Spacing = 12, Children = { new TextBlock { Classes = { "h3" }, Text = "Choose an evidence item" }, _grid, _message, new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Spacing = 8, Children = { cancel, ok } } } };
     }
 
     public EvidenceItem? SelectedItem => _tcs.Task.Status == TaskStatus.RanToCompletion ? _tcs.Task.Result : null;
@@ -204,12 +204,12 @@ public sealed class TaskDialog : Window
 
         Content = new StackPanel
         {
-            Margin = new(20), Spacing = 10,
+            Margin = new(20), Spacing = 12,
             Children =
             {
                 new TextBlock { Classes = { "h3" }, Text = "Create task" },
                 _title, _details,
-                new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, Children = { _owner, _priority, new StackPanel { Children = { new TextBlock { Classes = { "label" }, Text = "DUE (OPTIONAL)" }, _due } } } },
+                new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, Children = { _owner, _priority, Ui.FormField("DUE (OPTIONAL)", _due) } },
                 _message,
                 new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Spacing = 8, Children = { cancelTask, create } },
             },
@@ -232,7 +232,7 @@ public sealed class CompleteTaskDialog : Window
             if (res.Ok) Close();
             else message.Text = res.Error;
         };
-        Content = new StackPanel { Margin = new(20), Spacing = 10, Children = { new TextBlock { Classes = { "h3" }, Text = "Complete task" }, note, message, done } };
+        Content = new StackPanel { Margin = new(20), Spacing = 12, Children = { new TextBlock { Classes = { "h3" }, Text = "Complete task" }, note, message, done } };
     }
 }
 

@@ -54,24 +54,24 @@ public partial class SettingsView : UserControl
         sp.Children.Add(new TextBlock { Classes = { "h1" }, Text = "Settings" });
 
         // Pharmacy profile
-        var profile = new StackPanel { Spacing = 12 };
-        profile.Children.Add(_name);
-        profile.Children.Add(_jur);
+        var profile = new StackPanel { Spacing = 14 };
+        profile.Children.Add(Ui.FormField("PHARMACY NAME", _name));
+        profile.Children.Add(Ui.FormField("JURISDICTION · TIME ZONE", _jur));
         var flags = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 16 };
         flags.Children.Add(_complex); flags.Children.Add(_sterile); flags.Children.Add(_prescribing); flags.Children.Add(_indirect);
         profile.Children.Add(flags);
         var dates = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 16,
             Children =
             {
-                new StackPanel { Children = { new TextBlock { Classes = { "label" }, Text = "CYCLE START (OPTIONAL)" }, _cycleStart } },
-                new StackPanel { Children = { new TextBlock { Classes = { "label" }, Text = "ACCREDITATION EXPIRY (OPTIONAL)" }, _expiry } },
-                new StackPanel { Children = { new TextBlock { Classes = { "label" }, Text = "ONSITE ASSESSMENT DATE (OPTIONAL)" }, _onsite } },
+                Ui.FormField("CYCLE START (OPTIONAL)", _cycleStart),
+                Ui.FormField("ACCREDITATION EXPIRY (OPTIONAL)", _expiry),
+                Ui.FormField("ONSITE ASSESSMENT DATE (OPTIONAL)", _onsite),
             } };
         profile.Children.Add(dates);
         var save = new Button { Content = "Save profile", Classes = { "primary" }, Height = 36 };
         save.Click += (_, _) => SaveProfile();
         profile.Children.Add(save);
-        profile.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap, Text = "Leave dates blank if unknown — QSPP Manager will not invent a deadline; it lists obligations that do not depend on the missing date." });
+        profile.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap, Text = "Leave dates blank if unknown — Hugh's QSPP Manager will not invent a deadline; it lists obligations that do not depend on the missing date." });
         sp.Children.Add(Ui.Section("Pharmacy profile", profile));
 
         // Deadlines
@@ -211,7 +211,7 @@ public partial class SettingsView : UserControl
         if (tl == null) return;
         var files = await tl.StorageProvider.OpenFilePickerAsync(new Avalonia.Platform.Storage.FilePickerOpenOptions
         {
-            AllowMultiple = false, Title = "Choose a QSPP Manager backup (.zip)",
+            AllowMultiple = false, Title = "Choose a Hugh's QSPP Manager backup (.zip)",
             FileTypeFilter = [new Avalonia.Platform.Storage.FilePickerFileType("QSPP backup") { Patterns = ["*.zip"] }],
         });
         if (files.Count == 0) return;
