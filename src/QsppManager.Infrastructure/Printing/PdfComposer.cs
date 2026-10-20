@@ -230,6 +230,153 @@ public class PdfComposer(string fontsDirectory)
         }
     }
 
+    /// <summary>M7: the remote assessment response pack — one A4 page-block per REM
+    /// evidence request: verbatim ask, plain English, expected evidence, the recorded
+    /// response notes and next action, linked evidence with review states, sign-off.</summary>
+    public record RoundPackModel(
+        string PharmacyName,
+        string RoundTitle,        // e.g. QCPP remote assessment portal — surveillance round
+        string RoundSource,       // source file + version of the questionnaire
+        string SummaryLine,       // counts, e.g. "19 items · 4 with evidence · 1 verified"
+        IReadOnlyList<QsppManager.Infrastructure.Services.QsppWorkspace.RoundPackItem> Items,
+        DateTime PrintedAtUtc);
+
+    public byte[] ComposeRoundPack(RoundPackModel m)
+    {
+        EnsureFonts();
+        var font = _knownFamilies.Contains("Host Grotesk") ? "Host Grotesk" : "Lato";
+        var mono = _knownFamilies.Contains("JetBrains Mono") ? "JetBrains Mono" : font;
+
+        return Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+                page.Margin(48);
+                page.PageColor(Colors.White);
+                page.DefaultTextStyle(x => x.FontFamily(font).FontSize(10.5f).FontColor(Ink).LineHeight(1.35f));
+
+                page.Header().Column(col =>
+                {
+                    col.Item().Row(r =>
+                    {
+                        r.RelativeItem().Column(c =>
+                        {
+                            c.Item().Text(m.PharmacyName).FontSize(15).SemiBold();
+                            c.Item().Text("Remote assessment response pack — Hugh's QSPP Manager").FontSize(9).FontColor(Muted);
+                        });
+                        r.AutoItem().AlignRight().Text($"Printed {m.PrintedAtUtc:dd MMM yyyy}").FontColor(Muted).FontSize(9);
+                    });
+                    col.Item().PaddingTop(6).LineHorizontal(1).LineColor(Ink);
+                });
+
+                page.Content().PaddingTop(14).Column(col =>
+                {
+                    col.Spacing(10);
+
+                    col.Item().Text(m.RoundTitle).SemiBold().FontSize(13);
+                    col.Item().Text($"Source: {m.RoundSource}").FontSize(8.5f).FontColor(Muted);
+                    col.Item().Text(m.SummaryLine).FontSize(10);
+                    col.Item().Text("Prepared to work through the portal's evidence requests one by one. Printing a document does not approve it; states shown here are the app's recorded states.")
+                        .FontSize(9).FontColor(Muted);
+
+                    foreach (var item in m.Items)
+                    {
+                        col.Item().PaddingTop(10).Column(sec =>
+                        {
+                            sec.Spacing(5);
+                            sec.Item().Row(r =>
+                            {
+                                r.AutoItem().Text(item.Ref).FontFamily(mono).FontSize(10).SemiBold();
+                                r.RelativeItem().PaddingLeft(10).Text(item.Title).SemiBold().FontSize(11.5f);
+                            });
+                            sec.Item().Text(t =>
+                            {
+                                t.Span("Readiness: ").FontColor(Muted);
+                                t.Span(EnumLabel(item.Readiness)).SemiBold();
+                                t.Span("   ·   Applicability: ").FontColor(Muted);
+                                t.Span(EnumLabel(item.Applicability));
+                                if (!string.IsNullOrWhiteSpace(item.OwnerName))
+                                {
+                                    t.Span("   ·   Owner: ").FontColor(Muted);
+                                    t.Span(item.OwnerName);
+                                }
+                            });
+                            if (!string.IsNullOrWhiteSpace(item.Wording))
+                                sec.Item().Text(item.Wording).FontSize(9.5f).FontColor(Muted);
+                            if (!string.IsNullOrWhiteSpace(item.PlainSummary))
+                                sec.Item().Text(t => { t.Span("Plain English: ").FontColor(Muted); t.Span(item.PlainSummary); });
+                            if (item.ExpectedExamples.Count > 0)
+                                sec.Item().Column(c =>
+                                {
+                                    c.Item().Text("Expected evidence (from the source)").SemiBold().FontSize(9.5f);
+                                    foreach (var e in item.ExpectedExamples)
+                                        c.Item().Text((e.Mandatory ? "• required: " : "• example: ") + e.Text).FontSize(9);
+                                });
+                            if (!string.IsNullOrWhiteSpace(item.NextAction))
+                                sec.Item().Text(t => { t.Span("Next action: ").FontColor(Muted); t.Span(item.NextAction); });
+                            if (!string.IsNullOrWhiteSpace(item.Notes))
+                                sec.Item().Text(t => { t.Span("Recorded notes: ").FontColor(Muted); t.Span(item.Notes); });
+
+                            if (item.Evidence.Count > 0)
+                            {
+                                sec.Item().PaddingTop(2).Table(table =>
+                                {
+                                    table.ColumnsDefinition(columns =>
+                                    {
+                                        columns.RelativeColumn(2.4f);
+                                        columns.RelativeColumn(1.6f);
+                                        columns.RelativeColumn(1.2f);
+                                        columns.RelativeColumn(1.1f);
+                                    });
+                                    table.Header(h =>
+                                    {
+                                        h.Cell().Text("Linked evidence").SemiBold().FontSize(9.5f);
+                                        h.Cell().Text("File").SemiBold().FontSize(9.5f);
+                                        h.Cell().Text("Effective").SemiBold().FontSize(9.5f);
+                                        h.Cell().Text("Review").SemiBold().FontSize(9.5f);
+                                    });
+                                    foreach (var e in item.Evidence)
+                                    {
+                                        table.Cell().Text(e.EvidenceTitle).FontSize(9);
+                                        table.Cell().Text(e.FileName).FontSize(9);
+                                        table.Cell().Text(e.Effective).FontSize(9);
+                                        table.Cell().Text(EnumLabel(e.ReviewState)).FontSize(9);
+                                    }
+                                });
+                            }
+                            else
+                            {
+                                sec.Item().Text("No evidence linked yet.").FontSize(9).FontColor(Muted);
+                            }
+                            sec.Item().PaddingTop(2).LineHorizontal(0.6f).LineColor(Muted);
+                        });
+                    }
+
+                    col.Item().PaddingTop(18).Row(sig =>
+                    {
+                        sig.RelativeItem().Text("Prepared by (name and signature): ____________________________________");
+                        sig.ConstantItem(24);
+                        sig.AutoItem().Text("Date: ____ / ____ / ________");
+                    });
+                });
+
+                page.Footer().Row(r =>
+                {
+                    r.RelativeItem().Text("Hugh's QSPP Manager · Remote assessment response pack · Printing a document does not approve it. Draft/superseded status remains visible.")
+                        .FontSize(8).FontColor(Muted);
+                    r.AutoItem().Text(t =>
+                    {
+                        t.Span("Page ").FontSize(8).FontColor(Muted);
+                        t.CurrentPageNumber().FontSize(8);
+                        t.Span(" of ").FontSize(8).FontColor(Muted);
+                        t.TotalPages().FontSize(8).FontColor(Muted);
+                    });
+                });
+            });
+        }).GeneratePdf();
+    }
+
     private static string EnumLabel(string raw) => raw switch
     {
         "ManagerVerified" => "Manager verified",

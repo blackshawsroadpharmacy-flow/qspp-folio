@@ -33,6 +33,14 @@
         </StackPanel>
       </StackPanel>
 
+      <!-- M7: surveillance round — the portal's October 2026 evidence requests -->
+      <StackPanel x:Name="RoundCard" Spacing="4">
+        <TextBlock Classes="h3">Surveillance round</TextBlock>
+        <TextBlock Text="{Binding RoundLead}" TextWrapping="Wrap" />
+        <TextBlock Classes="small" Text="{Binding RoundNextEvent}" />
+        <Button Classes="tertiary" Content="Work through the items" Padding="0" Height="26" Command="{Binding OpenRoundCommand}" />
+      </StackPanel>
+
       <!-- Overdue -->
       <StackPanel>
         <TextBlock Classes="h3">Overdue tasks</TextBlock>

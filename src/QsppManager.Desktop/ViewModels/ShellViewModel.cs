@@ -258,6 +258,15 @@ public class ShellViewModel : ViewModelBase
         }
     }
 
+    /// <summary>M7: deep-link from Today's surveillance card — opens Requirements with
+    /// the search pre-filtered to the round's items. DD-29: navigation is synchronous,
+    /// so the filter applies as soon as the Requirements pane is the current page.</summary>
+    public void OpenRequirementsFiltered(string filterText)
+    {
+        if (SelectedNav?.Page != ShellPage.Requirements) SelectedNav = NavItems.FirstOrDefault(n => n.Page == ShellPage.Requirements);
+        if (CurrentPage is RequirementsView rv) rv.SetFilter(filterText);
+    }
+
     private void RunSearch()
     {
         SearchResults.Clear();

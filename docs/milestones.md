@@ -111,6 +111,47 @@ chips as overwhelming. Shipped, all live-verified:
 Tests: 74/74 green (3 new `OwnerBulkAssignTests`: bulk claims all + single audit
 line, independent re-assignment after bulk, read-only refusal).
 
+## M7 · surveillance round response workflow · **CODE COMPLETE (verified 20 Oct 2026)**
+
+### What shipped
+- **Today card "Surveillance round"** (hidden when no REM items): the real counts
+  (`{items} evidence requests are open with the QCPP remote assessment portal. {n}
+  have evidence attached, {n} are in progress, {n} verified.`) plus the nearest
+  PLANNED assessment event as the round's response window if one is recorded.
+  "Work through the items" deep-links to Requirements with the search pre-filtered
+  to `REM-` (`ShellViewModel.OpenRequirementsFiltered`).
+- **Round brief in code**: `QsppWorkspace.SurveillanceRound()` (counts + next planned
+  event) and `SurveillanceRoundPackItems()` (per-REM rows built from the same read
+  paths as the UI, so the printed pack can never disagree with the app).
+- **Print centre → "Remote assessment round pack"**: one click composes every REM
+  evidence request into one dated A4 PDF — verbatim ask, plain English, expected
+  evidence (required vs example), recorded notes and next action, readiness/
+  applicability/owner line, linked evidence table with review states, sign-off
+  block, honest footer ("Printing a document does not approve it"). Recorded as a
+  `RemoteRoundPack` print job; preview + "Send to printer" + "Open PDF externally"
+  work on the last rendered file as usual.
+- **Fixed en route — latent Today bug**: `TodayViewModel` had no change
+  notification, so every scalar card (overdue count, verified share) bound its
+  pre-Refresh default ("0 of 0"). Now derives from `ViewModelBase` with
+  `SetProperty` — the M6.1-verified counts finally display as data arrives
+  (visible live: MANAGER-VERIFIED jumped to "0 of 470" as soon as refresh moved).
+- **Fixed en route — thread affinity**: the round pack read `_printer/_copies/
+  _duplex` inside `Task.Run`, throwing "calling thread cannot access this object";
+  all UI reads now happen before the background compose.
+
+Tests: 77/77 green (3 new `SurveillanceRoundTests`: summary counts match real
+states + finds the planned event; zero-REM rounds are empty; round pack composes a
+real >10 KB PDF with zero audit/state side effects).
+
+### Verification record
+- Live: dev app relaunch, sign-in, Today card shows 19 requests / 0 with evidence /
+  0 in progress / 0 verified + "No planned assessment event recorded."; deep-link
+  lands on Requirements with `REM-` filter showing exactly 19 rows; round pack
+  rendered "19 REM items in one PDF" and the exact PDF (6 pages, 153 KB) opens in
+  macOS Preview; page 1 visually checked (header, summary, item blocks, bullets).
+- sqlite: one `PrintJobs` row `RemoteRoundPack | Remote assessment round pack — 19
+  items | State=Prepared`; zero new requirement/audit writes from rendering.
+
 ## M5 — product finish (macOS) · **CODE COMPLETE (verified 20 Oct 2026)**
 
 Owner-scoped to the macOS (osx-arm64) polish pass: design system, native shell,

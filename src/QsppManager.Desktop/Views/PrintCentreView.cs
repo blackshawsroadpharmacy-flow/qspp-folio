@@ -72,6 +72,19 @@ public partial class PrintCentreView : UserControl
         printerRow.Children.Add(Ui.FormField("COPIES", _copies));
         sp.Children.Add(Ui.Section("Printer", printerRow));
 
+        // ---- remote assessment round pack (M7) ----
+        // One button renders the whole surveillance round as a response pack: every REM
+        // item with its verbatim ask, recorded response and linked evidence, ready to
+        // email or print for the portal round. Independent of the Document picker above;
+        // "Send to printer" and "Open PDF externally" below work on whatever rendered last.
+        sp.Children.Add(Ui.Section("Remote assessment round pack", Ui.Col(10,
+            Ui.Btn("Render round pack + preview").With(b =>
+            {
+                b.Height = 32;
+                b.Click += async (_, _) => await RenderRoundPackAsync();
+            }),
+            Ui.Small("Composes every REM evidence request from the current surveillance round into one dated PDF: verbatim wording, expected evidence, recorded notes and next actions, linked evidence with review states, and a sign-off block."))));
+
         sp.Children.Add(_resultBar);
 
         var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
@@ -194,6 +207,60 @@ public partial class PrintCentreView : UserControl
         catch (Exception ex)
         {
             _resultBar.Text = $"Rendering failed: {ex.Message}. Nothing was queued and no state was changed.";
+        }
+    }
+
+    /// <summary>M7: render the whole surveillance round as one response-pack PDF.
+    /// Read-only over the workspace (no requirement-state changes); records one print
+    /// job with DocumentKind "RemoteRoundPack", then previews it.</summary>
+    private async Task RenderRoundPackAsync()
+    {
+        if (App.Session == null) { _resultBar.Text = "Sign in first."; return; }
+        var items = App.Workspace.SurveillanceRoundPackItems();
+        if (items.Count == 0) { _resultBar.Text = "No surveillance (REM) requirements imported — nothing to pack."; return; }
+        var round = App.Workspace.SurveillanceRound();
+        var ph = App.Workspace.EnsurePharmacy();
+        var summary = $"{round.Items} items · {round.WithEvidence} with evidence · {round.Verified} verified" +
+            (round.NextEvent is null ? "" : $" · next event: {round.NextEvent}");
+        var printerName = _printer.SelectedItem as string ?? "";   // UI-thread reads BEFORE Task.Run:
+        var copies = (int)_copies.Value;                           // Avalonia controls are thread-affine.
+        var duplex = _duplex.IsChecked == true;
+        var model = new PdfComposer.RoundPackModel(
+            ph.Name,
+            "QCPP remote assessment portal — surveillance round",
+            "vendor questionnaire pack (REM items)",
+            summary,
+            items, DateTime.UtcNow);
+
+        try
+        {
+            await Task.Run(() =>
+            {
+                var bytes = App.Composer.ComposeRoundPack(model);
+                var job = new PrintJob
+                {
+                    DocumentKind = "RemoteRoundPack",
+                    Title = $"Remote assessment round pack — {items.Count} items",
+                    PrinterName = printerName,
+                    Copies = copies,
+                    Duplex = duplex,
+                    State = PrintJobState.Prepared,
+                    ActorUserId = App.Session.UserId,
+                };
+                var rel = $"job-{job.Id}.pdf";
+                job.PdfRelativePath = rel;
+                File.WriteAllBytes(Path.Combine(AppData.PdfDir, rel), bytes);
+                App.Printer.RecordJob(job).GetAwaiter().GetResult();
+                _lastRenderedJob = job.Id;
+                _lastRenderedPdf = Path.Combine(AppData.PdfDir, rel);
+            });
+            _resultBar.Text = $"Round pack rendered: {items.Count} REM items in one PDF. 'Send to printer' submits it through CUPS; 'Open PDF externally' for emailing.";
+            LoadJobs();
+            ShowPreview(App.Printer.RecentJobs(30).First(j => j.Id == _lastRenderedJob));
+        }
+        catch (Exception ex)
+        {
+            _resultBar.Text = $"Round pack rendering failed: {ex.Message}. Nothing was queued and no state was changed.";
         }
     }
 

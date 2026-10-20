@@ -9,15 +9,28 @@ namespace QsppManager.Desktop.ViewModels;
 
 /// <summary>Real persisted briefing: no decorative figures. Every number opens its records;
 /// planning-only dates are labelled, never presented as program deadlines.</summary>
-public class TodayViewModel(ShellViewModel shell, TodayView view)
+public class TodayViewModel(ShellViewModel shell, TodayView view) : ViewModelBase
 {
     public string Greeting => $"Good {(DateTime.Now.Hour < 12 ? "morning" : DateTime.Now.Hour < 17 ? "afternoon" : "evening")}";
     public string SubGreeting => $"{(App.Workspace.EnsurePharmacy().Name)} — here is the accreditation position today, {DateTime.Today:dd MMM yyyy}.";
 
-    public string OverdueCount { get; private set; } = "0";
-    public string AwaitingReviewCount { get; private set; } = "0";
-    public string VerifiedShare { get; private set; } = "0 of 0";
-    public string IssuesCount { get; private set; } = "0";
+    // Scalar bindings on this VM need change notification: Refresh() runs after
+    // DataContext is set, so snapshot-at-attach bindings would keep the "0" defaults.
+    private string _overdueCount = "0";
+    public string OverdueCount { get => _overdueCount; private set => SetProperty(ref _overdueCount, value); }
+    private string _awaitingReviewCount = "0";
+    public string AwaitingReviewCount { get => _awaitingReviewCount; private set => SetProperty(ref _awaitingReviewCount, value); }
+    private string _verifiedShare = "0 of 0";
+    public string VerifiedShare { get => _verifiedShare; private set => SetProperty(ref _verifiedShare, value); }
+    private string _issuesCount = "0";
+    public string IssuesCount { get => _issuesCount; private set => SetProperty(ref _issuesCount, value); }
+
+    // M7: the surveillance round card — real counts from the workspace; hidden when the pharmacy has no REM items.
+    private string _roundLead = "";
+    public string RoundLead { get => _roundLead; private set => SetProperty(ref _roundLead, value); }
+    private string _roundNextEvent = "";
+    public string RoundNextEvent { get => _roundNextEvent; private set => SetProperty(ref _roundNextEvent, value); }
+    public System.Windows.Input.ICommand OpenRoundCommand => new RelayCommand(_ => { view.Refresh(); shell.OpenRequirementsFiltered("REM-"); });
 
     public ObservableCollection<DeadlineRow> Deadlines { get; } = [];
     public ObservableCollection<TaskRow> Overdue { get; } = [];
@@ -61,6 +74,14 @@ public class TodayViewModel(ShellViewModel shell, TodayView view)
 
         var issues = App.Workspace.Issues().Count(i => i.Status != "resolved");
         IssuesCount = issues.ToString();
+
+        var round = App.Workspace.SurveillanceRound();
+        RoundLead = round.Items == 0 ? "" :
+            $"{round.Items} evidence requests are open with the QCPP remote assessment portal. " +
+            $"{round.WithEvidence} have evidence attached, {round.InProgress} are in progress, {round.Verified} verified.";
+        RoundNextEvent = string.IsNullOrWhiteSpace(round.NextEvent) ? "No planned assessment event recorded." : $"Next planned event: {round.NextEvent}";
+        var roundCard = view.FindControl<StackPanel>("RoundCard");
+        if (roundCard is { }) roundCard.IsVisible = round.Items > 0;
 
         Deadlines.Clear();
         foreach (var d in App.Workspace.PharmacyDeadlines())

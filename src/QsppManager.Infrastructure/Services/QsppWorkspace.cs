@@ -835,6 +835,79 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
         return (verified, total);
     }
 
+    /// <summary>M7: the surveillance round brief — real counts over the REM evidence
+    /// requests (RefKind.Surveillance) plus the nearest PLANNED assessment event that
+    /// could carry the round's response window. No invented percentages.</summary>
+    public record RemoteRoundSummary(int Items, int WithEvidence, int InProgress, int Verified, string? NextEvent);
+
+    public RemoteRoundSummary SurveillanceRound()
+    {
+        var ph = EnsurePharmacy();
+        var remIds = db.Requirements.AsNoTracking()
+            .Where(r => r.RefKind == RefKind.Surveillance).Select(r => r.Id).ToList();
+        var states = db.RequirementStates.AsNoTracking()
+            .Where(s => s.PharmacyId == ph.Id && remIds.Contains(s.RequirementId)).ToList();
+        var withEvidence = db.EvidenceLinks.AsNoTracking()
+            .Where(l => remIds.Contains(l.RequirementId) && l.State != LinkState.Superseded)
+            .Select(l => l.RequirementId).Distinct().Count();
+        var openEvent = db.AssessmentEvents.AsNoTracking()
+            .Where(e => e.State == "Planned" && e.ScheduledDate >= DateOnly.FromDateTime(DateTime.Today))
+            .OrderBy(e => e.ScheduledDate).FirstOrDefault();
+        var nextEvent = openEvent is null
+            ? null
+            : $"{openEvent.Kind} · {openEvent.ScheduledDate:dd MMM yyyy}" +
+              (string.IsNullOrWhiteSpace(openEvent.Note) ? "" : $" · {openEvent.Note}");
+        return new RemoteRoundSummary(
+            remIds.Count, withEvidence,
+            states.Count(s => s.Readiness is RequirementReadiness.InProgress or RequirementReadiness.ReadyForReview),
+            states.Count(s => s.Readiness is RequirementReadiness.ManagerVerified or RequirementReadiness.AssessorAccepted),
+            nextEvent);
+    }
+
+    /// <summary>M7: per-REM rows for the response-pack PDF. Same read paths as the UI
+    /// (wording, expected-evidence examples, linked evidence with review states) so the
+    /// printed pack can never disagree with the app. Read-only, no state writes.</summary>
+    public record RoundPackItem(string Ref, string Title, string Wording, string PlainSummary,
+        IReadOnlyList<(string Text, bool Mandatory)> ExpectedExamples,
+        string Notes, string NextAction, string Readiness, string Applicability, string OwnerName,
+        IReadOnlyList<(string EvidenceTitle, string FileName, string Effective, string ReviewState)> Evidence);
+
+    public List<RoundPackItem> SurveillanceRoundPackItems()
+    {
+        var ph = EnsurePharmacy();
+        var rems = db.Requirements.AsNoTracking().Where(r => r.RefKind == RefKind.Surveillance).OrderBy(r => r.Ref).ToList();
+        var remIds = rems.Select(r => r.Id).ToList();
+        var users = db.Users.AsNoTracking().ToDictionary(u => u.Id, u => u.DisplayName);
+        var states = db.RequirementStates.AsNoTracking().Where(s => s.PharmacyId == ph.Id).ToDictionary(s => s.RequirementId);
+        var examples = db.RequirementEvidenceExamples.AsNoTracking().Where(e => remIds.Contains(e.RequirementId)).ToList();
+        var links = db.EvidenceLinks.AsNoTracking().Where(l => remIds.Contains(l.RequirementId) && l.State != LinkState.Superseded)
+            .Join(db.EvidenceItems.AsNoTracking(), l => l.EvidenceItemId, e => e.Id,
+                (l, e) => new { l.RequirementId, Title = e.Title, e.FileName, e.ReviewState, e.EffectiveFrom, e.EffectiveTo })
+            .ToList();
+
+        var rows = new List<RoundPackItem>();
+        foreach (var r in rems)
+        {
+            states.TryGetValue(r.Id, out var st);
+            var itemExamples = examples.Where(e => e.RequirementId == r.Id).OrderBy(e => e.Mandatory ? 0 : 1)
+                .Select(e => (e.Text, e.Mandatory)).ToList();
+            var itemLinks = links.Where(l => l.RequirementId == r.Id)
+                .Select(l => (l.Title, l.FileName ?? "",
+                    (l.EffectiveFrom?.ToString("dd MMM yyyy") ?? "") + (l.EffectiveTo is null ? "" : " → " + l.EffectiveTo?.ToString("dd MMM yyyy")),
+                    l.ReviewState.ToString()))
+                .ToList();
+            rows.Add(new RoundPackItem(
+                r.Ref, r.Title, r.WordingExcerpt, r.PlainSummary ?? "",
+                itemExamples,
+                st?.Notes ?? "", st?.NextAction ?? "",
+                (st?.Readiness ?? RequirementReadiness.NotStarted).ToString(),
+                (st?.Applicability ?? Applicability.Unknown).ToString(),
+                st is { OwnerUnassigned: false } && users.TryGetValue(st.OwnerUserId, out var on) ? on : "",
+                itemLinks));
+        }
+        return rows;
+    }
+
     // ---------- preparation journey (Assessments screen) ----------
     /// <summary>Counts only — the journey view turns them into narrative. No invented
     /// percentages; every number is a real query result.</summary>
