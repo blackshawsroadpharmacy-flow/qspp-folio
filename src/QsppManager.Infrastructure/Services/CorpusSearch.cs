@@ -72,6 +72,7 @@ public class CorpusSearch(QsppDbContext db) : ICorpusIndexer
         RefKind.Policy => "Policy",
         RefKind.Obligation => "Obligation",
         RefKind.Hitlist => "Readiness hitlist",
+        RefKind.Surveillance => "Remote assessment item",
         _ => k.ToString(),
     };
 

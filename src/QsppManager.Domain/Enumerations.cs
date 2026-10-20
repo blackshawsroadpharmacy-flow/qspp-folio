@@ -12,6 +12,7 @@ public enum RefKind
     Policy,       // QSPP policy provision
     Obligation,   // derived operational obligation (attestation, notifications, fees)
     Hitlist,      // imported planning item from readiness-hitlist.md
+    Surveillance, // QCPP remote-assessment portal evidence request (e.g. REM-01)
 }
 
 public enum DomainPart

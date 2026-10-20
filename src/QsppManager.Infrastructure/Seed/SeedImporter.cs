@@ -60,7 +60,109 @@ public class SeedImporter(QsppDbContext db, AttachmentStore store, AuditService 
     {
         var results = (ImportRequirements(ct), ImportIssues(ct), ImportDocuments(ct));
         var anchors = ImportPageAnchors(ct);
-        return (results.Item1.reqs, results.Item1.examples, results.Item2, results.Item3);
+        var surveillance = ImportSurveillanceItems();
+        return (results.Item1.reqs + surveillance.added, results.Item1.examples + surveillance.examples, results.Item2, results.Item3);
+    }
+
+    /// <summary>M6: seed/remote-assessment.json — the October 2026 QCPP remote surveillance
+    /// assessment's evidence requests (REM-01…REM-19) imported as trackable requirements.
+    /// Unlike the one-shot corpus import this UPSERTS on every boot (matching by the
+    /// deterministic id) so a revised questionnaire fills in while pharmacies already
+    /// hold linked evidence, owners and readiness states; wording updates never touch
+    /// those. Absent file changes nothing.</summary>
+    private (int added, int examples) ImportSurveillanceItems()
+    {
+        var path = Path.Combine(repoRoot, "seed", "remote-assessment.json");
+        if (!File.Exists(path)) return (0, 0);
+
+        using var doc = JsonDocument.Parse(File.ReadAllText(path), new JsonDocumentOptions { AllowTrailingCommas = true });
+        if (doc.RootElement.ValueKind != JsonValueKind.Object ||
+            !doc.RootElement.TryGetProperty("requirements", out var reqs) ||
+            reqs.ValueKind != JsonValueKind.Array)
+            return (0, 0);
+
+        var added = 0;
+        var updated = 0;
+        var examplesNew = 0;
+        foreach (var el in reqs.EnumerateArray())
+        {
+            if (el.ValueKind != JsonValueKind.Object) continue;
+            var kind = ParseEnum<RefKind>(el.GetProperty("refKind").GetString() ?? "Surveillance");
+            if (kind != RefKind.Surveillance) continue;   // this importer owns only its own namespace
+            var refKey = el.GetProperty("ref").GetString() ?? "";
+            var sourceDoc = el.GetProperty("sourceDoc").GetString() ?? "";
+            var id = DeterministicId("Surveillance", $"{sourceDoc}:{refKey}");
+
+            var title = S(el, "title");
+            var summary = S(el, "summary");
+            var wording = S(el, "wording");
+            var priority = S(el, "priority");
+
+            var existing = db.Requirements.IgnoreQueryFilters().Include(x => x.EvidenceExamples)
+                .FirstOrDefault(r => r.Id == id);
+            if (existing == null)
+            {
+                var r = new Requirement
+                {
+                    Id = id,
+                    RefKind = kind,
+                    Ref = refKey,
+                    Title = title,
+                    PlainSummary = summary,
+                    SourceDocFile = sourceDoc,
+                    SourceVersion = el.GetProperty("sourceVersion").GetString() ?? "",
+                    WordingExcerpt = wording,
+                    Domain = ParseEnum<DomainPart>(S(el, "domain") is { Length: > 0 } d && int.TryParse(d, out _) ? d : "Program"),
+                    ApplicabilityHint = ParseEnum<ApplicabilityHint>(el.TryGetProperty("applicabilityHint", out var aEl) && aEl.ValueKind == JsonValueKind.String ? aEl.GetString()! : "Unknown"),
+                    AnchorFile = "",
+                    AnchorLines = "",
+                    InterpretationFlagsJson = el.TryGetProperty("interpretationFlags", out var fEl) && fEl.ValueKind == JsonValueKind.Array
+                        ? JsonSerializer.Serialize(fEl) : "[]",
+                    Priority = priority,
+                    ExtraJson = JsonSerializer.Serialize(el, new JsonSerializerOptions { WriteIndented = false }),
+                };
+                db.Requirements.Add(r);
+                added++;
+                existing = r;
+            }
+            else if (existing.Title != title || existing.PlainSummary != summary ||
+                     existing.WordingExcerpt != wording || existing.Priority != priority)
+            {
+                // Wording was revised in a later questionnaire print; display fields
+                // update, owner decisions/readiness (RequirementStates + links) untouched.
+                existing.Title = title;
+                existing.PlainSummary = summary;
+                existing.WordingExcerpt = wording;
+                existing.Priority = priority;
+                updated++;
+            }
+
+            // Sync evidence examples: add missing, keep existing (linked notes can attach to them).
+            var present = db.RequirementEvidenceExamples.Where(x => x.RequirementId == id).ToList();
+            var seen = new HashSet<string>(present.Select(p => p.Text), StringComparer.OrdinalIgnoreCase);
+            if (el.TryGetProperty("evidenceExamples", out var ev) && ev.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var e in ev.EnumerateArray().Take(12))
+                {
+                    if (e.ValueKind == JsonValueKind.Null) continue;
+                    var text = e.ValueKind == JsonValueKind.String ? e.GetString()! : S(e, "text");
+                    if (string.IsNullOrWhiteSpace(text) || seen.Contains(text)) continue;
+                    db.RequirementEvidenceExamples.Add(new RequirementEvidenceExample
+                    {
+                        RequirementId = id,
+                        Text = text[..Math.Min(text.Length, 280)],
+                        Mandatory = e.ValueKind == JsonValueKind.Object && e.TryGetProperty("mandatory", out var m) && m.ValueKind == JsonValueKind.True,
+                    });
+                    examplesNew++;
+                    seen.Add(text);
+                }
+            }
+        }
+        db.SaveChanges();
+        if (added > 0 || updated > 0 || examplesNew > 0)
+            audit.Append("system", null, "remote_assessment.synced", "requirements", "*",
+                $"Remote-assessment items: {added} added, {updated} wording updates, {examplesNew} evidence examples");
+        return (added, examplesNew);
     }
 
     /// <summary>M2: optional seed/page-anchors.json (generated by a separate verified

@@ -1,0 +1,595 @@
+{
+ "retrievedDate": "2026-10-20",
+ "packVersion": "October 2026 remote surveillance assessment",
+ "sourceUrl": "(QCPP remote assessment portal — print supplied by the owner: QSPP Remote Assessment - October 2026.pdf)",
+ "requirements": [
+  {
+   "id": "REM-01",
+   "refKind": "SURVEILLANCE",
+   "ref": "REM-01",
+   "title": "Vaccination procedure",
+   "sourceDoc": "QSPP Remote Assessment - October 2026.pdf",
+   "sourceVersion": "QCPP remote assessment portal — surveillance round, printed 20 Oct 2026",
+   "domain": 2,
+   "applicabilityHint": "always",
+   "wording": "Provide evidence of procedure that shows the delivery of pharmacy services which is related to vaccination.",
+   "summary": "Upload the pharmacy's written vaccination procedure.",
+   "evidenceExamples": [
+    {
+     "text": "A written procedure covering vaccination service delivery.",
+     "mandatory": true
+    },
+    {
+     "text": "Documentation of how vaccinations are delivered, including patient screening, consent, administration and after-care.",
+     "mandatory": false
+    }
+   ],
+   "interpretationFlags": [
+    "remote-assessment-2026",
+    "surveillance-item",
+    "not-a-confirmed-deficiency"
+   ],
+   "priority": "October 2026 remote surveillance assessment",
+   "as85000Clause": "2.1.1",
+   "status": "imported_unverified",
+   "ownersBlank": true,
+   "note": "Imported from the October 2026 remote assessment portal for Burke Road Compounding Pharmacy; not a confirmed deficiency."
+  },
+  {
+   "id": "REM-02",
+   "refKind": "SURVEILLANCE",
+   "ref": "REM-02",
+   "title": "Beyond-use dates (complex compounding)",
+   "sourceDoc": "QSPP Remote Assessment - October 2026.pdf",
+   "sourceVersion": "QCPP remote assessment portal — surveillance round, printed 20 Oct 2026",
+   "domain": 2,
+   "applicabilityHint": "always",
+   "wording": "Provide evidence of how beyond use dates (BUD) are determined, assigned and recorded for compounded preparations.",
+   "summary": "Upload the pharmacy's beyond-use dating protocol.",
+   "evidenceExamples": [
+    {
+     "text": "A written BUD protocol.",
+     "mandatory": true
+    },
+    {
+     "text": "The protocol must include the stability data or other evidence used to derive the BUDs.",
+     "mandatory": true
+    },
+    {
+     "text": "Reference to the applicable USP <795>/<797> limits or the All Pharmacy Formulary where those standards are used.",
+     "mandatory": false
+    }
+   ],
+   "interpretationFlags": [
+    "remote-assessment-2026",
+    "surveillance-item",
+    "not-a-confirmed-deficiency"
+   ],
+   "priority": "October 2026 remote surveillance assessment",
+   "as85000Clause": "2.2.3",
+   "status": "imported_unverified",
+   "ownersBlank": true,
+   "note": "Imported from the October 2026 remote assessment portal for Burke Road Compounding Pharmacy; not a confirmed deficiency."
+  },
+  {
+   "id": "REM-03",
+   "refKind": "SURVEILLANCE",
+   "ref": "REM-03",
+   "title": "Self-audit or evaluation (last 6 months)",
+   "sourceDoc": "QSPP Remote Assessment - October 2026.pdf",
+   "sourceVersion": "QCPP remote assessment portal — surveillance round, printed 20 Oct 2026",
+   "domain": 2,
+   "applicabilityHint": "always",
+   "wording": "Provide evidence of up to 2 evaluations or self-audits which have been performed in the past 6 months.",
+   "summary": "Upload up to two evaluations or self-audits performed in the last 6 months.",
+   "evidenceExamples": [
+    {
+     "text": "Evaluations or self-audits dated within the last 6 months.",
+     "mandatory": true
+    },
+    {
+     "text": "Topics must cover some or all of: staged supply, dose administration aids, clinical interventions, active service review.",
+     "mandatory": true
+    }
+   ],
+   "interpretationFlags": [
+    "remote-assessment-2026",
+    "surveillance-item",
+    "not-a-confirmed-deficiency"
+   ],
+   "priority": "October 2026 remote surveillance assessment",
+   "as85000Clause": "2.1.1",
+   "status": "imported_unverified",
+   "ownersBlank": true,
+   "note": "Imported from the October 2026 remote assessment portal for Burke Road Compounding Pharmacy; not a confirmed deficiency."
+  },
+  {
+   "id": "REM-04",
+   "refKind": "SURVEILLANCE",
+   "ref": "REM-04",
+   "title": "Pharmacist and owner registrations",
+   "sourceDoc": "QSPP Remote Assessment - October 2026.pdf",
+   "sourceVersion": "QCPP remote assessment portal — surveillance round, printed 20 Oct 2026",
+   "domain": 1,
+   "applicabilityHint": "always",
+   "wording": "Provide evidence of all owners and all registered pharmacists involved in the pharmacy who have a current Pharmacist registration with AHPRA.",
+   "summary": "Upload AHPRA registration details for all registered pharmacists involved in the pharmacy.",
+   "evidenceExamples": [
+    {
+     "text": "A list of all owners and registered pharmacists at the pharmacy.",
+     "mandatory": true
+    },
+    {
+     "text": "Each person's current AHPRA registration details (or a public-register extract).",
+     "mandatory": true
+    }
+   ],
+   "interpretationFlags": [
+    "remote-assessment-2026",
+    "surveillance-item",
+    "not-a-confirmed-deficiency"
+   ],
+   "priority": "October 2026 remote surveillance assessment",
+   "as85000Clause": "1.2.1",
+   "status": "imported_unverified",
+   "ownersBlank": true,
+   "note": "Imported from the October 2026 remote assessment portal for Burke Road Compounding Pharmacy; not a confirmed deficiency."
+  },
+  {
+   "id": "REM-05",
+   "refKind": "SURVEILLANCE",
+   "ref": "REM-05",
+   "title": "Vaccine cold-chain self-audit (Strive for 5)",
+   "sourceDoc": "QSPP Remote Assessment - October 2026.pdf",
+   "sourceVersion": "QCPP remote assessment portal — surveillance round, printed 20 Oct 2026",
+   "domain": 2,
+   "applicabilityHint": "always",
+   "wording": "Provide evidence of a self-audit related to the storage of vaccines in the past 12 months. Guidance on self-audits is available in the Strive for 5 program resources.",
+   "summary": "Upload the pharmacy's Strive for 5 self-audit performed in the last 12 months.",
+   "evidenceExamples": [
+    {
+     "text": "A completed vaccine storage self-audit dated within the last 12 months.",
+     "mandatory": true
+    },
+    {
+     "text": "Temperature logs, fridge audit notes or photographs completed alongside the self-audit.",
+     "mandatory": false
+    }
+   ],
+   "interpretationFlags": [
+    "remote-assessment-2026",
+    "surveillance-item",
+    "not-a-confirmed-deficiency"
+   ],
+   "priority": "October 2026 remote surveillance assessment",
+   "as85000Clause": "2.2.1",
+   "status": "imported_unverified",
+   "ownersBlank": true,
+   "note": "Imported from the October 2026 remote assessment portal for Burke Road Compounding Pharmacy; not a confirmed deficiency."
+  },
+  {
+   "id": "REM-06",
+   "refKind": "SURVEILLANCE",
+   "ref": "REM-06",
+   "title": "Insurance certificates",
+   "sourceDoc": "QSPP Remote Assessment - October 2026.pdf",
+   "sourceVersion": "QCPP remote assessment portal — surveillance round, printed 20 Oct 2026",
+   "domain": 1,
+   "applicabilityHint": "always",
+   "wording": "Provide details of insurance coverage: certificate of currency for professional indemnity and public liability, and work cover where it is legally required.",
+   "summary": "Upload your current insurance certificates, including professional indemnity and public liability, and work cover if required.",
+   "evidenceExamples": [
+    {
+     "text": "Current certificate(s) of currency for professional indemnity and public liability insurance.",
+     "mandatory": true
+    },
+    {
+     "text": "Workers compensation insurance certificate of currency.",
+     "mandatory": true
+    }
+   ],
+   "interpretationFlags": [
+    "remote-assessment-2026",
+    "surveillance-item",
+    "not-a-confirmed-deficiency"
+   ],
+   "priority": "October 2026 remote surveillance assessment",
+   "as85000Clause": "1.2.1",
+   "status": "imported_unverified",
+   "ownersBlank": true,
+   "note": "Imported from the October 2026 remote assessment portal for Burke Road Compounding Pharmacy; not a confirmed deficiency."
+  },
+  {
+   "id": "REM-07",
+   "refKind": "SURVEILLANCE",
+   "ref": "REM-07",
+   "title": "Business continuity plan",
+   "sourceDoc": "QSPP Remote Assessment - October 2026.pdf",
+   "sourceVersion": "QCPP remote assessment portal — surveillance round, printed 20 Oct 2026",
+   "domain": 1,
+   "applicabilityHint": "always",
+   "wording": "Provide details of the pharmacy's business continuity plan, including how the pharmacy mitigates and responds to interruptions to services.",
+   "summary": "Upload the pharmacy's business continuity plan.",
+   "evidenceExamples": [
+    {
+     "text": "A written business continuity plan.",
+     "mandatory": true
+    },
+    {
+     "text": "The plan should address mitigation and responses to service interruptions (e.g. power loss, network outage, supply failure).",
+     "mandatory": false
+    }
+   ],
+   "interpretationFlags": [
+    "remote-assessment-2026",
+    "surveillance-item",
+    "not-a-confirmed-deficiency"
+   ],
+   "priority": "October 2026 remote surveillance assessment",
+   "as85000Clause": "1.2.3",
+   "status": "imported_unverified",
+   "ownersBlank": true,
+   "note": "Imported from the October 2026 remote assessment portal for Burke Road Compounding Pharmacy; not a confirmed deficiency."
+  },
+  {
+   "id": "REM-08",
+   "refKind": "SURVEILLANCE",
+   "ref": "REM-08",
+   "title": "Position descriptions with S&Q responsibilities",
+   "sourceDoc": "QSPP Remote Assessment - October 2026.pdf",
+   "sourceVersion": "QCPP remote assessment portal — surveillance round, printed 20 Oct 2026",
+   "domain": 1,
+   "applicabilityHint": "always",
+   "wording": "Provide the pharmacy's position descriptions for all staff, including staff involved in governance, management and delivery of safety and quality activities.",
+   "summary": "Upload the pharmacy's position descriptions for all staff, which include staff who are involved in the governance, management, and delivery of safety and quality activities.",
+   "evidenceExamples": [
+    {
+     "text": "Position descriptions for each role.",
+     "mandatory": true
+    },
+    {
+     "text": "Descriptions must set out safety and quality responsibilities for each role.",
+     "mandatory": true
+    }
+   ],
+   "interpretationFlags": [
+    "remote-assessment-2026",
+    "surveillance-item",
+    "not-a-confirmed-deficiency"
+   ],
+   "priority": "October 2026 remote surveillance assessment",
+   "as85000Clause": "1.1.1",
+   "status": "imported_unverified",
+   "ownersBlank": true,
+   "note": "Imported from the October 2026 remote assessment portal for Burke Road Compounding Pharmacy; not a confirmed deficiency."
+  },
+  {
+   "id": "REM-09",
+   "refKind": "SURVEILLANCE",
+   "ref": "REM-09",
+   "title": "IT loss recovery process",
+   "sourceDoc": "QSPP Remote Assessment - October 2026.pdf",
+   "sourceVersion": "QCPP remote assessment portal — surveillance round, printed 20 Oct 2026",
+   "domain": 2,
+   "applicabilityHint": "always",
+   "wording": "Provide evidence of the pharmacy's information technology (IT) loss/data recovery process. The record must be from the last 18 months.",
+   "summary": "Upload the pharmacy's IT loss/data recovery process used within the last 18 months.",
+   "evidenceExamples": [
+    {
+     "text": "A written IT loss/data recovery process.",
+     "mandatory": true
+    },
+    {
+     "text": "The record or exercise demonstrating the process was tested or used in the last 18 months.",
+     "mandatory": true
+    }
+   ],
+   "interpretationFlags": [
+    "remote-assessment-2026",
+    "surveillance-item",
+    "not-a-confirmed-deficiency"
+   ],
+   "priority": "October 2026 remote surveillance assessment",
+   "as85000Clause": "2.4.3",
+   "status": "imported_unverified",
+   "ownersBlank": true,
+   "note": "Imported from the October 2026 remote assessment portal for Burke Road Compounding Pharmacy; not a confirmed deficiency."
+  },
+  {
+   "id": "REM-10",
+   "refKind": "SURVEILLANCE",
+   "ref": "REM-10",
+   "title": "Security access register",
+   "sourceDoc": "QSPP Remote Assessment - October 2026.pdf",
+   "sourceVersion": "QCPP remote assessment portal — surveillance round, printed 20 Oct 2026",
+   "domain": 1,
+   "applicabilityHint": "always",
+   "wording": "Provide the pharmacy's current key and/or access code register, showing who holds keys or access codes.",
+   "summary": "Upload the pharmacy's key or access code register.",
+   "evidenceExamples": [
+    {
+     "text": "A current key/access-code register.",
+     "mandatory": true
+    }
+   ],
+   "interpretationFlags": [
+    "remote-assessment-2026",
+    "surveillance-item",
+    "not-a-confirmed-deficiency"
+   ],
+   "priority": "October 2026 remote surveillance assessment",
+   "as85000Clause": "1.2.4",
+   "status": "imported_unverified",
+   "ownersBlank": true,
+   "note": "Imported from the October 2026 remote assessment portal for Burke Road Compounding Pharmacy; not a confirmed deficiency."
+  },
+  {
+   "id": "REM-11",
+   "refKind": "SURVEILLANCE",
+   "ref": "REM-11",
+   "title": "Annual document review",
+   "sourceDoc": "QSPP Remote Assessment - October 2026.pdf",
+   "sourceVersion": "QCPP remote assessment portal — surveillance round, printed 20 Oct 2026",
+   "domain": 1,
+   "applicabilityHint": "always",
+   "wording": "Provide details of the pharmacy's document review system, including annual review and how changes are communicated to all staff.",
+   "summary": "Upload evidence of the pharmacy's document review system, including how it demonstrates annual review and communication.",
+   "evidenceExamples": [
+    {
+     "text": "A written document-review system.",
+     "mandatory": true
+    },
+    {
+     "text": "Evidence showing documents are reviewed annually and communicated to all staff.",
+     "mandatory": true
+    }
+   ],
+   "interpretationFlags": [
+    "remote-assessment-2026",
+    "surveillance-item",
+    "not-a-confirmed-deficiency"
+   ],
+   "priority": "October 2026 remote surveillance assessment",
+   "as85000Clause": "1.1.2",
+   "status": "imported_unverified",
+   "ownersBlank": true,
+   "note": "Imported from the October 2026 remote assessment portal for Burke Road Compounding Pharmacy; not a confirmed deficiency."
+  },
+  {
+   "id": "REM-12",
+   "refKind": "SURVEILLANCE",
+   "ref": "REM-12",
+   "title": "Safety and quality issues record",
+   "sourceDoc": "QSPP Remote Assessment - October 2026.pdf",
+   "sourceVersion": "QCPP remote assessment portal — surveillance round, printed 20 Oct 2026",
+   "domain": 1,
+   "applicabilityHint": "always",
+   "wording": "Provide the pharmacy's record which demonstrate the identification of safety and quality issues and the record of any action taken.",
+   "summary": "Upload the pharmacy's record of safety and quality issues, including the action(s) taken.",
+   "evidenceExamples": [
+    {
+     "text": "A log or register of safety and quality issues.",
+     "mandatory": true
+    },
+    {
+     "text": "The record of actions taken for each issue.",
+     "mandatory": true
+    }
+   ],
+   "interpretationFlags": [
+    "remote-assessment-2026",
+    "surveillance-item",
+    "not-a-confirmed-deficiency"
+   ],
+   "priority": "October 2026 remote surveillance assessment",
+   "as85000Clause": "1.1.2",
+   "status": "imported_unverified",
+   "ownersBlank": true,
+   "note": "Imported from the October 2026 remote assessment portal for Burke Road Compounding Pharmacy; not a confirmed deficiency."
+  },
+  {
+   "id": "REM-13",
+   "refKind": "SURVEILLANCE",
+   "ref": "REM-13",
+   "title": "Recruitment process and employment contract",
+   "sourceDoc": "QSPP Remote Assessment - October 2026.pdf",
+   "sourceVersion": "QCPP remote assessment portal — surveillance round, printed 20 Oct 2026",
+   "domain": 2,
+   "applicabilityHint": "always",
+   "wording": "Provide evidence of the pharmacy's recruitment process and a signed contract of employment for one current staff member. (Remove/censor any personal details not needed.)",
+   "summary": "Upload evidence of the pharmacy's recruitment process AND a signed contract of one current staff member.",
+   "evidenceExamples": [
+    {
+     "text": "A written recruitment process.",
+     "mandatory": true
+    },
+    {
+     "text": "A signed employment contract for one current staff member.",
+     "mandatory": true
+    }
+   ],
+   "interpretationFlags": [
+    "remote-assessment-2026",
+    "surveillance-item",
+    "not-a-confirmed-deficiency"
+   ],
+   "priority": "October 2026 remote surveillance assessment",
+   "as85000Clause": "2.4.1",
+   "status": "imported_unverified",
+   "ownersBlank": true,
+   "note": "Imported from the October 2026 remote assessment portal for Burke Road Compounding Pharmacy; not a confirmed deficiency."
+  },
+  {
+   "id": "REM-14",
+   "refKind": "SURVEILLANCE",
+   "ref": "REM-14",
+   "title": "Pharmacy student placements",
+   "sourceDoc": "QSPP Remote Assessment - October 2026.pdf",
+   "sourceVersion": "QCPP remote assessment portal — surveillance round, printed 20 Oct 2026",
+   "domain": 2,
+   "applicabilityHint": "always",
+   "wording": "Provide details of whether students undertake placement in your pharmacy. If yes, provide a copy of the signed agreement.",
+   "summary": "Answer YES or NO: does the pharmacy have students on placement? If YES, upload the placement agreement.",
+   "evidenceExamples": [
+    {
+     "text": "A YES/NO answer about students on placement.",
+     "mandatory": true
+    },
+    {
+     "text": "A signed placement agreement (only if students are placed).",
+     "mandatory": false
+    }
+   ],
+   "interpretationFlags": [
+    "remote-assessment-2026",
+    "surveillance-item",
+    "not-a-confirmed-deficiency"
+   ],
+   "priority": "October 2026 remote surveillance assessment",
+   "as85000Clause": "2.4.1",
+   "status": "imported_unverified",
+   "ownersBlank": true,
+   "note": "Imported from the October 2026 remote assessment portal for Burke Road Compounding Pharmacy; not a confirmed deficiency."
+  },
+  {
+   "id": "REM-15",
+   "refKind": "SURVEILLANCE",
+   "ref": "REM-15",
+   "title": "Dismissals and resignations",
+   "sourceDoc": "QSPP Remote Assessment - October 2026.pdf",
+   "sourceVersion": "QCPP remote assessment portal — surveillance round, printed 20 Oct 2026",
+   "domain": 2,
+   "applicabilityHint": "always",
+   "wording": "Provide evidence of dismissals and resignations process, or details that there have been no dismissals or resignations in the review period.",
+   "summary": "Upload evidence of the pharmacy's dismissal and resignation processes, or note that no dismissals/resignations occurred in the review period.",
+   "evidenceExamples": [
+    {
+     "text": "A written dismissal and resignation process, or a note that none occurred in the review period.",
+     "mandatory": true
+    }
+   ],
+   "interpretationFlags": [
+    "remote-assessment-2026",
+    "surveillance-item",
+    "not-a-confirmed-deficiency"
+   ],
+   "priority": "October 2026 remote surveillance assessment",
+   "as85000Clause": "2.4.1",
+   "status": "imported_unverified",
+   "ownersBlank": true,
+   "note": "Imported from the October 2026 remote assessment portal for Burke Road Compounding Pharmacy; not a confirmed deficiency."
+  },
+  {
+   "id": "REM-16",
+   "refKind": "SURVEILLANCE",
+   "ref": "REM-16",
+   "title": "Clinical references",
+   "sourceDoc": "QSPP Remote Assessment - October 2026.pdf",
+   "sourceVersion": "QCPP remote assessment portal — surveillance round, printed 20 Oct 2026",
+   "domain": 1,
+   "applicabilityHint": "always",
+   "wording": "Provide details of up to 5 clinical references that the pharmacy uses.",
+   "summary": "Upload up to five clinical references used by the pharmacy.",
+   "evidenceExamples": [
+    {
+     "text": "A list of the clinical references the pharmacy relies on (up to 5).",
+     "mandatory": true
+    }
+   ],
+   "interpretationFlags": [
+    "remote-assessment-2026",
+    "surveillance-item",
+    "not-a-confirmed-deficiency"
+   ],
+   "priority": "October 2026 remote surveillance assessment",
+   "as85000Clause": "1.1.3",
+   "status": "imported_unverified",
+   "ownersBlank": true,
+   "note": "Imported from the October 2026 remote assessment portal for Burke Road Compounding Pharmacy; not a confirmed deficiency."
+  },
+  {
+   "id": "REM-17",
+   "refKind": "SURVEILLANCE",
+   "ref": "REM-17",
+   "title": "Partnering with consumers",
+   "sourceDoc": "QSPP Remote Assessment - October 2026.pdf",
+   "sourceVersion": "QCPP remote assessment portal — surveillance round, printed 20 Oct 2026",
+   "domain": 1,
+   "applicabilityHint": "always",
+   "wording": "Provide details of a record which demonstrate the pharmacy partnering with consumers when designing and delivering pharmacy services.",
+   "summary": "Upload the record of consultation with consumers on service design and delivery.",
+   "evidenceExamples": [
+    {
+     "text": "A record of consumer consultation used in service design or delivery.",
+     "mandatory": true
+    }
+   ],
+   "interpretationFlags": [
+    "remote-assessment-2026",
+    "surveillance-item",
+    "not-a-confirmed-deficiency"
+   ],
+   "priority": "October 2026 remote surveillance assessment",
+   "as85000Clause": "1.1.7",
+   "status": "imported_unverified",
+   "ownersBlank": true,
+   "note": "Imported from the October 2026 remote assessment portal for Burke Road Compounding Pharmacy; not a confirmed deficiency."
+  },
+  {
+   "id": "REM-18",
+   "refKind": "SURVEILLANCE",
+   "ref": "REM-18",
+   "title": "Health promotion example",
+   "sourceDoc": "QSPP Remote Assessment - October 2026.pdf",
+   "sourceVersion": "QCPP remote assessment portal — surveillance round, printed 20 Oct 2026",
+   "domain": 2,
+   "applicabilityHint": "always",
+   "wording": "Provide an example of health education or promotion provided, tailored to the needs of consumers.",
+   "summary": "Upload an example of health education or promotion the pharmacy provides, tailored to consumer needs.",
+   "evidenceExamples": [
+    {
+     "text": "One example of health education/promotion material or activity tailored to consumer needs.",
+     "mandatory": true
+    }
+   ],
+   "interpretationFlags": [
+    "remote-assessment-2026",
+    "surveillance-item",
+    "not-a-confirmed-deficiency"
+   ],
+   "priority": "October 2026 remote surveillance assessment",
+   "as85000Clause": "2.3.2",
+   "status": "imported_unverified",
+   "ownersBlank": true,
+   "note": "Imported from the October 2026 remote assessment portal for Burke Road Compounding Pharmacy; not a confirmed deficiency."
+  },
+  {
+   "id": "REM-19",
+   "refKind": "SURVEILLANCE",
+   "ref": "REM-19",
+   "title": "Infection prevention and control records",
+   "sourceDoc": "QSPP Remote Assessment - October 2026.pdf",
+   "sourceVersion": "QCPP remote assessment portal — surveillance round, printed 20 Oct 2026",
+   "domain": 2,
+   "applicabilityHint": "always",
+   "wording": "Provide details of 2 records which demonstrate the pharmacy's infection prevention and control activities.",
+   "summary": "Upload two records of infection prevention and control activities.",
+   "evidenceExamples": [
+    {
+     "text": "Two records of infection prevention and control activities (e.g. cleaning logs, hand-hygiene audits, staff immunisation records).",
+     "mandatory": true
+    }
+   ],
+   "interpretationFlags": [
+    "remote-assessment-2026",
+    "surveillance-item",
+    "not-a-confirmed-deficiency"
+   ],
+   "priority": "October 2026 remote surveillance assessment",
+   "as85000Clause": "2.3.1",
+   "status": "imported_unverified",
+   "ownersBlank": true,
+   "note": "Imported from the October 2026 remote assessment portal for Burke Road Compounding Pharmacy; not a confirmed deficiency."
+  }
+ ]
+}

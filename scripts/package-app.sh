@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Build the QSPP Manager macOS .app bundle (osx-arm64, self-contained).
-# Output: <repo>/dist/QSPP Manager.app
+# Build the Hugh's QSPP Manager macOS .app bundle (osx-arm64, self-contained).
+# Output: <repo>/dist/Hugh's QSPP Manager.app
 #
 # Run from the repo root:  scripts/package-app.sh
 # Optional env:
@@ -10,7 +10,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 ROOT="$(pwd)"
-APP_NAME="QSPP Manager"
+APP_NAME="Hugh's QSPP Manager"
 DIST="$ROOT/dist"
 CONTENTS="$DIST/$APP_NAME.app/Contents"
 PLIST_BUDDY="/usr/libexec/PlistBuddy"
@@ -40,13 +40,23 @@ else
   echo "  (no vendor pack found at $PACK_SRC — app will rely on Settings override)"
 fi
 
+# Bundle the seed corpus (451-requirement pack import + REM surveillance items).
+# FindRepoRoot checks Contents/Resources/seed explicitly; without this the packaged
+# app silently skips the 451-requirement import and the REM-01…REM-19 upsert.
+if [ -d "$ROOT/seed" ]; then
+  mkdir -p "$CONTENTS/Resources/seed"
+  cp "$ROOT"/seed/*.json "$CONTENTS/Resources/seed/"
+else
+  echo "  (no seed corpus at $ROOT/seed — packaged app will import nothing)"
+fi
+
 cat > "$CONTENTS/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleName</key><string>QSPP Manager</string>
-    <key>CFBundleDisplayName</key><string>QSPP Manager</string>
+    <key>CFBundleName</key><string>Hugh's QSPP Manager</string>
+    <key>CFBundleDisplayName</key><string>Hugh's QSPP Manager</string>
     <key>CFBundleIdentifier</key><string>au.com.burkeroadpharmacy.qsppmanager</string>
     <key>CFBundleVersion</key><string>1.0.0</string>
     <key>CFBundleShortVersionString</key><string>1.0.0</string>

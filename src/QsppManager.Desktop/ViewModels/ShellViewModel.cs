@@ -200,7 +200,7 @@ public class ShellViewModel : ViewModelBase
             ShellPage.Tasks => "Tasks & calendar",
             ShellPage.People => "People & training",
             ShellPage.PrintCentre => "Print centre",
-            _ => NavItems.FirstOrDefault(n => n.Page == page)?.Label ?? "QSPP Manager",
+            _ => NavItems.FirstOrDefault(n => n.Page == page)?.Label ?? "Hugh's QSPP Manager",
         };
         OnPropertyChanged(nameof(PageTitle));
     }
@@ -242,7 +242,7 @@ public class ShellViewModel : ViewModelBase
     public void OpenResult(SearchResultRow row)
     {
         ClosePalette();
-        if (row.Kind is "Std" or "Uag" or "UagKeyTask" or "Rule" or "Tc" or "Policy" or "Obligation" or "Hitlist")
+        if (row.Kind is "Std" or "Uag" or "UagKeyTask" or "Rule" or "Tc" or "Policy" or "Obligation" or "Hitlist" or "Surveillance")
         {
             if (SelectedNav?.Page != ShellPage.Requirements) SelectedNav = NavItems.FirstOrDefault(n => n.Page == ShellPage.Requirements);
             if (CurrentPage is RequirementsView rv) rv.OpenById(row.Id);

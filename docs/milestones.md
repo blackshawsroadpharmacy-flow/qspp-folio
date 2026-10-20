@@ -64,6 +64,28 @@ claim runtime validation that did not happen on this machine.
 | Injectable clocks + VIC holidays | ✔ | `Clock.Pin/Unpin` threaded through Journey/recurring/expire queries (tested with a fixed date); `VicHolidays` table 2025–2028 (Melbourne Cup, Boxing Day observed Monday, etc.) with an explicit "verify current gazetted dates before relying on them" note; business-day tests across the 2026 Christmas block |
 | Source-change compare | ✔ | DiffPlex line diff between any two managed documents on their cached full text (Library button); the known UAG PROMs→"Patient-reported Measures" class of change surfaces as -/+ lines; whitespace-only differences ignored (tested) |
 
+## M6 — client identity + surveillance intake · **CODE COMPLETE (verified 20 Oct 2026)**
+
+Owner ask: rename the app "Hugh's QSPP Manager" with the client logo applied
+tastefully; space every input field consistently; and absorb the QCPP remote
+surveillance assessment portal's October 2026 evidence requests (Burke Road
+Compounding) as first-class trackable work — "a reliable and robust solution".
+
+### What shipped
+
+| Task | Status | Evidence |
+|---|---|---|
+| Rename across the whole app | ✅ verified | Scripted replace in 14 named surface files (window title, login card, About, PDF composer footer, backup naming, `package-app.sh` APP_NAME + CFBundleName/DisplayName, README/GATES/build scripts); zero non-historical leftovers by grep. Historical docs (this file, decisions) intentionally keep the original name |
+| Logo: app icon | ✅ verified | `scripts/make-icon.py` rebuilds the icns from `assets/art/HughLogo.png` (cream disc + avatar on the brand-green squircle); vision-checked at 384 px and 64 px; bundle CFBundleIconFile unchanged |
+| Logo: in-app marks | ✅ verified | Login card: 44 px circular avatar with green keyline above the wordmark; Help → About: 64 px avatar + "Hugh's QSPP Manager". No logo noise anywhere else |
+| Input-field rhythm | ✅ verified | New `Ui.FormField(label, field)` contract (Spacing 6, small-caps label above field); applied to Settings, onboarding, evidence/task/schedule/incident/potency dialogs, print centre copies, requirement decision reason + next action; watermarks de-duplicated. Login/Settings/Requirements pages visually verified on a live run; dialogs share the same contract |
+| October 2026 remote assessment as trackable requirements | ✅ verified | 19 evidence requests seeded as `seed/remote-assessment.json` → `RefKind.Surveillance`, refs REM-01…REM-19, wording verbatim from the portal, evidence examples carrying the portal's mandatory/optional "must include" bullets. Importer UPSERTS on every boot (deterministic id) so a revised questionnaire re-words without disturbing linked evidence, owners or readiness; absent file = no-op |
+| Packaged bundle seed | ✅ verified | `package-app.sh` now bundles `Contents/Resources/seed/*.json`; before this fix the packaged app skipped the corpus + REM import (FindRepoRoot missed seed/) — caught before delivery |
+| Palette routing for REM items | ✅ verified | `OpenResult` kind whitelist extended with "Surveillance" — ⌘K → REM-02 now opens the requirement detail (was falling through to Documents) |
+
+Tests: 71/71 green (30 Domain + 41 Integration; 3 new `RemoteAssessmentSeedTests` —
+creation, idempotency, wording-revision-preserves-links).
+
 ## M5 — product finish (macOS) · **CODE COMPLETE (verified 20 Oct 2026)**
 
 Owner-scoped to the macOS (osx-arm64) polish pass: design system, native shell,
