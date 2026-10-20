@@ -6,6 +6,10 @@
       <DockPanel Margin="12,10,8,8">
         <TextBox x:Name="FilterBox" DockPanel.Dock="Top" Watermark="Filter by reference or title" />
         <TextBlock x:Name="CountLabel" DockPanel.Dock="Top" Classes="monoSm" Margin="2,8,0,0" />
+        <Button x:Name="BulkAssign" DockPanel.Dock="Top" Margin="2,8,0,0"
+                Content="Assign unassigned to me" Height="28" HorizontalContentAlignment="Center"
+                HorizontalAlignment="Left" Background="{DynamicResource Brush.Sage}"
+                Foreground="{DynamicResource Brush.Green}" BorderThickness="0" />
         <ListBox x:Name="ReqList" Classes="list" Margin="4,8,4,0" Background="Transparent">
           <ListBox.ItemTemplate>
             <DataTemplate>

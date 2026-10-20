@@ -142,6 +142,44 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
         return ServiceResult.Succeed();
     }
 
+    /// <summary>One-click "claim the backlog": every still-unassigned requirement of this
+    /// pharmacy is assigned to one user with a single audit entry, so the audit trail
+    /// stays readable and the Requirements list loses its wall of "owner not assigned".</summary>
+    public int AssignAllOwnersToUser(Guid userId, UserSession session)
+    {
+        if (session.ReadOnly) return 0;
+        if (userId == Guid.Empty || !db.Users.Any(u => u.Id == userId)) return 0;
+        var ph = EnsurePharmacy();
+        // Get-or-create per requirement: state rows are created lazily on first detail
+        // view, so a fresh import has none — a bulk claim must touch every requirement.
+        var reqIds = db.Requirements.AsNoTracking().Select(r => r.Id).ToList();
+        var existing = db.RequirementStates.Where(s => s.PharmacyId == ph.Id).ToDictionary(s => s.RequirementId);
+        var states = new List<RequirementState>();
+        foreach (var reqId in reqIds)
+        {
+            if (existing.TryGetValue(reqId, out var st))
+            {
+                if (!st.OwnerUnassigned) continue;
+                st.OwnerUserId = userId;
+                st.OwnerUnassigned = false;
+                st.UpdatedAtUtc = DateTime.UtcNow;
+            }
+            else
+            {
+                st = new RequirementState { RequirementId = reqId, PharmacyId = ph.Id, OwnerUserId = userId, OwnerUnassigned = false };
+                db.RequirementStates.Add(st);
+            }
+            states.Add(st);
+        }
+        if (states.Count > 0)
+        {
+            db.SaveChanges();
+            audit.Append(session.DisplayName, session.UserId, "requirement.owner.bulk", "pharmacy", ph.Id.ToString(),
+                $"assigned={states.Count}; to={session.UserName}");
+        }
+        return states.Count;
+    }
+
     public ServiceResult SetNextAction(Guid requirementId, string nextAction, UserSession session)
     {
         if (session.ReadOnly) return ServiceResult.Fail("Read-only reviewer accounts cannot edit next actions.");

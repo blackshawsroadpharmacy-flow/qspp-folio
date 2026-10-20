@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Text.Json;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
@@ -29,6 +30,16 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
         InitializeComponent();
         _shell = shell;
         LoadList();
+        ToolTip.SetTip(BulkAssign, "One click marks you (the signed-in user) as the owner of every requirement that has none. Audit-logged as a single entry.");
+        BulkAssign.Click += (_, _) =>
+        {
+            if (App.Session is not { ReadOnly: false } session) return;
+            var changed = App.Workspace.AssignAllOwnersToUser(session.UserId, session);
+            LoadList();
+            ShowResult(changed > 0 ? $"Owner recorded on {changed} requirement{(changed == 1 ? "" : "s")}." :
+                "No unassigned requirements left.");
+            if (changed > 0 && Guid.TryParse(_currentDetailId, out var claimed)) LoadDetail(claimed);
+        };
         FilterBox.TextChanged += (_, _) => LoadList();
         ReqList.SelectionChanged += (_, _) =>
         {
@@ -69,6 +80,9 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
         }
         ReqList.ItemsSource = _items;
         CountLabel.Text = $"{_items.Count} requirement{(_items.Count == 1 ? "" : "s")} in the imported corpus";
+        var unassigned = rows.Count(r => r.OwnerUnassigned);
+        BulkAssign.IsVisible = App.Session is { ReadOnly: false } && unassigned > 0;
+        if (BulkAssign.IsVisible) BulkAssign.Content = $"Assign {unassigned} unassigned to me";
     }
 
     private void LoadDetail(Guid id)
@@ -160,8 +174,38 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
             Applicability.NotApplicable => "info",
             _ => "warn",
         }));
-        if (d.State.OwnerUnassigned) row.Children.Add(Ui.Chip("Owner not assigned", "warn"));
-        else row.Children.Add(new TextBlock { Classes = { "small" }, Text = $"Owner: {d.OwnerName}", VerticalAlignment = VerticalAlignment.Center });
+        if (d.State.OwnerUnassigned)
+        {
+            // Quiet state: muted text + explanation on hover + one click to claim (M6 feedback).
+            var unassigned = new TextBlock
+            {
+                Text = "No owner yet", Classes = { "small" },
+                VerticalAlignment = VerticalAlignment.Center, Opacity = 0.85,
+            };
+            ToolTip.SetTip(unassigned,
+                "Nothing recorded: nobody currently owns gathering this evidence. " +
+                "Use 'Assign to me' to claim it. Assessors read ownership as accountability for the evidence.");
+            row.Children.Add(unassigned);
+            row.Children.Add(new TextBlock { Text = "·", Classes = { "small" }, VerticalAlignment = VerticalAlignment.Center });
+        }
+        else
+        {
+            var owner = new TextBlock { Text = $"Owner: {d.OwnerName}", VerticalAlignment = VerticalAlignment.Center };
+            ToolTip.SetTip(owner, "The person accountable for collecting and verifying this evidence.");
+            row.Children.Add(owner);
+        }
+        if (App.Session is { } session && !session.ReadOnly)
+        {
+            var assign = new Button { Content = "Assign to me", Height = 28, HorizontalAlignment = HorizontalAlignment.Left };
+            ToolTip.SetTip(assign, "Record you as the owner of this requirement (audit-logged).");
+            assign.Click += (_, _) =>
+            {
+                var res = App.Workspace.AssignOwner(d.Requirement.Id, session.UserId, session);
+                ShowResultSafe(res.Ok ? "Owner assigned to you." : res.Error);
+                Reload();
+            };
+            row.Children.Add(assign);
+        }
         return row;
     }
 
@@ -499,7 +543,11 @@ public record RequirementItem
             RequirementReadiness.AssessorAccepted => "assessor outcome recorded",
             _ => "not started",
         };
-        OwnerNote = r.OwnerUnassigned ? "Owner not assigned" : $"Owner: {r.OwnerName} · {r.EvidenceCount} evidence · {r.OpenTaskCount} open tasks";
+        // Quiet list: rows carry work, not identity — ownership is a detail-page fact
+        // (chip + hover there). Only nonzero counts render, so rows stay scannable.
+        var ev = r.EvidenceCount > 0 ? $"{r.EvidenceCount} evidence" : "";
+        var tk = r.OpenTaskCount > 0 ? $"{r.OpenTaskCount} open task{(r.OpenTaskCount == 1 ? "" : "s")}" : "";
+        OwnerNote = string.Join(" · ", new[] { ev, tk }.Where(s => s.Length > 0));
         Applicability = r.Applicability;
     }
 }

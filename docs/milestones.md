@@ -86,6 +86,31 @@ Compounding) as first-class trackable work — "a reliable and robust solution".
 Tests: 71/71 green (30 Domain + 41 Integration; 3 new `RemoteAssessmentSeedTests` —
 creation, idempotency, wording-revision-preserves-links).
 
+## M6.1 · owner-noise pass (owner feedback 20 Oct 2026) · **COMPLETE (verified)**
+
+After delivery the owner flagged the 470-requirement wall of "Owner not assigned"
+chips as overwhelming. Shipped, all live-verified:
+
+- List rows are quiet: no owner text at all; a per-row note appears only when a
+  requirement has evidence or open tasks ("2 evidence · 1 open task"). Ownership
+  became a detail-page fact, not a list-side repetition.
+- Detail page: unassigned shows muted "No owner yet" text with a hover tooltip
+  explaining what it means; one-click "Assign to me" button claims ownership
+  (audit-logged per requirement). Assigned shows "Owner: <name>" with its own tooltip.
+- Bulk claim: "Assign N unassigned to me" button above the list (hidden when none
+  remain, and read-only reviewers never see it), assigning every unassigned
+  requirement to the signed-in user as ONE audit line
+  (`requirement.owner.bulk, assigned=470`) so the audit trail stays short. New
+  `QsppWorkspace.AssignAllOwnersToUser` get-or-creates lazy state rows, so a fresh
+  import's backlog is claimable in one click.
+- Chose explicit claim over "default the owner on import": silent auto-assignment
+  would state accountability nobody recorded; one deliberate click does the same
+  with an audit trail. The owner's alternative ask (different colour + hover hint)
+  is also in: the quiet state is muted with the tooltip.
+
+Tests: 74/74 green (3 new `OwnerBulkAssignTests`: bulk claims all + single audit
+line, independent re-assignment after bulk, read-only refusal).
+
 ## M5 — product finish (macOS) · **CODE COMPLETE (verified 20 Oct 2026)**
 
 Owner-scoped to the macOS (osx-arm64) polish pass: design system, native shell,
