@@ -35,10 +35,10 @@ public static class Ui
     public static TextBlock H1(string t) => new() { Classes = { "h1" }, Text = t };
     public static TextBlock H2(string t) => new() { Classes = { "h2" }, Text = t };
     public static TextBlock H3(string t) => new() { Classes = { "h3" }, Text = t };
-    public static TextBlock Lead(string t) => new() { Classes = { "lead" }, Text = t, TextWrapping = TextWrapping.Wrap, MaxWidth = 900 };
+    public static TextBlock Lead(string t) => new() { Classes = { "lead" }, Text = t, TextWrapping = TextWrapping.Wrap, MaxWidth = 900, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left };
     public static TextBlock Small(string t) => new() { Classes = { "small" }, Text = t, TextWrapping = TextWrapping.Wrap };
     public static TextBlock Label(string t) => new() { Classes = { "label" }, Text = t };
-    public static TextBlock Para(string t) => new() { Text = t, TextWrapping = TextWrapping.Wrap, MaxWidth = 820 };
+    public static TextBlock Para(string t) => new() { Text = t, TextWrapping = TextWrapping.Wrap, MaxWidth = 820, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left };
     public static TextBlock Mono(string t) => new() { Classes = { "mono" }, Text = t };
 
     // ---------- scaffolding ----------

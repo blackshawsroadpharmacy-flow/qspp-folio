@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
 using System.Text.Json;
 using Avalonia.Controls;
+using Avalonia.Controls.Templates;
+using Avalonia.Data;
 using Avalonia.Layout;
 using Avalonia.Media;
 using QsppManager.Desktop.ViewModels;
@@ -12,15 +14,19 @@ namespace QsppManager.Desktop.Views;
 /// <summary>Library: the reading room. Corpus search over requirements/evidence/documents
 /// (FTS5), the verified source documents with provenance, the interpretation issues with
 /// their competing quotes, and the supersession impact review.</summary>
-public partial class LibraryView : UserControl
+public partial class LibraryView : UserControl, IPageSearchFocus
 {
-    private readonly DataGrid _sources = new() { Height = 220, AutoGenerateColumns = false, IsReadOnly = true };
-    private readonly DataGrid _issues = new() { Height = 140, AutoGenerateColumns = false, IsReadOnly = true, RowHeight = 34 };
-    private readonly DataGrid _superseded = new() { Height = 150, AutoGenerateColumns = false, IsReadOnly = true, RowHeight = 34 };
-    private readonly TextBox _searchBox = new() { Watermark = "Search the whole corpus — try potency, mid-cycle, attestation…", Height = 36 };
-    private readonly ListBox _results = new() { Height = 220, BorderThickness = new(0, 0, 0, 1) };
-    private readonly TextBlock _message = new() { Classes = { "small" }, TextWrapping = TextWrapping.Wrap };
+    private readonly DataGrid _sources = Ui.Grid().With(_ => _.Height = 220);
+    private readonly DataGrid _issues = Ui.Grid(rowHeight: 34).With(_ => _.Height = 140);
+    private readonly DataGrid _superseded = Ui.Grid(rowHeight: 34).With(_ => _.Height = 150);
+    private readonly TextBox _searchBox = new() { Watermark = "Search the whole corpus — try potency, mid-cycle, attestation…" };
+    private readonly ListBox _results = new() { Height = 220, Classes = { "list" } };
+    private readonly Grid _resultsHost = new();
+    private readonly Control _resultsEmpty = Ui.EmptyState("search", "Search the corpus",
+        "Find requirements, evidence records and source documents. Press Enter or click Search; double-click a result to open the record.");
+    private readonly TextBox _resultBar = new() { IsReadOnly = true, TextWrapping = TextWrapping.Wrap, MinHeight = 34, Watermark = "Result messages appear here", Classes = { "result" } };
     private readonly StackPanel _issueDetail = new() { Spacing = 6 };
+    private readonly ListBox _diffLines = new() { Height = 160, Background = Brushes.Transparent };
 
     public LibraryView(ShellViewModel shell)
     {
@@ -30,118 +36,148 @@ public partial class LibraryView : UserControl
 
     private Control Build(ShellViewModel shell)
     {
-        var sp = new StackPanel { Margin = new(32, 28), Spacing = 12, MaxWidth = 1100, HorizontalAlignment = HorizontalAlignment.Left };
-        sp.Children.Add(new TextBlock { Classes = { "h1" }, Text = "Library" });
-        sp.Children.Add(new TextBlock { Classes = { "lead" }, Text = "Search every imported requirement, evidence record and source document, read the governing documents with their checksums, and track the interpretation questions that are deliberately kept open until a source settles them." });
+        var sp = new StackPanel { Margin = new(32, 28), Spacing = 14, MaxWidth = 1040, HorizontalAlignment = HorizontalAlignment.Left };
+        sp.Children.Add(Ui.H1("Library"));
+        sp.Children.Add(Ui.Lead("Search every imported requirement, evidence record and source document, read the governing documents with their checksums, and track the interpretation questions that are deliberately kept open until a source settles them."));
+        sp.Children.Add(_resultBar);
 
-        // ---- corpus search ----
-        sp.Children.Add(new TextBlock { Text = "Corpus search", Classes = { "h3" } });
+        sp.Children.Add(SearchSection(shell));
+        sp.Children.Add(SourcesSection());
+        sp.Children.Add(IssuesSection());
+        sp.Children.Add(SupersessionSection());
+        sp.Children.Add(CompareSection());
+
+        return new ScrollViewer { Content = sp };
+    }
+
+    // ---- corpus search ----
+    private Control SearchSection(ShellViewModel shell)
+    {
+        Ui.Ax(_searchBox, "Corpus search", "Searches every requirement, evidence record and source document");
+        Ui.Ax(_results, "Corpus search results", "Double-click a result to open the record");
+        _results.ItemTemplate = SearchRowTemplate();
+
         var searchRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         _searchBox.Width = 640;
         _searchBox.KeyDown += (_, e) => { if (e.Key == Avalonia.Input.Key.Enter) RunSearch(); };
         searchRow.Children.Add(_searchBox);
-        searchRow.Children.Add(new Button { Content = "Search", Classes = { "primary" }, Height = 36, MinWidth = 110 }.With(b => b.Click += (_, _) => RunSearch()));
-        sp.Children.Add(searchRow);
-        _results.BorderBrush = Helpers.Brush("Brush.Divider");
+        searchRow.Children.Add(Ui.PrimaryBtn("Search", null, 110, null, "Run the corpus search")
+            .With(b => { b.Height = 32; b.Click += (_, _) => RunSearch(); }));
+
+        _resultsHost.Children.Add(_results);
+        _resultsHost.Children.Add(_resultsEmpty);
+        UpdateResultsHost();
         _results.DoubleTapped += (_, _) => OpenSelected(shell);
-        sp.Children.Add(_results);
-        sp.Children.Add(new TextBlock { Classes = { "small" }, Text = "Enter in the box or double-click a result opens the record. Bracketed highlights mark the matched text." });
 
-        // ---- source documents ----
-        sp.Children.Add(new TextBlock { Text = "Source documents (verified corpus)", Classes = { "h3" }, Margin = new(0, 10, 0, 0) });
-        _sources.Columns.Add(new DataGridTextColumn { Header = "Document", Binding = new Avalonia.Data.Binding("DisplayName"), Width = new DataGridLength(430) });
-        _sources.Columns.Add(new DataGridTextColumn { Header = "Role", Binding = new Avalonia.Data.Binding("Role"), Width = new DataGridLength(90) });
-        _sources.Columns.Add(new DataGridTextColumn { Header = "Version", Binding = new Avalonia.Data.Binding("Version"), Width = new DataGridLength(170) });
-        _sources.Columns.Add(new DataGridTextColumn { Header = "sha256", Binding = new Avalonia.Data.Binding("ShaShort"), Width = new DataGridLength(110) });
-        _sources.Columns.Add(new DataGridTextColumn { Header = "Full text", Binding = new Avalonia.Data.Binding("Indexed"), Width = new DataGridLength(80) });
-        _sources.Columns.Add(new DataGridTextColumn { Header = "Provenance", Binding = new Avalonia.Data.Binding("Provenance"), Width = new DataGridLength(230) });
-        sp.Children.Add(_sources);
+        return Ui.Section("Corpus search", Ui.Col(10, searchRow, _resultsHost,
+            Ui.Small("Enter in the box or double-click a result opens the record. Bracketed highlights mark the matched text.")));
+    }
+
+    // ---- source documents ----
+    private Control SourcesSection()
+    {
+        _sources.Columns.Add(Ui.Col("Document", "DisplayName", 430));
+        _sources.Columns.Add(Ui.Col("Role", "Role", 90));
+        _sources.Columns.Add(Ui.Col("Version", "Version", 170));
+        _sources.Columns.Add(Ui.Col("sha256", "ShaShort", 110));
+        _sources.Columns.Add(Ui.Col("Full text", "Indexed", 80));
+        _sources.Columns.Add(Ui.Col("Provenance", "Provenance", 230));
+
         var docRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        docRow.Children.Add(new Button { Content = "Open source PDF via system viewer", Height = 34 }.With(b => b.Click += (_, _) =>
+        docRow.Children.Add(Ui.Btn("Open source PDF via system viewer").With(b =>
         {
-            if (_sources.SelectedItem is SourceDocRow s)
-                Helpers.OpenWithSystemViewer(App.Store.AbsolutePath(s.StoredRelativePath));
-            else _message.Text = "Select a source document first.";
-        }));
-        docRow.Children.Add(new Button { Content = "Extract full text (selected)", Height = 34 }.With(b => b.Click += (_, _) =>
-        {
-            if (_sources.SelectedItem is not SourceDocRow s) { _message.Text = "Select a source document first."; return; }
-            var (ok, pages, err) = App.TextIndex.Extract(s.Id);
-            _message.Text = ok
-                ? $"Extracted {pages} pages from “{s.DisplayName}” into the search index. Ctrl+K and the search box now find words inside that document."
-                : $"Extraction failed: {err}";
-            Load();
-        }));
-        docRow.Children.Add(new Button { Content = "Extract & index all documents", Height = 34 }.With(b => b.Click += (_, _) =>
-        {
-            var docs = App.Workspace.AllSourceDocuments();
-            var done = 0; var failed = 0; var pagesTotal = 0; var lastError = "";
-            foreach (var d in docs)
+            b.Height = 32;
+            b.Click += (_, _) =>
             {
-                var (ok, pages, err) = App.TextIndex.Extract(d.Id);
-                if (ok) { done++; pagesTotal += pages; } else { failed++; lastError = $"{d.DisplayName}: {err}"; }
-            }
-            _message.Text = done == docs.Count
-                ? $"Indexed {done} documents ({pagesTotal} pages). The full corpus text is now searchable."
-                : $"Indexed {done} of {docs.Count} documents ({pagesTotal} pages); {failed} failed — first failure: {lastError}";
-            Load();
+                if (_sources.SelectedItem is SourceDocRow s)
+                    Helpers.OpenWithSystemViewer(App.Store.AbsolutePath(s.StoredRelativePath));
+                else _resultBar.Text = "Select a source document first.";
+            };
         }));
-        sp.Children.Add(docRow);
+        docRow.Children.Add(Ui.Btn("Extract full text (selected)").With(b => b.Height = 32).
+            With(b => b.Click += (_, _) =>
+            {
+                if (_sources.SelectedItem is not SourceDocRow s) { _resultBar.Text = "Select a source document first."; return; }
+                var (ok, pages, err) = App.TextIndex.Extract(s.Id);
+                _resultBar.Text = ok
+                    ? $"Extracted {pages} pages from “{s.DisplayName}” into the search index. Ctrl+K and the search box now find words inside that document."
+                    : $"Extraction failed: {err}";
+                Load();
+            }));
+        docRow.Children.Add(Ui.Btn("Extract & index all documents").With(b => b.Height = 32).
+            With(b => b.Click += (_, _) =>
+            {
+                var docs = App.Workspace.AllSourceDocuments();
+                var done = 0; var failed = 0; var pagesTotal = 0; var lastError = "";
+                foreach (var d in docs)
+                {
+                    var (ok, pages, err) = App.TextIndex.Extract(d.Id);
+                    if (ok) { done++; pagesTotal += pages; } else { failed++; lastError = $"{d.DisplayName}: {err}"; }
+                }
+                _resultBar.Text = done == docs.Count
+                    ? $"Indexed {done} documents ({pagesTotal} pages). The full corpus text is now searchable."
+                    : $"Indexed {done} of {docs.Count} documents ({pagesTotal} pages); {failed} failed — first failure: {lastError}";
+                Load();
+            }));
 
-        // ---- interpretation issues ----
-        sp.Children.Add(new TextBlock { Text = "Interpretation issues deliberately kept open", Classes = { "h3" }, Margin = new(0, 10, 0, 0) });
-        sp.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
-            Text = "Where the program sources disagree (or wording needs confirmation), the app refuses to pick a side silently. The conservative reading is used for planning dates and is labelled PLANNING ONLY everywhere it appears. Acknowledging records that the pharmacy has seen it; resolving requires a note recording who settled it and which source is authoritative." });
-        _issues.Columns.Add(new DataGridTextColumn { Header = "Key", Binding = new Avalonia.Data.Binding("Key"), Width = new DataGridLength(170) });
-        _issues.Columns.Add(new DataGridTextColumn { Header = "Question", Binding = new Avalonia.Data.Binding("Title"), Width = new DataGridLength(470) });
-        _issues.Columns.Add(new DataGridTextColumn { Header = "Status", Binding = new Avalonia.Data.Binding("Status"), Width = new DataGridLength(150) });
-        _issues.Columns.Add(new DataGridTextColumn { Header = "Conservative planning", Binding = new Avalonia.Data.Binding("Planning"), Width = new DataGridLength(280) });
-        sp.Children.Add(_issues);
-        sp.Children.Add(_issueDetail);
+        return Ui.Section("Source documents (verified corpus)", Ui.Col(10, _sources, docRow));
+    }
+
+    // ---- interpretation issues ----
+    private Control IssuesSection()
+    {
+        _issues.Columns.Add(Ui.Col("Key", "Key", 170));
+        _issues.Columns.Add(Ui.Col("Question", "Title", 470));
+        _issues.Columns.Add(Ui.Col("Status", "Status", 150));
+        _issues.Columns.Add(Ui.Col("Conservative planning", "Planning", 280));
+
         var issueRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        issueRow.Children.Add(new Button { Content = "Show competing sources", Height = 34 }.With(b => b.Click += (_, _) => ShowIssueSources()));
-        issueRow.Children.Add(new Button { Content = "Acknowledge", Height = 34 }.With(b => b.Click += (_, _) => Acknowledge()));
-        issueRow.Children.Add(new Button { Content = "Resolve…", Height = 34 }.With(b => b.Click += async (_, _) => await ResolveAsync()));
-        sp.Children.Add(issueRow);
+        issueRow.Children.Add(Ui.Btn("Show competing sources").With(b => { b.Height = 32; b.Click += (_, _) => ShowIssueSources(); }));
+        issueRow.Children.Add(Ui.Btn("Acknowledge").With(b => { b.Height = 32; b.Click += (_, _) => Acknowledge(); }));
+        issueRow.Children.Add(Ui.Btn("Resolve…").With(b => { b.Height = 32; b.Click += async (_, _) => await ResolveAsync(); }));
 
-        // ---- supersession review ----
-        sp.Children.Add(new TextBlock { Text = "Supersession review", Classes = { "h3" }, Margin = new(0, 10, 0, 0) });
-        sp.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
-            Text = "Retired evidence versions with the requirement links that were affected. Each affected link already has a re-link task assigned to the requirement owner — this table is the impact overview." });
-        _superseded.Columns.Add(new DataGridTextColumn { Header = "Retired evidence", Binding = new Avalonia.Data.Binding("OldTitle"), Width = new DataGridLength(330) });
-        _superseded.Columns.Add(new DataGridTextColumn { Header = "Replacement", Binding = new Avalonia.Data.Binding("Replacement"), Width = new DataGridLength(280) });
-        _superseded.Columns.Add(new DataGridTextColumn { Header = "Reason", Binding = new Avalonia.Data.Binding("Reason"), Width = new DataGridLength(220) });
-        _superseded.Columns.Add(new DataGridTextColumn { Header = "Links affected", Binding = new Avalonia.Data.Binding("AffectedReqs"), Width = new DataGridLength(110) });
-        _superseded.Columns.Add(new DataGridTextColumn { Header = "Open re-link tasks", Binding = new Avalonia.Data.Binding("OpenTasks"), Width = new DataGridLength(130) });
-        sp.Children.Add(_superseded);
+        return Ui.Section("Interpretation issues deliberately kept open", Ui.Col(10,
+            Ui.Small("Where the program sources disagree (or wording needs confirmation), the app refuses to pick a side silently. The conservative reading is used for planning dates and is labelled PLANNING ONLY everywhere it appears. Acknowledging records that the pharmacy has seen it; resolving requires a note recording who settled it and which source is authoritative."),
+            _issues, _issueDetail, issueRow));
+    }
 
-        // ---- source version compare ----
-        sp.Children.Add(new TextBlock { Text = "Compare source versions", Classes = { "h3" }, Margin = new(0, 10, 0, 0) });
+    // ---- supersession review ----
+    private Control SupersessionSection()
+    {
+        _superseded.Columns.Add(Ui.Col("Retired evidence", "OldTitle", 330));
+        _superseded.Columns.Add(Ui.Col("Replacement", "Replacement", 280));
+        _superseded.Columns.Add(Ui.Col("Reason", "Reason", 220));
+        _superseded.Columns.Add(Ui.Col("Links affected", "AffectedReqs", 110));
+        _superseded.Columns.Add(Ui.Col("Open re-link tasks", "OpenTasks", 130));
+
+        return Ui.Section("Supersession review", Ui.Col(10,
+            Ui.Small("Retired evidence versions with the requirement links that were affected. Each affected link already has a re-link task assigned to the requirement owner — this table is the impact overview."),
+            _superseded));
+    }
+
+    // ---- source version compare ----
+    private Control CompareSection()
+    {
+        _diffLines.ItemTemplate = DiffRowTemplate();
         var cmpRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        cmpRow.Children.Add(new Button { Content = "Compare full text of two documents…", Height = 34 }.With(b => b.Click += async (_, _) =>
+        cmpRow.Children.Add(Ui.Btn("Compare full text of two documents…").With(b => { b.Height = 32; b.Click += async (_, _) =>
         {
             var docs = App.Workspace.AllSourceDocuments().Where(d => d.Sha256Hex.Length > 0).ToList();
-            if (docs.Count < 2) { _message.Text = "Two source documents are needed for a compare."; return; }
+            if (docs.Count < 2) { _resultBar.Text = "Two source documents are needed for a compare."; return; }
             var list = string.Join("\n", docs.Select((d, i) => $"{i + 1}. {d.DisplayName} ({d.FileName})"));
             var aIdx = await Dialogs.Prompt(this, "Compare source versions — the OLDER version", "Number of the first document…\n" + list);
             if (aIdx is null || !int.TryParse(aIdx, out var ai) || ai < 1 || ai > docs.Count) return;
             var bIdx = await Dialogs.Prompt(this, "Compare source versions — the NEWER version", "Number of the second document");
             if (bIdx is null || !int.TryParse(bIdx, out var bi) || bi < 1 || bi > docs.Count) return;
             var (ok, err, summary, lines) = SourceCompare.DiffDocuments(App.TextIndex, docs[ai - 1], docs[bi - 1]);
-            _message.Text = ok ? summary : err;
+            _resultBar.Text = ok ? summary : err;
             _diffLines.ItemsSource = lines.Take(150).Select(l => new DiffRow(l)).ToList();
-        }));
-        sp.Children.Add(cmpRow);
-        sp.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
-            Text = "Diff runs on the cached full-text extractions (both documents get extracted on demand). '+ ' lines exist only in the newer document; '- ' lines only in the older." });
-        _diffLines = new ListBox { Height = 160, FontFamily = new Avalonia.Media.FontFamily("JetBrains Mono, Consolas"), FontSize = 11 };
-        sp.Children.Add(_diffLines);
+        }; }));
 
-        sp.Children.Add(_message);
-        return new ScrollViewer { Content = sp };
+        return Ui.Section("Compare source versions", Ui.Col(10, cmpRow,
+            Ui.Small("Diff runs on the cached full-text extractions (both documents get extracted on demand). '+ ' lines exist only in the newer document; '- ' lines only in the older."),
+            _diffLines));
     }
-
-    private ListBox _diffLines = null!;
 
     private void Load()
     {
@@ -164,7 +200,15 @@ public partial class LibraryView : UserControl
     {
         _results.ItemsSource = App.Search.Query(_searchBox.Text, 60, hidePatientDataEvidence: App.Session?.ReadOnly == true)
             .Select(r => new SearchRow(r.Kind, r.Title, r.Excerpt, r.Meta, r.Id)).ToList();
-        if (_results.ItemCount == 0) _message.Text = "Nothing matched. The LIKE fallback also ran — try a shorter term.";
+        UpdateResultsHost();
+        if (_results.ItemCount == 0) _resultBar.Text = "Nothing matched. The LIKE fallback also ran — try a shorter term.";
+    }
+
+    private void UpdateResultsHost()
+    {
+        var hasResults = _results.ItemCount > 0;
+        _results.IsVisible = hasResults;
+        _resultsEmpty.IsVisible = !hasResults;
     }
 
     private void OpenSelected(ShellViewModel shell)
@@ -177,10 +221,10 @@ public partial class LibraryView : UserControl
 
     private void ShowIssueSources()
     {
-        if (SelectedIssue is not { } row) { _message.Text = "Select an interpretation issue first."; return; }
+        if (SelectedIssue is not { } row) { _resultBar.Text = "Select an interpretation issue first."; return; }
         var issue = App.Workspace.Issues().First(i => i.Id == row.Id);
         _issueDetail.Children.Clear();
-        _issueDetail.Children.Add(new TextBlock { Classes = { "label" }, Text = "SOURCES — VERBATIM, AS RETRIEVED" });
+        _issueDetail.Children.Add(Ui.Label("SOURCES — VERBATIM, AS RETRIEVED"));
         try
         {
             using var doc = JsonDocument.Parse(string.IsNullOrWhiteSpace(issue.SourcesJson) ? "[]" : issue.SourcesJson);
@@ -192,46 +236,57 @@ public partial class LibraryView : UserControl
                 var text = s.TryGetProperty("text", out var tEl) ? tEl.GetString() : "";
                 var file = s.TryGetProperty("file", out var fEl) ? fEl.GetString() : "";
                 var lines = s.TryGetProperty("approxLines", out var lEl) ? (lEl.ValueKind == JsonValueKind.String ? lEl.GetString() : "") : "";
-                _issueDetail.Children.Add(new Border
+                _issueDetail.Children.Add(Ui.Card(new StackPanel
                 {
-                    BorderBrush = Helpers.Brush("Brush.Divider"), BorderThickness = new(1),
-                    Padding = new(10, 6), Background = Helpers.Brush("Brush.White"),
-                    Child = new StackPanel { Spacing = 2, Children =
+                    Spacing = 2,
+                    Children =
                     {
                         new TextBlock { FontWeight = FontWeight.Medium, Text = reference ?? "", TextWrapping = TextWrapping.Wrap },
-                        new TextBlock { FontFamily = new FontFamily("JetBrains Mono, Consolas"), Classes = { "small" }, Text = text ?? "", TextWrapping = TextWrapping.Wrap },
+                        new TextBlock { Classes = { "monoSm" }, Text = text ?? "", TextWrapping = TextWrapping.Wrap },
                         new TextBlock { Classes = { "small" }, Text = $"{file}{(string.IsNullOrEmpty(lines) ? "" : " · approx. lines " + lines)}", TextWrapping = TextWrapping.Wrap },
-                    } },
-                });
+                    },
+                }, vPad: 8, hPad: 12));
             }
         }
         catch (JsonException)
         {
             _issueDetail.Children.Add(new TextBlock { Classes = { "small" }, Text = "(source list unreadable — see coverage ledger)" });
         }
-        var meta = new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
-            Text = $"Retrieved {issue.RetrievedDate} · pack {issue.PackVersion}" };
-        _issueDetail.Children.Add(meta);
+        var statusRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
+        statusRow.Children.Add(Ui.Chip(issue.Status, IssueTone(issue.Status)));
+        statusRow.Children.Add(new TextBlock
+        {
+            Classes = { "small" }, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center,
+            Text = $"Retrieved {issue.RetrievedDate} · pack {issue.PackVersion}",
+        });
+        _issueDetail.Children.Add(statusRow);
         if (issue.Status == "resolved")
-            _issueDetail.Children.Add(new TextBlock { Classes = { "lead" }, TextWrapping = TextWrapping.Wrap, Text = $"RESOLVED: {issue.ResolutionNote}" });
+            _issueDetail.Children.Add(Ui.Lead($"RESOLVED: {issue.ResolutionNote}"));
     }
+
+    private static string IssueTone(string status) => status switch
+    {
+        "resolved" => "ok",
+        "acknowledged" => "info",
+        _ => "warn",
+    };
 
     private void Acknowledge()
     {
-        if (SelectedIssue is not { } row) { _message.Text = "Select an interpretation issue first."; return; }
+        if (SelectedIssue is not { } row) { _resultBar.Text = "Select an interpretation issue first."; return; }
         var res = App.Workspace.AcknowledgeIssue(row.Id, App.Session!);
-        _message.Text = res.Ok ? "Acknowledged — recorded in the audit trail. The conservative planning reading still applies." : res.Error;
+        _resultBar.Text = res.Ok ? "Acknowledged — recorded in the audit trail. The conservative planning reading still applies." : res.Error;
         Load();
     }
 
     private async Task ResolveAsync()
     {
-        if (SelectedIssue is not { } row) { _message.Text = "Select an interpretation issue first."; return; }
+        if (SelectedIssue is not { } row) { _resultBar.Text = "Select an interpretation issue first."; return; }
         var note = await Dialogs.Prompt(this, "Resolution record (required)",
             "Who settled this, and which source is taken as authoritative?");
         if (string.IsNullOrWhiteSpace(note)) return;
         var res = App.Workspace.ResolveIssue(row.Id, note, App.Session!);
-        _message.Text = res.Ok ? "Resolved and recorded. Planning flags for this question can now follow the settled source." : res.Error;
+        _resultBar.Text = res.Ok ? "Resolved and recorded. Planning flags for this question can now follow the settled source." : res.Error;
         Load();
     }
 
@@ -241,9 +296,47 @@ public partial class LibraryView : UserControl
     public record SearchRow(string Kind, string Title, string Excerpt, string Meta, Guid Id);
     public record DiffRow(string Line);
 
+    /// <summary>Kit two-line search-result row: name, kind + meta strip, excerpt.</summary>
+    private static FuncDataTemplate<object> SearchRowTemplate() => new((_, _) =>
+    {
+        var sp = new StackPanel { Spacing = 2 };
+        var title = new TextBlock { FontWeight = FontWeight.SemiBold, FontSize = 13, TextTrimming = TextTrimming.CharacterEllipsis };
+        title.Bind(TextBlock.TextProperty, new Binding("Title"));
+
+        var metaRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 7 };
+        var kind = new TextBlock { Classes = { "monoSm" }, Foreground = Ui.Br("Brush.Green") };
+        kind.Bind(TextBlock.TextProperty, new Binding("Kind"));
+        var meta = new TextBlock { Classes = { "small" } };
+        meta.Bind(TextBlock.TextProperty, new Binding("Meta"));
+        metaRow.Children.Add(kind);
+        metaRow.Children.Add(meta);
+
+        var excerpt = new TextBlock { Classes = { "small" }, TextTrimming = TextTrimming.CharacterEllipsis };
+        excerpt.Bind(TextBlock.TextProperty, new Binding("Excerpt"));
+
+        sp.Children.Add(title);
+        sp.Children.Add(metaRow);
+        sp.Children.Add(excerpt);
+        return sp;
+    }, true);
+
+    private static FuncDataTemplate<object> DiffRowTemplate() => new((_, _) =>
+    {
+        var tb = new TextBlock { Classes = { "monoSm" }, VerticalAlignment = VerticalAlignment.Center };
+        tb.Bind(TextBlock.TextProperty, new Binding("Line"));
+        return tb;
+    }, true);
+
     public void OpenLibrarySearch(string text)
     {
         _searchBox.Text = text;
         RunSearch();
     }
+
+    public void FocusSearch()
+    {
+        _searchBox.Focus();
+        _searchBox.SelectAll();
+    }
+    public void SetFilter(string text) => OpenLibrarySearch(text);
 }

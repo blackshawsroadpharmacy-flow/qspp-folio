@@ -23,8 +23,8 @@ public partial class PrintCentreView : UserControl
     private readonly ComboBox _printer = new() { MinWidth = 240 };
     private readonly NumericUpDown _copies = new() { Minimum = 1, Maximum = 20, Value = 1, Width = 110 };
     private readonly CheckBox _duplex = new() { Content = "Duplex (long edge)", FontSize = 13 };
-    private readonly TextBlock _status = new() { Classes = { "small" }, TextWrapping = TextWrapping.Wrap };
-    private readonly DataGrid _jobs = new() { Height = 220, AutoGenerateColumns = false, IsReadOnly = true };
+    private readonly TextBox _resultBar = new() { IsReadOnly = true, TextWrapping = TextWrapping.Wrap, MinHeight = 34, Watermark = "Result messages appear here", Classes = { "result" } };
+    private readonly DataGrid _jobs = Ui.Grid().With(_ => _.Height = 220);
     private List<RequirementRow> _rows = [];
     private Guid _lastRenderedJob = Guid.Empty;
     private string _lastRenderedPdf = "";
@@ -40,49 +40,63 @@ public partial class PrintCentreView : UserControl
 
     private Control Build()
     {
-        var sp = new StackPanel { Margin = new(32, 28), Spacing = 14, MaxWidth = 1100, HorizontalAlignment = HorizontalAlignment.Left };
-        sp.Children.Add(new TextBlock { Classes = { "h1" }, Text = "Print centre" });
-        sp.Children.Add(new TextBlock
+        // ---- primary interactive controls get automation names (voice control / screen readers) ----
+        Ui.Ax(_req, "Requirement to print", "The requirement whose checklist is rendered");
+        Ui.Ax(_variant, "Checklist variant", "Completed, pre-filled or blank");
+        Ui.Ax(_printer, "Printer", "CUPS printer that receives the print submission");
+        Ui.Ax(_copies, "Number of copies");
+        Ui.Ax(_duplex, "Duplex printing", "Print double-sided, long-edge binding");
+        Ui.Ax(_jobs, "Recent print jobs", "Select a job row to print it again with the same PDF");
+
+        var sp = new StackPanel { Margin = new(32, 28), Spacing = 14, MaxWidth = 1040, HorizontalAlignment = HorizontalAlignment.Left };
+        sp.Children.Add(Ui.H1("Print centre"));
+        sp.Children.Add(Ui.Lead("Print the current requirement checklist as a working paper document: blank, pre-filled with expected evidence, or completed with the current evidence register. Rendering is A4, greyscale-safe; paper output depends on the printer — a spooler acceptance does not guarantee the pages printed."));
+
+        // ---- document ----
+        var variantRow = new StackPanel
         {
-            Classes = { "lead" }, TextWrapping = TextWrapping.Wrap,
-            Text = "Print the current requirement checklist as a working paper document: blank, pre-filled with expected evidence, or completed with the current evidence register. Rendering is A4, greyscale-safe; paper output depends on the printer — a spooler acceptance does not guarantee the pages printed.",
-        });
+            Orientation = Orientation.Horizontal, Spacing = 10, VerticalAlignment = VerticalAlignment.Center,
+            Children = { new TextBlock { Text = "Variant:", VerticalAlignment = VerticalAlignment.Center }, _variant },
+        };
+        sp.Children.Add(Ui.Section("Document", Ui.Col(8, _req, variantRow)));
 
-        sp.Children.Add(new TextBlock { Text = "Document", Classes = { "h3" } });
-        sp.Children.Add(_req);
-        sp.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, VerticalAlignment = VerticalAlignment.Center, Children = { new TextBlock { Text = "Variant:", VerticalAlignment = VerticalAlignment.Center }, _variant } });
-
-        sp.Children.Add(new TextBlock { Text = "Printer", Classes = { "h3" } });
+        // ---- printer ----
         var printerRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, VerticalAlignment = VerticalAlignment.Center };
         printerRow.Children.Add(_printer);
-        printerRow.Children.Add(new Button { Content = "Refresh printers", Height = 32 }.With(_ => _.Click += (_, _) => { LoadPrinters(); _status.Text = ""; }));
+        printerRow.Children.Add(Ui.GhostBtn("Refresh printers").With(b =>
+        {
+            b.Height = 32;
+            b.Click += (_, _) => { LoadPrinters(); _resultBar.Text = ""; };
+        }));
         printerRow.Children.Add(_duplex);
         printerRow.Children.Add(new StackPanel { Children = { new TextBlock { Classes = { "label" }, Text = "COPIES" }, _copies } });
-        sp.Children.Add(printerRow);
-        sp.Children.Add(_status);
+        sp.Children.Add(Ui.Section("Printer", printerRow));
+
+        sp.Children.Add(_resultBar);
 
         var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        row.Children.Add(new Button { Content = "Render + preview", Classes = { "primary" }, Height = 36 }.With(_ => _.Click += async (_, _) => await RenderAsync()));
-        row.Children.Add(new Button { Content = "Send to printer", Height = 36 }.With(_ => _.Click += (_, _) => PrintLast()));
-        row.Children.Add(new Button { Content = "Open PDF externally", Height = 36 }.With(_ => _.Click += (_, _) =>
+        row.Children.Add(Ui.PrimaryBtn("Render + preview").With(b => { b.Height = 32; b.Click += async (_, _) => await RenderAsync(); }));
+        row.Children.Add(Ui.Btn("Send to printer").With(b => { b.Height = 32; b.Click += (_, _) => PrintLast(); }));
+        row.Children.Add(Ui.GhostBtn("Open PDF externally").With(b => { b.Height = 32; b.Click += (_, _) =>
         {
             if (File.Exists(_lastRenderedPdf)) Helpers.OpenWithSystemViewer(_lastRenderedPdf);
-            else _status.Text = "Render the document first.";
-        }));
+            else _resultBar.Text = "Render the document first.";
+        }; }));
         sp.Children.Add(row);
 
-        sp.Children.Add(new TextBlock { Text = "Recent print jobs", Classes = { "h3" }, Margin = new(0, 8, 0, 0) });
-        _jobs.Columns.Add(new DataGridTextColumn { Header = "When", Binding = new Avalonia.Data.Binding("When"), Width = new DataGridLength(150) });
-        _jobs.Columns.Add(new DataGridTextColumn { Header = "Document", Binding = new Avalonia.Data.Binding("Title"), Width = new DataGridLength(300) });
-        _jobs.Columns.Add(new DataGridTextColumn { Header = "Printer", Binding = new Avalonia.Data.Binding("Printer"), Width = new DataGridLength(130) });
-        _jobs.Columns.Add(new DataGridTextColumn { Header = "Copies", Binding = new Avalonia.Data.Binding("Copies"), Width = new DataGridLength(70) });
-        _jobs.Columns.Add(new DataGridTextColumn { Header = "State", Binding = new Avalonia.Data.Binding("State"), Width = new DataGridLength(120) });
-        _jobs.Columns.Add(new DataGridTextColumn { Header = "Detail", Binding = new Avalonia.Data.Binding("Detail"), Width = new DataGridLength(280) });
-        _jobs.Columns.Add(new DataGridTextColumn { Header = "Id", Binding = new Avalonia.Data.Binding("Id"), Width = new DataGridLength(280) });
+        // ---- recent print jobs ----
+        _jobs.Columns.Add(Ui.Col("When", "When", 150));
+        _jobs.Columns.Add(Ui.Col("Document", "Title", 300));
+        _jobs.Columns.Add(Ui.Col("Printer", "Printer", 130));
+        _jobs.Columns.Add(Ui.Col("Copies", "Copies", 70));
+        _jobs.Columns.Add(Ui.Col("State", "State", 120));
+        _jobs.Columns.Add(Ui.Col("Detail", "Detail", 280));
+        _jobs.Columns.Add(Ui.Col("Id", "Id", 280));
         _jobs.ItemsSource = JobRows();
-        sp.Children.Add(_jobs);
-        sp.Children.Add(new Button { Content = "Print again (selected job, same PDF)", Height = 32 }.With(_ => _.Click += (_, _) => ReprintSelected()));
-        sp.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap, Text = "Print again re-submits the previously rendered PDF with the recorded settings. Failed submissions are never retried automatically, because paper would come out twice if the first job actually printed. Printer presets, batch printing and binder templates land in Milestone 3." });
+
+        sp.Children.Add(Ui.Section("Recent print jobs", Ui.Col(10, _jobs,
+            Ui.Btn("Print again (selected job, same PDF)").With(b => { b.Height = 32; b.Click += (_, _) => ReprintSelected(); }),
+            Ui.Small("Print again re-submits the previously rendered PDF with the recorded settings. Failed submissions are never retried automatically, because paper would come out twice if the first job actually printed. Printer presets, batch printing and binder templates land in Milestone 3."))));
 
         return new ScrollViewer { Content = sp };
     }
@@ -112,18 +126,18 @@ public partial class PrintCentreView : UserControl
         var names = printers.Select(p => p.Name).ToList();
         _printer.ItemsSource = names;
         _printer.SelectedIndex = names.Count > 0 ? 0 : -1;
-        _status.Text = printers.Count == 0
+        _resultBar.Text = printers.Count == 0
             ? "No printers visible to CUPS (lpstat). You can still render and preview the PDF, or save it and print from another device."
             : $"{printers.Count} printer(s) found via CUPS." + (printers.FirstOrDefault(p => p.IsDefault) is { } def ? $" Default: {def.Name}." : "");
     }
 
     private async Task RenderAsync()
     {
-        if (_rows.Count == 0) { _status.Text = "No requirements imported yet — print needs a requirement to reference."; return; }
+        if (_rows.Count == 0) { _resultBar.Text = "No requirements imported yet — print needs a requirement to reference."; return; }
         var row = _rows.ElementAtOrDefault(Math.Max(_req.SelectedIndex, 0));
-        if (row == null) { _status.Text = "Choose a requirement first."; return; }
+        if (row == null) { _resultBar.Text = "Choose a requirement first."; return; }
         var detail = App.Workspace.RequirementDetail(row.Id, App.Session);
-        if (detail == null) { _status.Text = "Requirement details could not be loaded."; return; }
+        if (detail == null) { _resultBar.Text = "Requirement details could not be loaded."; return; }
 
         var variant = _variant.SelectedItem as string ?? "completed";
         var evRows = variant == "prefilled"
@@ -173,41 +187,41 @@ public partial class PrintCentreView : UserControl
                 _lastRenderedJob = job.Id;
                 _lastRenderedPdf = Path.Combine(AppData.PdfDir, rel);
             });
-            _status.Text = "Rendered. The preview window shows the generated pages; 'Send to printer' submits the same file through CUPS.";
+            _resultBar.Text = "Rendered. The preview window shows the generated pages; 'Send to printer' submits the same file through CUPS.";
             LoadJobs();
             ShowPreview(App.Printer.RecentJobs(30).First(j => j.Id == _lastRenderedJob));
         }
         catch (Exception ex)
         {
-            _status.Text = $"Rendering failed: {ex.Message}. Nothing was queued and no state was changed.";
+            _resultBar.Text = $"Rendering failed: {ex.Message}. Nothing was queued and no state was changed.";
         }
     }
 
     private void PrintLast()
     {
         if (_lastRenderedJob == Guid.Empty || !File.Exists(_lastRenderedPdf))
-        { _status.Text = "Render a document first."; return; }
+        { _resultBar.Text = "Render a document first."; return; }
         var printer = _printer.SelectedItem as string;
-        if (string.IsNullOrWhiteSpace(printer)) { _status.Text = "Choose a printer (none visible — refresh)."; return; }
+        if (string.IsNullOrWhiteSpace(printer)) { _resultBar.Text = "Choose a printer (none visible — refresh)."; return; }
         var outcome = App.Printer.SubmitToPrinter(_lastRenderedPdf, printer, (int)_copies.Value, _duplex.IsChecked == true);
         var state = outcome.Ok ? PrintJobState.SentToPrinter : PrintJobState.Failed;
         App.Printer.UpdateJobState(_lastRenderedJob, state, outcome.detail, "").GetAwaiter().GetResult();
-        _status.Text = outcome.detail;
+        _resultBar.Text = outcome.detail;
         LoadJobs();
     }
 
     private void ReprintSelected()
     {
-        if (_jobs.SelectedItem is not JobRow row) { _status.Text = "Select a job row."; return; }
+        if (_jobs.SelectedItem is not JobRow row) { _resultBar.Text = "Select a job row."; return; }
         var pdf = Path.Combine(AppData.PdfDir, $"job-{row.Id}.pdf");
-        if (!File.Exists(pdf)) { _status.Text = "The rendered PDF for this job is gone (cleaned up). Render again instead."; return; }
+        if (!File.Exists(pdf)) { _resultBar.Text = "The rendered PDF for this job is gone (cleaned up). Render again instead."; return; }
         var printer = _printer.SelectedItem as string;
-        if (string.IsNullOrWhiteSpace(printer)) { _status.Text = "Choose a printer."; return; }
+        if (string.IsNullOrWhiteSpace(printer)) { _resultBar.Text = "Choose a printer."; return; }
         var outcome = App.Printer.SubmitToPrinter(pdf, printer, (int)_copies.Value, _duplex.IsChecked == true);
         var job = App.Db.PrintJobs.FirstOrDefault(j => j.Id == row.Id);
         if (job != null)
             App.Printer.UpdateJobState(row.Id, outcome.Ok ? PrintJobState.SentToPrinter : PrintJobState.Failed, outcome.detail + " (re-print)", "").GetAwaiter().GetResult();
-        _status.Text = outcome.detail;
+        _resultBar.Text = outcome.detail;
         LoadJobs();
     }
 
@@ -227,7 +241,7 @@ public partial class PrintCentreView : UserControl
         }
         catch (Exception ex)
         {
-            _status.Text = $"Preview could not open: {ex.Message}. Use 'Open PDF externally'.";
+            _resultBar.Text = $"Preview could not open: {ex.Message}. Use 'Open PDF externally'.";
         }
     }
 }

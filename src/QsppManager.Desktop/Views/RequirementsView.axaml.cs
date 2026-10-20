@@ -14,7 +14,7 @@ namespace QsppManager.Desktop.Views;
 /// <summary>The flagship requirements workspace: corpus list on the left, working detail on
 /// the right. Detail = Overview / Evidence / Tasks / Notes tabs. State transitions and role
 /// checks live in QsppWorkspace; this view only collects intent and shows results.</summary>
-public partial class RequirementsView : UserControl
+public partial class RequirementsView : UserControl, IPageSearchFocus
 {
     private readonly ShellViewModel _shell;
     private readonly ObservableCollection<RequirementItem> _items = [];
@@ -32,7 +32,7 @@ public partial class RequirementsView : UserControl
         FilterBox.TextChanged += (_, _) => LoadList();
         ReqList.SelectionChanged += (_, _) =>
         {
-            if (ReqList.SelectedItem is RequirementRow r)
+            if (ReqList.SelectedItem is RequirementItem r)
                 LoadDetail(r.Id);
         };
         var first = _items.FirstOrDefault(i => i.RefKind == RefKind.Hitlist) ?? _items.FirstOrDefault();
@@ -46,6 +46,14 @@ public partial class RequirementsView : UserControl
         var row = _items.FirstOrDefault(i => i.Id == id);
         if (row != null) ReqList.SelectedItem = row;
     }
+
+    /// <summary>Command-palette / ⌘F hook: focus the filter and route a preset filter.</summary>
+    public void FocusSearch()
+    {
+        FilterBox.Focus();
+        FilterBox.SelectAll();
+    }
+    public void SetFilter(string text) => FilterBox.Text = text;
 
     private void LoadList()
     {
@@ -65,10 +73,23 @@ public partial class RequirementsView : UserControl
 
     private void LoadDetail(Guid id)
     {
-        _detail = App.Workspace.RequirementDetail(id, App.Session);
-        if (_detail == null) { Detail.Content = null; return; }
-        _currentDetailId = id.ToString();
-        Detail.Content = BuildDetail();
+        try
+        {
+            _detail = App.Workspace.RequirementDetail(id, App.Session);
+            if (_detail == null) { Detail.Content = null; ToastWindow.Show($"RequirementDetail returned null for id {id}", App.Main, error: true); return; }
+            _currentDetailId = id.ToString();
+            Detail.Content = BuildDetail();
+        }
+        catch (Exception ex)
+        {
+            ToastWindow.Show("DETAIL BUILD ERROR: " + ex.Message, App.Main, error: true);
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => ShowResultSafe("DETAIL BUILD ERROR: " + ex.Message));
+        }
+    }
+
+    private void ShowResultSafe(string text)
+    {
+        if (_resultBar != null) _resultBar.Text = text;
     }
 
     // ---------------- detail construction ----------------
@@ -96,7 +117,7 @@ public partial class RequirementsView : UserControl
         tabs.Items.Add(new TabItem { Header = "Notes & issues", Content = Pad(notes) });
         sp.Children.Add(tabs);
 
-        _resultBar = new TextBox { IsReadOnly = true, TextWrapping = TextWrapping.Wrap, MinHeight = 34, Watermark = "Result messages appear here", Foreground = MediaBrushes.Muted };
+        _resultBar = new TextBox { IsReadOnly = true, TextWrapping = TextWrapping.Wrap, MinHeight = 34, Watermark = "Result messages appear here", Classes = { "result" } };
         sp.Children.Insert(2, _resultBar);   // under the status row, above the tabs
 
         return new ScrollViewer { Content = sp };
@@ -107,7 +128,7 @@ public partial class RequirementsView : UserControl
     private Control Header(RequirementDetail d)
     {
         var sp = new StackPanel { Spacing = 4 };
-        sp.Children.Add(new TextBlock { Text = d.Requirement.Ref, FontFamily = new FontFamily("JetBrains Mono"), FontSize = 12 });
+        sp.Children.Add(new TextBlock { Text = d.Requirement.Ref, Classes = { "mono" }, Foreground = Ui.Br("Brush.Muted") });
         sp.Children.Add(new TextBlock { Text = d.Requirement.Title,Classes = { "h2" }, TextWrapping = TextWrapping.Wrap });
         sp.Children.Add(new TextBlock
         {
@@ -127,19 +148,19 @@ public partial class RequirementsView : UserControl
     private Control StatusRow(RequirementDetail d)
     {
         var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
-        row.Children.Add(TagChip(ReadinessLabel(d.State.Readiness), d.State.Readiness switch
+        row.Children.Add(Ui.Chip(ReadinessLabel(d.State.Readiness), d.State.Readiness switch
         {
-            RequirementReadiness.ManagerVerified or RequirementReadiness.AssessorAccepted => "Green",
-            RequirementReadiness.NotStarted => "Muted",
-            _ => "Caution",
+            RequirementReadiness.ManagerVerified or RequirementReadiness.AssessorAccepted => "ok",
+            RequirementReadiness.NotStarted => "info",
+            _ => "warn",
         }));
-        row.Children.Add(TagChip(ApplicabilityLabel(d.State.Applicability), d.State.Applicability switch
+        row.Children.Add(Ui.Chip(ApplicabilityLabel(d.State.Applicability), d.State.Applicability switch
         {
-            Applicability.Applicable => "Green",
-            Applicability.NotApplicable => "Muted",
-            _ => "Caution",
+            Applicability.Applicable => "ok",
+            Applicability.NotApplicable => "info",
+            _ => "warn",
         }));
-        if (d.State.OwnerUnassigned) row.Children.Add(new Border { Classes = { "tag" }, Child = new TextBlock { Text = "OWNER UNASSIGNED" } });
+        if (d.State.OwnerUnassigned) row.Children.Add(Ui.Chip("Owner not assigned", "warn"));
         else row.Children.Add(new TextBlock { Classes = { "small" }, Text = $"Owner: {d.OwnerName}", VerticalAlignment = VerticalAlignment.Center });
         return row;
     }
@@ -367,11 +388,7 @@ public partial class RequirementsView : UserControl
             st.Children.Add(new TextBlock { Text = "Interpretation issues affecting this requirement", Classes = { "h3" } });
             foreach (var issue in d.RelatedIssues)
             {
-                var box = new Border
-                {
-                    BorderBrush = MediaBrushes.Caution, BorderThickness = new(1),
-                    Padding = new(10), Background = new SolidColorBrush(Color.Parse("#FBF6E9")),
-                };
+                var box = new Border { Classes = { "issuebox" } };
                 var isp = new StackPanel { Spacing = 5 };
                 isp.Children.Add(new TextBlock { Text = issue.Title, FontWeight = FontWeight.SemiBold, TextWrapping = TextWrapping.Wrap });
                 isp.Children.Add(new TextBlock { Classes = { "small" }, Text = "Conservative planning: " + issue.ConservativePlanning, TextWrapping = TextWrapping.Wrap });
@@ -418,33 +435,6 @@ public partial class RequirementsView : UserControl
         if (_resultBar != null) _resultBar.Text = text;
     }
     private void ShowInfo(string text) => ShowResult(text);
-
-    private static StackPanel Card(string label, Control content)
-    {
-        var b = new Border
-        {
-            Background = MediaBrushes.White, BorderBrush = MediaBrushes.Divider, BorderThickness = new(1),
-            Padding = new(16), Child = new StackPanel { Spacing = 8, Children = { new TextBlock { Text = label, Classes = { "label" } }, content } },
-        };
-        return new StackPanel { Children = { b } };
-    }
-
-    internal static Border TagChip(string text, string tone)
-    {
-        var color = tone switch
-        {
-            "Green" => "#23614D",
-            "Muted" => "#52685C",
-            "Alert" => "#9A3F1F",
-            _ => "#7A5200",
-        };
-        return new Border
-        {
-            Classes = { "tag" },
-            BorderBrush = new SolidColorBrush(Color.Parse(color)),
-            Child = new TextBlock { Text = text, Foreground = new SolidColorBrush(Color.Parse(color)) },
-        };
-    }
 
     private static string ReadinessLabel(RequirementReadiness r) => r switch
     {
@@ -512,14 +502,4 @@ public record RequirementItem
         OwnerNote = r.OwnerUnassigned ? "Owner not assigned" : $"Owner: {r.OwnerName} · {r.EvidenceCount} evidence · {r.OpenTaskCount} open tasks";
         Applicability = r.Applicability;
     }
-}
-
-internal static class MediaBrushes
-{
-    public static IBrush Muted => new SolidColorBrush(Color.Parse("#52685C"));
-    public static IBrush Divider => new SolidColorBrush(Color.Parse("#A9B7A3"));
-    public static IBrush Ink => new SolidColorBrush(Color.Parse("#163F35"));
-    public static IBrush White => new SolidColorBrush(Color.Parse("#FFFEF8"));
-    public static IBrush Caution => new SolidColorBrush(Color.Parse("#7A5200"));
-    public static IBrush Alert => new SolidColorBrush(Color.Parse("#9A3F1F"));
 }

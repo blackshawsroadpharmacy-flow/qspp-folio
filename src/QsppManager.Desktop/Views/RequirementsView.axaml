@@ -1,21 +1,21 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="QsppManager.Desktop.Views.RequirementsView">
-  <Grid ColumnDefinitions="380,*">
-    <Border Grid.Column="0" BorderBrush="{StaticResource Brush.Divider}" BorderThickness="0,0,1,0" Background="{StaticResource Brush.White}">
-      <DockPanel Margin="12,12">
+  <Grid ColumnDefinitions="392,*">
+    <Border Grid.Column="0" BorderBrush="{DynamicResource Brush.Divider}" BorderThickness="0,0,1,0" Background="{DynamicResource Brush.Surface}">
+      <DockPanel Margin="12,10,8,8">
         <TextBox x:Name="FilterBox" DockPanel.Dock="Top" Watermark="Filter by reference or title" />
-        <TextBlock x:Name="CountLabel" DockPanel.Dock="Top" Classes="small" Margin="0,6,0,0" />
-        <ListBox x:Name="ReqList" Margin="0,8,0,0" BorderThickness="0" Background="Transparent">
+        <TextBlock x:Name="CountLabel" DockPanel.Dock="Top" Classes="monoSm" Margin="2,8,0,0" />
+        <ListBox x:Name="ReqList" Classes="list" Margin="4,8,4,0" Background="Transparent">
           <ListBox.ItemTemplate>
             <DataTemplate>
-              <StackPanel Margin="2,4">
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                  <TextBlock Text="{Binding Ref}" FontFamily="JetBrains Mono" FontSize="12" />
+              <StackPanel Spacing="2" Margin="0">
+                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis" />
+                <StackPanel Orientation="Horizontal" Spacing="7">
+                  <TextBlock Text="{Binding Ref}" Classes="monoSm" Foreground="{DynamicResource Brush.Green}" />
                   <TextBlock Text="{Binding ReadinessLabel}" Classes="small" />
                 </StackPanel>
-                <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
-                <TextBlock Classes="small" Text="{Binding OwnerNote}" TextTrimming="CharacterEllipsis" />
+                <TextBlock Text="{Binding OwnerNote}" Classes="small" TextTrimming="CharacterEllipsis" />
               </StackPanel>
             </DataTemplate>
           </ListBox.ItemTemplate>

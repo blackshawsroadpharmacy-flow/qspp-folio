@@ -80,7 +80,7 @@
       <!-- Deadlines -->
       <StackPanel>
         <TextBlock Classes="h3">Program deadlines and plan markers</TextBlock>
-        <TextBlock Classes="small" TextWrapping="Wrap" MaxWidth="640">Dates marked "planning only" are the conservative reading of sources that disagree. They are planning aids, not program deadlines. The Settings page lists each conflicting source in full.</TextBlock>
+        <TextBlock Classes="small" TextWrapping="Wrap" MaxWidth="640" HorizontalAlignment="Left">Dates marked "planning only" are the conservative reading of sources that disagree. They are planning aids, not program deadlines. The Settings page lists each conflicting source in full.</TextBlock>
         <ItemsControl ItemsSource="{Binding Deadlines}" Margin="0,6,0,0">
           <ItemsControl.ItemTemplate>
             <DataTemplate>
@@ -88,7 +88,7 @@
                 <StackPanel>
                   <TextBlock Text="{Binding DateLabel}" Classes="mono" />
                   <TextBlock Text="{Binding Title}" />
-                  <TextBlock Classes="small" Text="{Binding Explanation}" TextWrapping="Wrap" MaxWidth="780" />
+                  <TextBlock Classes="small" Text="{Binding Explanation}" TextWrapping="Wrap" MaxWidth="780" HorizontalAlignment="Left" />
                   <Border Classes="tag" HorizontalAlignment="Left" Margin="0,4,0,0" IsVisible="{Binding PlanningOnly}">
                     <TextBlock Text="PLANNING ONLY — SOURCES DISAGREE" />
                   </Border>

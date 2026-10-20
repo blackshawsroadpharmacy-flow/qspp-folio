@@ -27,7 +27,7 @@ public partial class SettingsView : UserControl
     private readonly DatePicker _expiry = new();
     private readonly DatePicker _onsite = new();
     private readonly ComboBox _scale = new() { SelectedIndex = 1, MinWidth = 200, ItemsSource = new[] { "Normal", "Larger (115%)", "Largest (130%)" } };
-    private readonly ListBox _deadlineBox = new() { Height = 220 };
+    private readonly ListBox _deadlineBox = new() { Height = 220, Background = Avalonia.Media.Brushes.Transparent, BorderThickness = new Avalonia.Thickness(0) };
     private readonly TextBlock _message = new() { Classes = { "small" }, TextWrapping = TextWrapping.Wrap };
 
     public SettingsView(ShellViewModel shell)
@@ -40,16 +40,16 @@ public partial class SettingsView : UserControl
 
     private Control Build()
     {
-        var sp = new StackPanel { Margin = new(32, 28), Spacing = 16, MaxWidth = 1100, HorizontalAlignment = HorizontalAlignment.Left };
+        var sp = new StackPanel { Margin = new(32, 28), Spacing = 18, MaxWidth = 1100, HorizontalAlignment = HorizontalAlignment.Left };
         sp.Children.Add(new TextBlock { Classes = { "h1" }, Text = "Settings" });
 
         // Pharmacy profile
-        sp.Children.Add(new TextBlock { Text = "Pharmacy profile and accreditation stage", Classes = { "h3" } });
-        sp.Children.Add(_name);
-        sp.Children.Add(_jur);
+        var profile = new StackPanel { Spacing = 12 };
+        profile.Children.Add(_name);
+        profile.Children.Add(_jur);
         var flags = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 16 };
         flags.Children.Add(_complex); flags.Children.Add(_sterile); flags.Children.Add(_prescribing); flags.Children.Add(_indirect);
-        sp.Children.Add(flags);
+        profile.Children.Add(flags);
         var dates = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 16,
             Children =
             {
@@ -57,34 +57,36 @@ public partial class SettingsView : UserControl
                 new StackPanel { Children = { new TextBlock { Classes = { "label" }, Text = "ACCREDITATION EXPIRY (OPTIONAL)" }, _expiry } },
                 new StackPanel { Children = { new TextBlock { Classes = { "label" }, Text = "ONSITE ASSESSMENT DATE (OPTIONAL)" }, _onsite } },
             } };
-        sp.Children.Add(dates);
+        profile.Children.Add(dates);
         var save = new Button { Content = "Save profile", Classes = { "primary" }, Height = 36 };
         save.Click += (_, _) => SaveProfile();
-        sp.Children.Add(save);
-        sp.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap, Text = "Leave dates blank if unknown — QSPP Manager will not invent a deadline; it lists obligations that do not depend on the missing date." });
+        profile.Children.Add(save);
+        profile.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap, Text = "Leave dates blank if unknown — QSPP Manager will not invent a deadline; it lists obligations that do not depend on the missing date." });
+        sp.Children.Add(Ui.Section("Pharmacy profile", profile));
 
-        sp.Children.Add(new TextBlock { Text = "Resulting known deadlines from the program sources", Classes = { "h3" } });
-        
-        sp.Children.Add(_deadlineBox);
+        // Deadlines
+        sp.Children.Add(Ui.Section("Resulting known deadlines from the program sources", _deadlineBox));
 
         // Users
-        sp.Children.Add(new TextBlock { Text = "Users and roles", Classes = { "h3" } });
         _users.Columns.Add(new DataGridTextColumn { Header = "Name", Binding = new Avalonia.Data.Binding("Name"), Width = new DataGridLength(200) });
         _users.Columns.Add(new DataGridTextColumn { Header = "User name", Binding = new Avalonia.Data.Binding("UserName"), Width = new DataGridLength(140) });
         _users.Columns.Add(new DataGridTextColumn { Header = "Role", Binding = new Avalonia.Data.Binding("Role"), Width = new DataGridLength(220) });
-        sp.Children.Add(_users);
+        var users = new StackPanel { Spacing = 10 };
+        users.Children.Add(_users);
         var addUser = new Button { Content = "Add user…" };
         addUser.Click += (_, _) => AddUser();
-        sp.Children.Add(addUser);
+        users.Children.Add(addUser);
+        sp.Children.Add(Ui.Section("Users and roles", users));
 
         // Accessibility
-        sp.Children.Add(new TextBlock { Text = "Text size (independent of density)", Classes = { "h3" } });
-        sp.Children.Add(_scale);
-        sp.Children.Add(new TextBlock { Classes = { "small" }, Text = "Density (standard now) gains its own setting in Milestone 5 with compact/comfortable spacing." });
+        var a11y = new StackPanel { Spacing = 10 };
+        a11y.Children.Add(_scale);
+        a11y.Children.Add(new TextBlock { Classes = { "small" }, Text = "Applies immediately across every screen. Dark appearance and text size also live in the View menu." });
+        sp.Children.Add(Ui.Section("Text size", a11y));
 
         // Data + integrity
-        sp.Children.Add(new TextBlock { Text = "Data location and integrity", Classes = { "h3" } });
-        sp.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap, Text = $"Database, attachments, rendered PDFs and backups live under: {AppData.Root}\nManaged attachments are content-addressed (sha256). The audit trail is append-only and hash-chained — tamper-EVIDENCE, not tamper-proofing: a machine administrator can still touch files." });
+        var data = new StackPanel { Spacing = 10 };
+        data.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap, Text = $"Database, attachments, rendered PDFs and backups live under: {AppData.Root}\nManaged attachments are content-addressed (sha256). The audit trail is append-only and hash-chained — tamper-EVIDENCE, not tamper-proofing: a machine administrator can still touch files." });
         var verify = new Button { Content = "Verify audit chain now" };
         verify.Click += (_, _) =>
         {
@@ -95,13 +97,15 @@ public partial class SettingsView : UserControl
         backup.Click += (_, _) => { _ = Backup(); };
         var restoreBtn = new Button { Content = "Restore from backup…" };
         restoreBtn.Click += (_, _) => { _ = RestoreAsync(); };
-        var bRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { verify, backup, restoreBtn } };
-        sp.Children.Add(bRow);
-        sp.Children.Add(_message);
+        data.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { verify, backup, restoreBtn } });
+        data.Children.Add(_message);
+        sp.Children.Add(Ui.Section("Data location and integrity", data));
 
-        sp.Children.Add(new TextBlock { Text = "Reference corpus", Classes = { "h3" } });
-        sp.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap, Text = $"Import summary is refreshed at startup: {App.Db.Requirements.Count()} requirements · {App.Db.SourceDocuments.Count()} source documents · {App.Db.InterpretationIssues.Count()} interpretation issues (retrieved 2026-10-19). Capacity-toolkit.pdf was rejected at import — it is an HTML page, not a PDF." });
-        sp.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap, Text = "Authentication cookies material (website-scrape/cookies.json, browser profiles) is deliberately kept out of the application database, backups, exports and source control." });
+        // Reference corpus
+        var corpus = new StackPanel { Spacing = 8 };
+        corpus.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap, Text = $"Import summary is refreshed at startup: {App.Db.Requirements.Count()} requirements · {App.Db.SourceDocuments.Count()} source documents · {App.Db.InterpretationIssues.Count()} interpretation issues. Capacity-toolkit.pdf was rejected at import — it is an HTML page, not a PDF." });
+        corpus.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap, Text = "Authentication cookies material (website-scrape/cookies.json, browser profiles) is deliberately kept out of the application database, backups, exports and source control." });
+        sp.Children.Add(Ui.Section("Reference corpus", corpus));
 
         return new ScrollViewer { Content = sp };
     }

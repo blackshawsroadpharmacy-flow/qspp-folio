@@ -129,6 +129,11 @@ public partial class MainWindow : Window
     {
         Helpers.SetTextScale(Math.Clamp(App.Config.TextScale, 1.0, 2.0));
         Helpers.TextScaleChanged += _ => { FontSize = 14 * Helpers.TextScale; }; // inherited fallback; layout scale lives on PageHost
+
+        // Theme change (menu toggle or OS system appearance): code-built pages capture
+        // brushes at build time → rebuild the visible page so it re-resolves tokens.
+        Helpers.ThemeChanged += () => Avalonia.Threading.Dispatcher.UIThread.Post(RebuildPageHost);
+        ActualThemeVariantChanged += (_, _) => Helpers.FireThemeChanged();
         FontSize = 14 * Helpers.TextScale;
     }
 

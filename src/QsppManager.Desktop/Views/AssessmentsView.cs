@@ -18,10 +18,11 @@ public partial class AssessmentsView : UserControl
 
     public AssessmentsView(ShellViewModel shell)
     {
-        var sp = new StackPanel { Margin = new(32, 28), Spacing = 14, MaxWidth = 1100, HorizontalAlignment = HorizontalAlignment.Left };
-        sp.Children.Add(new TextBlock { Classes = { "h1" }, Text = "Assessments" });
+        var sp = new StackPanel { Margin = new(32, 28), Spacing = 14, MaxWidth = 1040, HorizontalAlignment = HorizontalAlignment.Left };
+        sp.Children.Add(Ui.H1("Assessments"));
         sp.Children.Add(new TextBlock { Classes = { "lead" },
             Text = "The preparation journey from first reading to the cycle's end. QSPP accreditation is awarded by the Guild's assessment process — this screen helps you arrive ready and keep the records that show it. Counts are live database values; what to do next is stated plainly." });
+        sp.Children.Add(_resultBar);
 
         Refresh(sp, shell);
         BuildEvents(sp);
@@ -31,96 +32,95 @@ public partial class AssessmentsView : UserControl
 
     private void BuildEvents(StackPanel sp)
     {
-        sp.Children.Add(new TextBlock { Text = "Assessment events timeline & findings", Classes = { "h3" }, Margin = new(0, 10, 0, 0) });
-        sp.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
+        var body = new StackPanel { Spacing = 10 };
+        body.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
             Text = "Record each planned assessment and the outcome when it actually arrives — an outcome can never be marked received without the report or letter reference. Findings carry corrective actions; a finding cannot close empty." });
-        _events.Columns.Add(new DataGridTextColumn { Header = "Kind", Binding = new Avalonia.Data.Binding("Kind"), Width = new DataGridLength(130) });
-        _events.Columns.Add(new DataGridTextColumn { Header = "Date", Binding = new Avalonia.Data.Binding("Date"), Width = new DataGridLength(110) });
-        _events.Columns.Add(new DataGridTextColumn { Header = "State", Binding = new Avalonia.Data.Binding("State"), Width = new DataGridLength(140) });
-        _events.Columns.Add(new DataGridTextColumn { Header = "Outcome reference", Binding = new Avalonia.Data.Binding("Outcome"), Width = new DataGridLength(260) });
-        _events.Columns.Add(new DataGridTextColumn { Header = "Note", Binding = new Avalonia.Data.Binding("Note"), Width = new DataGridLength(400) });
-        sp.Children.Add(_events);
+        _events.Columns.Add(Ui.Col("Kind", "Kind", 130));
+        _events.Columns.Add(Ui.Col("Date", "Date", 110));
+        _events.Columns.Add(Ui.Col("State", "State", 140));
+        _events.Columns.Add(Ui.Col("Outcome reference", "Outcome", 260));
+        _events.Columns.Add(Ui.Col("Note", "Note", 400));
+        Ui.Ax(_events, "Assessment events", "Timeline of planned and completed accreditation assessment events");
+        body.Children.Add(_events);
         _events.SelectionChanged += (_, _) => LoadFindings();
-        var evRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        evRow.Children.Add(new Button { Content = "New event…", Classes = { "primary" }, Height = 34 }.With(b => b.Click += async (_, _) =>
-        {
-            var kind = await Dialogs.Prompt(this, "New assessment event", "Onsite, MidCycle, ReAccreditation or Other", "Onsite");
-            if (string.IsNullOrWhiteSpace(kind)) return;
-            var dateText = await Dialogs.Prompt(this, "New assessment event", "Scheduled date (yyyy-MM-dd)");
-            if (!DateOnly.TryParse(dateText, out var date)) { _eventsMessage.Text = "Date must be yyyy-MM-dd."; return; }
-            var note = await Dialogs.Prompt(this, "New assessment event", "Note (provider, booking ref…)") ?? "";
-            var res = App.Workspace.AddAssessmentEvent(kind.Trim(), date, note, App.Session!);
-            _eventsMessage.Text = res.Ok ? "Event recorded on the timeline." : res.Error;
-            LoadEvents();
-        }));
-        evRow.Children.Add(new Button { Content = "Mark completed", Height = 34 }.With(b => b.Click += (_, _) =>
-        {
-            if (_events.SelectedItem is not EvRow r) { _eventsMessage.Text = "Select an event first."; return; }
-            var res = App.Workspace.SetAssessmentEventState(r.Id, "Completed", "", App.Session!);
-            _eventsMessage.Text = res.Ok ? "Marked completed." : res.Error;
-            LoadEvents();
-        }));
-        evRow.Children.Add(new Button { Content = "Outcome received…", Height = 34 }.With(b => b.Click += async (_, _) =>
-        {
-            if (_events.SelectedItem is not EvRow r) { _eventsMessage.Text = "Select an event first."; return; }
-            var refText = await Dialogs.Prompt(this, "Outcome received", "Report or letter reference (required)");
-            var res = App.Workspace.SetAssessmentEventState(r.Id, "OutcomeReceived", refText ?? "", App.Session!);
-            _eventsMessage.Text = res.Ok ? "Outcome recorded with its reference — the closure evidence the program expects." : res.Error;
-            LoadEvents();
-        }));
-        sp.Children.Add(evRow);
+        var evRow = Ui.BtnRow(
+            Ui.PrimaryBtn("New event…").With(b => b.Click += async (_, _) =>
+            {
+                var kind = await Dialogs.Prompt(this, "New assessment event", "Onsite, MidCycle, ReAccreditation or Other", "Onsite");
+                if (string.IsNullOrWhiteSpace(kind)) return;
+                var dateText = await Dialogs.Prompt(this, "New assessment event", "Scheduled date (yyyy-MM-dd)");
+                if (!DateOnly.TryParse(dateText, out var date)) { _resultBar.Text = "Date must be yyyy-MM-dd."; return; }
+                var note = await Dialogs.Prompt(this, "New assessment event", "Note (provider, booking ref…)") ?? "";
+                var res = App.Workspace.AddAssessmentEvent(kind.Trim(), date, note, App.Session!);
+                _resultBar.Text = res.Ok ? "Event recorded on the timeline." : res.Error;
+                LoadEvents();
+            }),
+            Ui.Btn("Mark completed").With(b => b.Click += (_, _) =>
+            {
+                if (_events.SelectedItem is not EvRow r) { _resultBar.Text = "Select an event first."; return; }
+                var res = App.Workspace.SetAssessmentEventState(r.Id, "Completed", "", App.Session!);
+                _resultBar.Text = res.Ok ? "Marked completed." : res.Error;
+                LoadEvents();
+            }),
+            Ui.Btn("Outcome received…").With(b => b.Click += async (_, _) =>
+            {
+                if (_events.SelectedItem is not EvRow r) { _resultBar.Text = "Select an event first."; return; }
+                var refText = await Dialogs.Prompt(this, "Outcome received", "Report or letter reference (required)");
+                var res = App.Workspace.SetAssessmentEventState(r.Id, "OutcomeReceived", refText ?? "", App.Session!);
+                _resultBar.Text = res.Ok ? "Outcome recorded with its reference — the closure evidence the program expects." : res.Error;
+                LoadEvents();
+            }));
+        body.Children.Add(evRow);
 
-        sp.Children.Add(new TextBlock { Text = "Findings (selected event)", Classes = { "h3" }, Margin = new(0, 6, 0, 0) });
-        _findings.Columns.Add(new DataGridTextColumn { Header = "Requirement", Binding = new Avalonia.Data.Binding("ReqRef"), Width = new DataGridLength(120) });
-        _findings.Columns.Add(new DataGridTextColumn { Header = "Severity", Binding = new Avalonia.Data.Binding("Severity"), Width = new DataGridLength(100) });
-        _findings.Columns.Add(new DataGridTextColumn { Header = "Description", Binding = new Avalonia.Data.Binding("Desc"), Width = new DataGridLength(430) });
-        _findings.Columns.Add(new DataGridTextColumn { Header = "State", Binding = new Avalonia.Data.Binding("State"), Width = new DataGridLength(90) });
-        _findings.Columns.Add(new DataGridTextColumn { Header = "Corrective action", Binding = new Avalonia.Data.Binding("Action"), Width = new DataGridLength(280) });
-        sp.Children.Add(_findings);
-        var fRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        fRow.Children.Add(new Button { Content = "Record finding…", Height = 34 }.With(b => b.Click += async (_, _) =>
-        {
-            if (_events.SelectedItem is not EvRow ev) { _eventsMessage.Text = "Select an event first."; return; }
-            var desc = await Dialogs.Prompt(this, "Record finding", "What was found");
-            if (string.IsNullOrWhiteSpace(desc)) return;
-            var reqRef = await Dialogs.Prompt(this, "Record finding", "Related requirement ref (optional, e.g. 2.2.3.8)") ?? "";
-            var sev = await Dialogs.Prompt(this, "Record finding", "Severity (free text — the program defines no taxonomy)") ?? "";
-            var res = App.Workspace.AddFinding(ev.Id, reqRef, desc, sev, App.Session!.UserId, App.Session);
-            _eventsMessage.Text = res.Ok ? "Finding recorded — it stays open until a corrective action closes it." : res.Error;
-            LoadEvents();
-        }));
-        fRow.Children.Add(new Button { Content = "Close finding…", Height = 34 }.With(b => b.Click += async (_, _) =>
-        {
-            if (_findings.SelectedItem is not FRow f) { _eventsMessage.Text = "Select a finding first."; return; }
-            var action = await Dialogs.Prompt(this, "Close finding", "Corrective action (required to close)");
-            var res = App.Workspace.SetFindingState(f.Id, "Closed", action ?? "", App.Session!);
-            _eventsMessage.Text = res.Ok ? "Finding closed with its corrective action on record." : res.Error;
-            LoadEvents();
-        }));
-        sp.Children.Add(fRow);
-        _eventsMessage = new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap };
-        sp.Children.Add(_eventsMessage);
+        body.Children.Add(new TextBlock { Text = "Findings (selected event)", Classes = { "h3" } });
+        _findings.Columns.Add(Ui.Col("Requirement", "ReqRef", 120));
+        _findings.Columns.Add(Ui.Col("Severity", "Severity", 100));
+        _findings.Columns.Add(Ui.Col("Description", "Desc", 430));
+        _findings.Columns.Add(Ui.Col("State", "State", 90));
+        _findings.Columns.Add(Ui.Col("Corrective action", "Action", 280));
+        Ui.Ax(_findings, "Findings", "Assessment findings attached to the selected event");
+        body.Children.Add(_findings);
+        var fRow = Ui.BtnRow(
+            Ui.PrimaryBtn("Record finding…").With(b => b.Click += async (_, _) =>
+            {
+                if (_events.SelectedItem is not EvRow ev) { _resultBar.Text = "Select an event first."; return; }
+                var desc = await Dialogs.Prompt(this, "Record finding", "What was found");
+                if (string.IsNullOrWhiteSpace(desc)) return;
+                var reqRef = await Dialogs.Prompt(this, "Record finding", "Related requirement ref (optional, e.g. 2.2.3.8)") ?? "";
+                var sev = await Dialogs.Prompt(this, "Record finding", "Severity (free text — the program defines no taxonomy)") ?? "";
+                var res = App.Workspace.AddFinding(ev.Id, reqRef, desc, sev, App.Session!.UserId, App.Session);
+                _resultBar.Text = res.Ok ? "Finding recorded — it stays open until a corrective action closes it." : res.Error;
+                LoadEvents();
+            }),
+            Ui.Btn("Close finding…").With(b => b.Click += async (_, _) =>
+            {
+                if (_findings.SelectedItem is not FRow f) { _resultBar.Text = "Select a finding first."; return; }
+                var action = await Dialogs.Prompt(this, "Close finding", "Corrective action (required to close)");
+                var res = App.Workspace.SetFindingState(f.Id, "Closed", action ?? "", App.Session!);
+                _resultBar.Text = res.Ok ? "Finding closed with its corrective action on record." : res.Error;
+                LoadEvents();
+            }));
+        body.Children.Add(fRow);
+        sp.Children.Add(Ui.Section("Assessment events timeline & findings", body));
 
         // ---- assessor pack ----
-        sp.Children.Add(new TextBlock { Text = "Assessor pack export", Classes = { "h3" }, Margin = new(0, 10, 0, 0) });
-        sp.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
+        var pack = new StackPanel { Spacing = 10 };
+        pack.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
             Text = "One checklist per manager-verified/applicable requirement plus the verified evidence that passes the redaction review, with a tamper-evident manifest (per-file sha256). Patient-data evidence without a redaction attestation is excluded and the exclusion is recorded in the manifest — decide with the manager whether to redact and re-import instead." });
-        sp.Children.Add(new Button
-        {
-            Content = "Export assessor pack…", Classes = { "primary" }, Height = 36, MinWidth = 200,
-        }.With(b => b.Click += async (_, _) =>
+        pack.Children.Add(Ui.PrimaryBtn("Export assessor pack…", minWidth: 200).With(b => b.Click += async (_, _) =>
         {
             var label = await Dialogs.Prompt(this, "Assessor pack", "Label for this export (optional)") ?? "";
             var svc = new AssessorPackService(App.Workspace, App.Db, App.Composer, App.Store, AppData.PackDir);
             var (ok, zipPath, error, reqCount, files, exclusions) = svc.Export(App.Session!, label);
-            if (!ok) { _eventsMessage.Text = $"Assessor pack failed: {error}"; return; }
+            if (!ok) { _resultBar.Text = $"Assessor pack failed: {error}"; return; }
             var note = exclusions.Count > 0 ? $"\nREDACTION EXCLUSIONS ({exclusions.Count}):\n- " + string.Join("\n- ", exclusions.Take(6)) : "\nNo redaction exclusions.";
-            _eventsMessage.Text = $"Pack exported: {zipPath}\n{reqCount} requirement checklist(s), {files} evidence file(s).{note}";
+            _resultBar.Text = $"Pack exported: {zipPath}\n{reqCount} requirement checklist(s), {files} evidence file(s).{note}";
             Helpers.OpenWithSystemViewer(zipPath);
         }));
+        sp.Children.Add(Ui.Section("Assessor pack export", pack));
     }
 
-    private TextBlock _eventsMessage = new();
+    private readonly TextBox _resultBar = new() { IsReadOnly = true, TextWrapping = TextWrapping.Wrap, MinHeight = 34, Watermark = "Result messages appear here", Classes = { "result" } };
 
     private void LoadEvents()
     {
@@ -150,8 +150,8 @@ public partial class AssessmentsView : UserControl
         // Diagnostic strip: the four numbers that get pharmacies caught out.
         sp.Children.Add(new Border
         {
-            Padding = new(14, 10), Background = Helpers.Brush("Brush.Sage"),
-            BorderBrush = Helpers.Brush("Brush.Divider"), BorderThickness = new(1),
+            Padding = new(14, 10), Background = Ui.Br("Brush.Sage"),
+            BorderBrush = Ui.Br("Brush.Divider"), BorderThickness = new(1),
             Child = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 26, Children =
             {
                 Mini("Overdue tasks", j.OverdueTasks.ToString()),
@@ -222,7 +222,7 @@ public partial class AssessmentsView : UserControl
     {
         sp.Children.Add(new Border
         {
-            BorderBrush = Helpers.Brush("Brush.Divider"), BorderThickness = new(0, 0, 0, 1),
+            BorderBrush = Ui.Br("Brush.Divider"), BorderThickness = new(0, 0, 0, 1),
             Padding = new(0, 10),
             Child = new Grid
             {
@@ -232,14 +232,20 @@ public partial class AssessmentsView : UserControl
                     new StackPanel { Spacing = 4, Children =
                     {
                         new TextBlock { Text = title, Classes = { "h3" } },
-                        new TextBlock { Text = status, TextWrapping = TextWrapping.Wrap, Classes = { "small" }, MaxWidth = 780 },
-                        new TextBlock { Text = advice, TextWrapping = TextWrapping.Wrap, Classes = { "small" }, MaxWidth = 780, Opacity = 0.85 },
+                        new TextBlock { Text = status, TextWrapping = TextWrapping.Wrap, Classes = { "small" }, MaxWidth = 780, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left },
+                        new TextBlock { Text = advice, TextWrapping = TextWrapping.Wrap, Classes = { "small" }, MaxWidth = 780, Opacity = 0.85, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left },
                     } },
-                    new Button { Content = button.label, Height = 34, MinWidth = 150, VerticalAlignment = VerticalAlignment.Top,
-                        Command = new SimpleNav(shell, button.page) },
+                    WithColumn(Ui.Btn(button.label, new SimpleNav(shell, button.page), minWidth: 150)),
                 },
             },
         });
+    }
+
+    private static Avalonia.Controls.Button WithColumn(Avalonia.Controls.Button button)
+    {
+        Avalonia.Controls.Grid.SetColumn(button, 1);
+        button.VerticalAlignment = VerticalAlignment.Top;
+        return button;
     }
 
     private sealed class SimpleNav(ShellViewModel shell, ShellPage page) : System.Windows.Input.ICommand

@@ -18,7 +18,7 @@ public static class Dialogs
         var win = new Window { Title = title, Width = 520, SizeToContent = SizeToContent.Height, WindowStartupLocation = WindowStartupLocation.CenterOwner };
         var box = new TextBox { Watermark = watermark, Text = initial, Margin = new(20, 16) };
         var tcs = new TaskCompletionSource<string?>();
-        var ok = new Button { Content = "Send", Classes = { "primary" }, MinWidth = 90 };
+        var ok = new Button { Content = "OK", Classes = { "primary" }, MinWidth = 90 };
         var cancel = new Button { Content = "Cancel", MinWidth = 80 };
         ok.Click += (_, _) => { tcs.TrySetResult(box.Text); win.Close(); };
         cancel.Click += (_, _) => { tcs.TrySetResult(null); win.Close(); };
@@ -31,6 +31,7 @@ public static class Dialogs
         {
             Children =
             {
+                new TextBlock { Classes = { "h3" }, Text = title, Margin = new(20, 14, 20, 0) },
                 box,
                 new StackPanel
                 {
@@ -150,6 +151,8 @@ public sealed class EvidencePickerDialog : Window
         _grid.Columns.Add(new DataGridTextColumn { Header = "Effective", Binding = new Avalonia.Data.Binding("Effective"), Width = new DataGridLength(160) });
         _grid.Columns.Add(new DataGridTextColumn { Header = "File", Binding = new Avalonia.Data.Binding("FileName"), Width = new DataGridLength(130) });
 
+        var cancel = new Button { Content = "Cancel", HorizontalAlignment = HorizontalAlignment.Right, Margin = new(0, 0, 8, 0) };
+        cancel.Click += (_, _) => _tcs.TrySetResult(null);
         var ok = new Button { Content = "Link selected", Classes = { "primary" }, HorizontalAlignment = HorizontalAlignment.Right };
         ok.Click += (_, _) =>
         {
@@ -160,7 +163,7 @@ public sealed class EvidencePickerDialog : Window
         };
         _message.Text = "Retired (superseded) items are excluded by the service; drafts need a rationale when linked.";
 
-        Content = new StackPanel { Margin = new(16), Spacing = 10, Children = { new TextBlock { Classes = { "h3" }, Text = "Choose an evidence item" }, _grid, _message, ok } };
+        Content = new StackPanel { Margin = new(16), Spacing = 10, Children = { new TextBlock { Classes = { "h3" }, Text = "Choose an evidence item" }, _grid, _message, new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Spacing = 8, Children = { cancel, ok } } } };
     }
 
     public EvidenceItem? SelectedItem => _tcs.Task.Status == TaskStatus.RanToCompletion ? _tcs.Task.Result : null;
@@ -196,6 +199,9 @@ public sealed class TaskDialog : Window
             if (res.Ok) Close();
         };
 
+        var cancelTask = new Button { Content = "Cancel", MinWidth = 80 };
+        cancelTask.Click += (_, _) => Close();
+
         Content = new StackPanel
         {
             Margin = new(20), Spacing = 10,
@@ -205,7 +211,7 @@ public sealed class TaskDialog : Window
                 _title, _details,
                 new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, Children = { _owner, _priority, new StackPanel { Children = { new TextBlock { Classes = { "label" }, Text = "DUE (OPTIONAL)" }, _due } } } },
                 _message,
-                create,
+                new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Spacing = 8, Children = { cancelTask, create } },
             },
         };
     }

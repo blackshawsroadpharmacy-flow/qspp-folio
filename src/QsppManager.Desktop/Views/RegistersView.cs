@@ -20,7 +20,8 @@ public partial class RegistersView : UserControl
     private readonly DataGrid _recalls = new() { Height = 140, AutoGenerateColumns = false, IsReadOnly = true, RowHeight = 32 };
     private readonly DataGrid _potency = new() { Height = 150, AutoGenerateColumns = false, IsReadOnly = true, RowHeight = 32 };
     private readonly TextBlock _potencyNote = new() { Classes = { "small" }, TextWrapping = TextWrapping.Wrap };
-    private readonly TextBlock _message = new() { Classes = { "small" }, TextWrapping = TextWrapping.Wrap };
+    // Result strip per contract rule 8 (was: bare TextBlock feedback line).
+    private readonly TextBox _resultBar = new() { IsReadOnly = true, TextWrapping = TextWrapping.Wrap, MinHeight = 34, Watermark = "Result messages appear here", Classes = { "result" } };
 
     public RegistersView()
     {
@@ -30,141 +31,155 @@ public partial class RegistersView : UserControl
 
     private Control Build()
     {
-        var sp = new StackPanel { Margin = new(32, 28), Spacing = 12, MaxWidth = 1100, HorizontalAlignment = HorizontalAlignment.Left };
-        sp.Children.Add(new TextBlock { Classes = { "h1" }, Text = "Registers" });
+        var sp = new StackPanel { Margin = new(32, 28), Spacing = 12, MaxWidth = 1040, HorizontalAlignment = HorizontalAlignment.Left };
+        sp.Children.Add(Ui.H1("Registers"));
         sp.Children.Add(new TextBlock { Classes = { "lead" }, TextWrapping = TextWrapping.Wrap,
             Text = "Recurring obligations, the equipment register and the incident register. Schedules materialise as ordinary tasks with due dates — missed occurrences stay visible until someone does them, and generation never duplicates. Equipment calibration dates automatically get a monthly check schedule." });
+        sp.Children.Add(_resultBar);
 
-        sp.Children.Add(new TextBlock { Text = "Recurring schedules", Classes = { "h3" } });
-        _defs.Columns.Add(new DataGridTextColumn { Header = "Schedule", Binding = new Avalonia.Data.Binding("Title"), Width = new DataGridLength(340) });
-        _defs.Columns.Add(new DataGridTextColumn { Header = "Cadence", Binding = new Avalonia.Data.Binding("Cadence"), Width = new DataGridLength(100) });
-        _defs.Columns.Add(new DataGridTextColumn { Header = "From", Binding = new Avalonia.Data.Binding("Anchor"), Width = new DataGridLength(110) });
-        _defs.Columns.Add(new DataGridTextColumn { Header = "Owner", Binding = new Avalonia.Data.Binding("Owner"), Width = new DataGridLength(150) });
-        _defs.Columns.Add(new DataGridTextColumn { Header = "Equipment", Binding = new Avalonia.Data.Binding("EquipmentName"), Width = new DataGridLength(180) });
-        _defs.Columns.Add(new DataGridTextColumn { Header = "Status", Binding = new Avalonia.Data.Binding("Status"), Width = new DataGridLength(90) });
-        sp.Children.Add(_defs);
-        var defRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        defRow.Children.Add(new Button { Content = "New schedule…", Classes = { "primary" }, Height = 34 }.With(b => b.Click += async (_, _) => await NewScheduleAsync()));
-        defRow.Children.Add(new Button { Content = "Pause selected", Height = 34 }.With(b => b.Click += (_, _) => ToggleDef(false)));
-        defRow.Children.Add(new Button { Content = "Resume selected", Height = 34 }.With(b => b.Click += (_, _) => ToggleDef(true)));
-        defRow.Children.Add(new Button { Content = "Generate occurrences now", Height = 34 }.With(b => b.Click += (_, _) =>
-        {
-            var n = App.Workspace.GenerateRecurringOccurrences(session: App.Session);
-            _message.Text = n > 0 ? $"{n} occurrence(s) generated (idempotent — reopening never duplicates)." : "Nothing new to generate.";
-            Load();
-        }));
-        sp.Children.Add(defRow);
-
-        sp.Children.Add(new TextBlock { Text = "Equipment register", Classes = { "h3" }, Margin = new(0, 8, 0, 0) });
-        _equipment.Columns.Add(new DataGridTextColumn { Header = "Name", Binding = new Avalonia.Data.Binding("Name"), Width = new DataGridLength(260) });
-        _equipment.Columns.Add(new DataGridTextColumn { Header = "Model", Binding = new Avalonia.Data.Binding("Model"), Width = new DataGridLength(150) });
-        _equipment.Columns.Add(new DataGridTextColumn { Header = "Serial", Binding = new Avalonia.Data.Binding("Serial"), Width = new DataGridLength(140) });
-        _equipment.Columns.Add(new DataGridTextColumn { Header = "Location", Binding = new Avalonia.Data.Binding("Location"), Width = new DataGridLength(160) });
-        _equipment.Columns.Add(new DataGridTextColumn { Header = "State", Binding = new Avalonia.Data.Binding("State"), Width = new DataGridLength(110) });
-        _equipment.Columns.Add(new DataGridTextColumn { Header = "Calibration due", Binding = new Avalonia.Data.Binding("Calibration"), Width = new DataGridLength(130) });
-        sp.Children.Add(_equipment);
-        var eqRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        eqRow.Children.Add(new Button { Content = "Add equipment…", Classes = { "primary" }, Height = 34 }.With(b => b.Click += async (_, _) => await AddEquipmentAsync()));
-        eqRow.Children.Add(new Button { Content = "Set calibration due…", Height = 34 }.With(b => b.Click += async (_, _) => await CalibrationAsync()));
-        eqRow.Children.Add(new Button { Content = "Send to maintenance", Height = 34 }.With(b => b.Click += (_, _) => SetState("Maintenance")));
-        eqRow.Children.Add(new Button { Content = "Back in service", Height = 34 }.With(b => b.Click += (_, _) => SetState("InService")));
-        eqRow.Children.Add(new Button { Content = "Retire", Height = 34 }.With(b => b.Click += (_, _) => SetState("Retired")));
-        sp.Children.Add(eqRow);
-
-        sp.Children.Add(new TextBlock { Text = "Incident register", Classes = { "h3" }, Margin = new(0, 8, 0, 0) });
-        _incidents.Columns.Add(new DataGridTextColumn { Header = "Date", Binding = new Avalonia.Data.Binding("DateLabel"), Width = new DataGridLength(110) });
-        _incidents.Columns.Add(new DataGridTextColumn { Header = "Severity", Binding = new Avalonia.Data.Binding("Severity"), Width = new DataGridLength(90) });
-        _incidents.Columns.Add(new DataGridTextColumn { Header = "Description", Binding = new Avalonia.Data.Binding("Description"), Width = new DataGridLength(360) });
-        _incidents.Columns.Add(new DataGridTextColumn { Header = "State", Binding = new Avalonia.Data.Binding("State"), Width = new DataGridLength(90) });
-        _incidents.Columns.Add(new DataGridTextColumn { Header = "Corrective action", Binding = new Avalonia.Data.Binding("Action"), Width = new DataGridLength(280) });
-        _incidents.Columns.Add(new DataGridTextColumn { Header = "Reported by", Binding = new Avalonia.Data.Binding("By"), Width = new DataGridLength(120) });
-        sp.Children.Add(_incidents);
-        var incRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        incRow.Children.Add(new Button { Content = "Report incident…", Classes = { "primary" }, Height = 34 }.With(b => b.Click += async (_, _) => await ReportIncidentAsync()));
-        incRow.Children.Add(new Button { Content = "Close with corrective action…", Height = 34 }.With(b => b.Click += async (_, _) => await CloseIncidentAsync()));
-        sp.Children.Add(incRow);
-        sp.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
-            Text = "Incidents link to requirement 1.1.2.4 (reporting to a person responsible) so the register is reachable from the clause. An incident cannot close without a recorded corrective action." });
-
-        // ---- compounding: suppliers ----
-        sp.Children.Add(new TextBlock { Text = "Compounding — registered suppliers", Classes = { "h3" }, Margin = new(0, 8, 0, 0) });
-        _suppliers.Columns.Add(new DataGridTextColumn { Header = "Supplier", Binding = new Avalonia.Data.Binding("Name"), Width = new DataGridLength(240) });
-        _suppliers.Columns.Add(new DataGridTextColumn { Header = "Supplies", Binding = new Avalonia.Data.Binding("Supplies"), Width = new DataGridLength(300) });
-        _suppliers.Columns.Add(new DataGridTextColumn { Header = "Registration note", Binding = new Avalonia.Data.Binding("Note"), Width = new DataGridLength(280) });
-        _suppliers.Columns.Add(new DataGridTextColumn { Header = "Last reviewed", Binding = new Avalonia.Data.Binding("Reviewed"), Width = new DataGridLength(120) });
-        sp.Children.Add(_suppliers);
-        var supRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        supRow.Children.Add(new Button { Content = "Add supplier…", Height = 34 }.With(b => b.Click += async (_, _) =>
-        {
-            var name = await Dialogs.Prompt(this, "Add supplier", "Supplier name");
-            if (string.IsNullOrWhiteSpace(name)) return;
-            var supplies = await Dialogs.Prompt(this, "Add supplier", "What you buy from them") ?? "";
-            var note = await Dialogs.Prompt(this, "Add supplier", "Registration/licence note you verified") ?? "";
-            var res = App.Workspace.AddSupplier(name, supplies, note, App.Session!);
-            _message.Text = res.Ok ? "Supplier added — 2.2.3.3 sourcing register." : res.Error;
-            Load();
-        }));
-        supRow.Children.Add(new Button { Content = "Mark reviewed today", Height = 34 }.With(b => b.Click += (_, _) =>
-        {
-            if (_suppliers.SelectedItem is not SupRow s) { _message.Text = "Select a supplier first."; return; }
-            var res = App.Workspace.SetSupplierReviewed(s.Id, null, DateOnly.FromDateTime(DateTime.Today), App.Session!);
-            _message.Text = res.Ok ? "Supplier review date recorded." : res.Error;
-            Load();
-        }));
-        sp.Children.Add(supRow);
-
-        // ---- compounding: recalls ----
-        sp.Children.Add(new TextBlock { Text = "Compounding — product recalls", Classes = { "h3" }, Margin = new(0, 8, 0, 0) });
-        _recalls.Columns.Add(new DataGridTextColumn { Header = "Product", Binding = new Avalonia.Data.Binding("Product"), Width = new DataGridLength(280) });
-        _recalls.Columns.Add(new DataGridTextColumn { Header = "Batch", Binding = new Avalonia.Data.Binding("Batch"), Width = new DataGridLength(140) });
-        _recalls.Columns.Add(new DataGridTextColumn { Header = "Received", Binding = new Avalonia.Data.Binding("Received"), Width = new DataGridLength(110) });
-        _recalls.Columns.Add(new DataGridTextColumn { Header = "Action taken", Binding = new Avalonia.Data.Binding("Action"), Width = new DataGridLength(320) });
-        _recalls.Columns.Add(new DataGridTextColumn { Header = "State", Binding = new Avalonia.Data.Binding("State"), Width = new DataGridLength(80) });
-        sp.Children.Add(_recalls);
-        var recRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        recRow.Children.Add(new Button { Content = "Record recall…", Height = 34 }.With(b => b.Click += async (_, _) =>
-        {
-            var product = await Dialogs.Prompt(this, "Record recall", "Product name");
-            if (string.IsNullOrWhiteSpace(product)) return;
-            var batch = await Dialogs.Prompt(this, "Record recall", "Batch / lot") ?? "";
-            var dateText = await Dialogs.Prompt(this, "Record recall", "Date received (yyyy-MM-dd, blank = today)");
-            if (!DateOnly.TryParse(dateText, out var received)) received = DateOnly.FromDateTime(DateTime.Today);
-            var res = App.Workspace.AddRecall(product, batch, received, "", App.Session!);
-            _message.Text = res.Ok ? "Recall recorded (open). Close it with the stock action once resolved." : res.Error;
-            Load();
-        }));
-        recRow.Children.Add(new Button { Content = "Close recall…", Height = 34 }.With(b => b.Click += async (_, _) =>
-        {
-            if (_recalls.SelectedItem is not RecRow r) { _message.Text = "Select a recall first."; return; }
-            var action = await Dialogs.Prompt(this, "Close recall", "What was done with the affected stock (quarantined/returned/destroyed)?");
-            var res = App.Workspace.CloseRecall(r.Id, action ?? "", App.Session!);
-            _message.Text = res.Ok ? "Recall closed with the stock action recorded." : res.Error;
-            Load();
-        }));
-        sp.Children.Add(recRow);
-
-        // ---- compounding: potency coverage ----
-        sp.Children.Add(new TextBlock { Text = "Compounding — potency testing coverage (per person)", Classes = { "h3" }, Margin = new(0, 8, 0, 0) });
-        _potency.Columns.Add(new DataGridTextColumn { Header = "Person", Binding = new Avalonia.Data.Binding("Name"), Width = new DataGridLength(190) });
-        _potency.Columns.Add(new DataGridTextColumn { Header = "Distinct drugs this year", Binding = new Avalonia.Data.Binding("Drugs"), Width = new DataGridLength(230) });
-        _potency.Columns.Add(new DataGridTextColumn { Header = "Distinct dosage forms", Binding = new Avalonia.Data.Binding("Forms"), Width = new DataGridLength(190) });
-        _potency.Columns.Add(new DataGridTextColumn { Header = "Coverage", Binding = new Avalonia.Data.Binding("Status"), Width = new DataGridLength(420) });
-        sp.Children.Add(_potency);
-        var potNote = new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap };
-        var potRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        potRow.Children.Add(new Button { Content = "Record a potency test…", Height = 34 }.With(b => b.Click += async (_, _) =>
-        {
-            var dlg = new PotencyDialog();
-            if (!await dlg.Show(this)) return;
-            var res = App.Workspace.AddPotencyRecord(dlg.StaffId, dlg.Role, dlg.Drug, dlg.Form, dlg.TestedOn, dlg.Outcome, App.Session!);
-            _message.Text = res.Ok ? "Potency record added to the per-person matrix." : res.Error;
-            Load();
-        }));
-        sp.Children.Add(potRow);
-        sp.Children.Add(_potencyNote);
-
-        sp.Children.Add(_message);
+        sp.Children.Add(RecurringSection());
+        sp.Children.Add(EquipmentSection());
+        sp.Children.Add(IncidentSection());
+        sp.Children.Add(SuppliersSection());
+        sp.Children.Add(RecallsSection());
+        sp.Children.Add(PotencySection());
         return new ScrollViewer { Content = sp };
+    }
+
+    private Control RecurringSection()
+    {
+        _defs.Columns.Add(Ui.Col("Schedule", "Title", 340));
+        _defs.Columns.Add(Ui.Col("Cadence", "Cadence", 100));
+        _defs.Columns.Add(Ui.Col("From", "Anchor", 110));
+        _defs.Columns.Add(Ui.Col("Owner", "Owner", 150));
+        _defs.Columns.Add(Ui.Col("Equipment", "EquipmentName", 180));
+        _defs.Columns.Add(Ui.Col("Status", "Status", 90));
+        Ui.Ax(_defs, "Recurring schedules", "Pause, resume or generate occurrences for recurring work");
+        var row = Ui.BtnRow(
+            Ui.PrimaryBtn("New schedule…").With(b => b.Click += async (_, _) => await NewScheduleAsync()),
+            Ui.Btn("Pause selected").With(b => b.Click += (_, _) => ToggleDef(false)),
+            Ui.Btn("Resume selected").With(b => b.Click += (_, _) => ToggleDef(true)),
+            Ui.Btn("Generate occurrences now").With(b => b.Click += (_, _) =>
+            {
+                var n = App.Workspace.GenerateRecurringOccurrences(session: App.Session);
+                _resultBar.Text = n > 0 ? $"{n} occurrence(s) generated (idempotent — reopening never duplicates)." : "Nothing new to generate.";
+                Load();
+            }));
+        return Ui.Section("Recurring schedules", Ui.Col(10, _defs, row));
+    }
+
+    private Control EquipmentSection()
+    {
+        _equipment.Columns.Add(Ui.Col("Name", "Name", 260));
+        _equipment.Columns.Add(Ui.Col("Model", "Model", 150));
+        _equipment.Columns.Add(Ui.Col("Serial", "Serial", 140));
+        _equipment.Columns.Add(Ui.Col("Location", "Location", 160));
+        _equipment.Columns.Add(Ui.Col("State", "State", 110));
+        _equipment.Columns.Add(Ui.Col("Calibration due", "Calibration", 130));
+        Ui.Ax(_equipment, "Equipment register", "Calibration dates and service state for each instrument");
+        var row = Ui.BtnRow(
+            Ui.PrimaryBtn("Add equipment…").With(b => b.Click += async (_, _) => await AddEquipmentAsync()),
+            Ui.Btn("Set calibration due…").With(b => b.Click += async (_, _) => await CalibrationAsync()),
+            Ui.Btn("Send to maintenance").With(b => b.Click += (_, _) => SetState("Maintenance")),
+            Ui.Btn("Back in service").With(b => b.Click += (_, _) => SetState("InService")),
+            Ui.DangerBtn("Retire").With(b => b.Click += (_, _) => SetState("Retired")));
+        return Ui.Section("Equipment register", Ui.Col(10, _equipment, row));
+    }
+
+    private Control IncidentSection()
+    {
+        _incidents.Columns.Add(Ui.Col("Date", "DateLabel", 110));
+        _incidents.Columns.Add(Ui.Col("Severity", "Severity", 90));
+        _incidents.Columns.Add(Ui.Col("Description", "Description", 360));
+        _incidents.Columns.Add(Ui.Col("State", "State", 90));
+        _incidents.Columns.Add(Ui.Col("Corrective action", "Action", 280));
+        _incidents.Columns.Add(Ui.Col("Reported by", "By", 120));
+        Ui.Ax(_incidents, "Incident register", "Reported incidents with their corrective actions");
+        var row = Ui.BtnRow(
+            Ui.PrimaryBtn("Report incident…").With(b => b.Click += async (_, _) => await ReportIncidentAsync()),
+            Ui.Btn("Close with corrective action…").With(b => b.Click += async (_, _) => await CloseIncidentAsync()));
+        return Ui.Section("Incident register", Ui.Col(10,
+            _incidents, row,
+            new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
+                Text = "Incidents link to requirement 1.1.2.4 (reporting to a person responsible) so the register is reachable from the clause. An incident cannot close without a recorded corrective action." }));
+    }
+
+    private Control SuppliersSection()
+    {
+        _suppliers.Columns.Add(Ui.Col("Supplier", "Name", 240));
+        _suppliers.Columns.Add(Ui.Col("Supplies", "Supplies", 300));
+        _suppliers.Columns.Add(Ui.Col("Registration note", "Note", 280));
+        _suppliers.Columns.Add(Ui.Col("Last reviewed", "Reviewed", 120));
+        Ui.Ax(_suppliers, "Registered suppliers", "Compounding suppliers and registration review dates");
+        var row = Ui.BtnRow(
+            Ui.PrimaryBtn("Add supplier…").With(b => b.Click += async (_, _) =>
+            {
+                var name = await Dialogs.Prompt(this, "Add supplier", "Supplier name");
+                if (string.IsNullOrWhiteSpace(name)) return;
+                var supplies = await Dialogs.Prompt(this, "Add supplier", "What you buy from them") ?? "";
+                var note = await Dialogs.Prompt(this, "Add supplier", "Registration/licence note you verified") ?? "";
+                var res = App.Workspace.AddSupplier(name, supplies, note, App.Session!);
+                _resultBar.Text = res.Ok ? "Supplier added — 2.2.3.3 sourcing register." : res.Error;
+                Load();
+            }),
+            Ui.Btn("Mark reviewed today").With(b => b.Click += (_, _) =>
+            {
+                if (_suppliers.SelectedItem is not SupRow s) { _resultBar.Text = "Select a supplier first."; return; }
+                var res = App.Workspace.SetSupplierReviewed(s.Id, null, DateOnly.FromDateTime(DateTime.Today), App.Session!);
+                _resultBar.Text = res.Ok ? "Supplier review date recorded." : res.Error;
+                Load();
+            }));
+        return Ui.Section("Compounding — registered suppliers", Ui.Col(10, _suppliers, row));
+    }
+
+    private Control RecallsSection()
+    {
+        _recalls.Columns.Add(Ui.Col("Product", "Product", 280));
+        _recalls.Columns.Add(Ui.Col("Batch", "Batch", 140));
+        _recalls.Columns.Add(Ui.Col("Received", "Received", 110));
+        _recalls.Columns.Add(Ui.Col("Action taken", "Action", 320));
+        _recalls.Columns.Add(Ui.Col("State", "State", 80));
+        Ui.Ax(_recalls, "Product recalls", "Recalls received from suppliers and the stock action taken");
+        var row = Ui.BtnRow(
+            Ui.PrimaryBtn("Record recall…").With(b => b.Click += async (_, _) =>
+            {
+                var product = await Dialogs.Prompt(this, "Record recall", "Product name");
+                if (string.IsNullOrWhiteSpace(product)) return;
+                var batch = await Dialogs.Prompt(this, "Record recall", "Batch / lot") ?? "";
+                var dateText = await Dialogs.Prompt(this, "Record recall", "Date received (yyyy-MM-dd, blank = today)");
+                if (!DateOnly.TryParse(dateText, out var received)) received = DateOnly.FromDateTime(DateTime.Today);
+                var res = App.Workspace.AddRecall(product, batch, received, "", App.Session!);
+                _resultBar.Text = res.Ok ? "Recall recorded (open). Close it with the stock action once resolved." : res.Error;
+                Load();
+            }),
+            Ui.Btn("Close recall…").With(b => b.Click += async (_, _) =>
+            {
+                if (_recalls.SelectedItem is not RecRow r) { _resultBar.Text = "Select a recall first."; return; }
+                var action = await Dialogs.Prompt(this, "Close recall", "What was done with the affected stock (quarantined/returned/destroyed)?");
+                var res = App.Workspace.CloseRecall(r.Id, action ?? "", App.Session!);
+                _resultBar.Text = res.Ok ? "Recall closed with the stock action recorded." : res.Error;
+                Load();
+            }));
+        return Ui.Section("Compounding — product recalls", Ui.Col(10, _recalls, row));
+    }
+
+    private Control PotencySection()
+    {
+        _potency.Columns.Add(Ui.Col("Person", "Name", 190));
+        _potency.Columns.Add(Ui.Col("Distinct drugs this year", "Drugs", 230));
+        _potency.Columns.Add(Ui.Col("Distinct dosage forms", "Forms", 190));
+        _potency.Columns.Add(Ui.Col("Coverage", "Status", 420));
+        Ui.Ax(_potency, "Potency testing coverage", "Per-person compounding coverage matrix");
+        var row = Ui.BtnRow(
+            Ui.PrimaryBtn("Record a potency test…").With(b => b.Click += async (_, _) =>
+            {
+                var dlg = new PotencyDialog();
+                if (!await dlg.Show(this)) return;
+                var res = App.Workspace.AddPotencyRecord(dlg.StaffId, dlg.Role, dlg.Drug, dlg.Form, dlg.TestedOn, dlg.Outcome, App.Session!);
+                _resultBar.Text = res.Ok ? "Potency record added to the per-person matrix." : res.Error;
+                Load();
+            }));
+        return Ui.Section("Compounding — potency testing coverage (per person)", Ui.Col(10, _potency, row, _potencyNote));
     }
 
     private void Load()
@@ -197,15 +212,15 @@ public partial class RegistersView : UserControl
         if (!await dlg.Show(this)) return;
         var res = App.Workspace.CreateRecurringDef(dlg.TitleText, dlg.Details, null, null,
             dlg.AssignedTo, dlg.Cadence, dlg.CustomDays, dlg.Anchor, TaskPriority.Normal, App.Session!);
-        _message.Text = res.Ok ? "Schedule created — occurrences generate on refresh, and via 'Generate occurrences now'." : res.Error;
+        _resultBar.Text = res.Ok ? "Schedule created — occurrences generate on refresh, and via 'Generate occurrences now'." : res.Error;
         Load();
     }
 
     private void ToggleDef(bool active)
     {
-        if (_defs.SelectedItem is not DefRow row) { _message.Text = "Select a schedule first."; return; }
+        if (_defs.SelectedItem is not DefRow row) { _resultBar.Text = "Select a schedule first."; return; }
         var res = App.Workspace.SetRecurringDefActive(row.Id, active, App.Session!);
-        _message.Text = res.Ok ? (active ? "Schedule resumed." : "Schedule paused — no further occurrences generate until resumed.") : res.Error;
+        _resultBar.Text = res.Ok ? (active ? "Schedule resumed." : "Schedule paused — no further occurrences generate until resumed.") : res.Error;
         Load();
     }
 
@@ -217,26 +232,26 @@ public partial class RegistersView : UserControl
         var serial = await Dialogs.Prompt(this, "Serial number", "Serial") ?? "";
         var location = await Dialogs.Prompt(this, "Location in the pharmacy", "Location") ?? "";
         var res = App.Workspace.AddEquipment(name, model, serial, location, "", App.Session!);
-        _message.Text = res.Ok ? "Equipment added to the register." : res.Error;
+        _resultBar.Text = res.Ok ? "Equipment added to the register." : res.Error;
         Load();
     }
 
     private async Task CalibrationAsync()
     {
-        if (_equipment.SelectedItem is not EqRow row) { _message.Text = "Select equipment first."; return; }
+        if (_equipment.SelectedItem is not EqRow row) { _resultBar.Text = "Select equipment first."; return; }
         var text = await Dialogs.Prompt(this, $"Calibration due — {row.Name}", "Due date (yyyy-MM-dd)");
         if (string.IsNullOrWhiteSpace(text) || !DateOnly.TryParse(text, out var due))
-        { _message.Text = "Enter the date as yyyy-MM-dd."; return; }
+        { _resultBar.Text = "Enter the date as yyyy-MM-dd."; return; }
         var res = App.Workspace.SetCalibrationDue(row.Id, due, App.Session!);
-        _message.Text = res.Ok ? "Calibration date recorded; a monthly check schedule now exists for this equipment." : res.Error;
+        _resultBar.Text = res.Ok ? "Calibration date recorded; a monthly check schedule now exists for this equipment." : res.Error;
         Load();
     }
 
     private void SetState(string state)
     {
-        if (_equipment.SelectedItem is not EqRow row) { _message.Text = "Select equipment first."; return; }
+        if (_equipment.SelectedItem is not EqRow row) { _resultBar.Text = "Select equipment first."; return; }
         var res = App.Workspace.SetEquipmentState(row.Id, state, App.Session!);
-        _message.Text = res.Ok ? $"Equipment marked {state}." : res.Error;
+        _resultBar.Text = res.Ok ? $"Equipment marked {state}." : res.Error;
         Load();
     }
 
@@ -245,17 +260,17 @@ public partial class RegistersView : UserControl
         var dlg = new IncidentDialog();
         if (!await dlg.Show(this)) return;
         var res = App.Workspace.AddIncident(dlg.Date, dlg.Severity, dlg.Description, dlg.ImmediateAction, App.Session!.DisplayName, App.Session);
-        _message.Text = res.Ok ? "Incident recorded and linked to the reporting requirement." : res.Error;
+        _resultBar.Text = res.Ok ? "Incident recorded and linked to the reporting requirement." : res.Error;
         Load();
     }
 
     private async Task CloseIncidentAsync()
     {
-        if (_incidents.SelectedItem is not IncRow row) { _message.Text = "Select an incident first."; return; }
+        if (_incidents.SelectedItem is not IncRow row) { _resultBar.Text = "Select an incident first."; return; }
         var action = await Dialogs.Prompt(this, "Corrective action (required to close)", "What was done so this doesn't recur?");
         if (string.IsNullOrWhiteSpace(action)) return;
         var res = App.Workspace.SetIncidentState(row.Id, "Closed", action, App.Session!);
-        _message.Text = res.Ok ? "Incident closed with corrective action recorded." : res.Error;
+        _resultBar.Text = res.Ok ? "Incident closed with corrective action recorded." : res.Error;
         Load();
     }
 
