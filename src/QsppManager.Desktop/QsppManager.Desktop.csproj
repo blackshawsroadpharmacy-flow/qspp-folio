@@ -14,14 +14,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <AvaloniaResource Include="Assets\Fonts\**" />
-    <AvaloniaResource Include="Assets\Icons\**" />
-    <AvaloniaResource Include="Assets\Notices\**" />
+    <!-- Brand assets are vendored once at the repo root (assets/) and linked into the
+         Avalonia blob so avares://QsppManager.Desktop/Assets/... URIs resolve. -->
+    <AvaloniaResource Include="../../assets/fonts/*.ttf" Link="Assets/Fonts/%(Filename)%(Extension)" />
+    <AvaloniaResource Include="../../assets/icons/*.svg" Link="Assets/Icons/%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="12.1.4" />
-    <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.3.22" />
+    <PackageReference Include="Avalonia.Controls.DataGrid" Version="12.1.2" />
     <PackageReference Include="Avalonia.Desktop" Version="12.1.4" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.4" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />

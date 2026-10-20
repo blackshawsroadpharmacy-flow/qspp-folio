@@ -1,174 +1,279 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="QsppManager.Desktop.App"
-             xmlns:dg="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls.DataGrid"
-             RequestedThemeVariant="Light">
+             xmlns:dg="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls.DataGrid">
 
   <Application.Resources>
 
-    <!-- OpenScript design tokens (owner-mandated; see design skill spec §4.1, §4.2, §4.3) -->
-    <Color x:Key="Color.Paper">#F5F5EB</Color>
-    <Color x:Key="Color.White">#FFFEF8</Color>
-    <Color x:Key="Color.Sage">#E4EADC</Color>
-    <Color x:Key="Color.Ink">#163F35</Color>
-    <Color x:Key="Color.Green">#23614D</Color>
-    <Color x:Key="Color.Muted">#52685C</Color>
-    <Color x:Key="Color.Divider">#A9B7A3</Color>
-    <Color x:Key="Color.ControlBorder">#6F8570</Color>
-    <Color x:Key="Color.Acid">#DBE76B</Color>
-    <Color x:Key="Color.Focus">#AB5537</Color>
-    <Color x:Key="Color.Alert">#9A3F1F</Color>
-    <Color x:Key="Color.Caution">#7A5200</Color>
-    <Color x:Key="Color.Error">#A32A2A</Color>
-    <Color x:Key="Color.RowHover">#EDF0DF</Color>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
 
-    <SolidColorBrush x:Key="Brush.Paper" Color="{StaticResource Color.Paper}" />
-    <SolidColorBrush x:Key="Brush.White" Color="{StaticResource Color.White}" />
-    <SolidColorBrush x:Key="Brush.Sage" Color="{StaticResource Color.Sage}" />
-    <SolidColorBrush x:Key="Brush.Ink" Color="{StaticResource Color.Ink}" />
-    <SolidColorBrush x:Key="Brush.Green" Color="{StaticResource Color.Green}" />
-    <SolidColorBrush x:Key="Brush.Muted" Color="{StaticResource Color.Muted}" />
-    <SolidColorBrush x:Key="Brush.Divider" Color="{StaticResource Color.Divider}" />
-    <SolidColorBrush x:Key="Brush.ControlBorder" Color="{StaticResource Color.ControlBorder}" />
-    <SolidColorBrush x:Key="Brush.Acid" Color="{StaticResource Color.Acid}" />
-    <SolidColorBrush x:Key="Brush.Focus" Color="{StaticResource Color.Focus}" />
-    <SolidColorBrush x:Key="Brush.Alert" Color="{StaticResource Color.Alert}" />
-    <SolidColorBrush x:Key="Brush.Caution" Color="{StaticResource Color.Caution}" />
-    <SolidColorBrush x:Key="Brush.Error" Color="{StaticResource Color.Error}" />
-    <SolidColorBrush x:Key="Brush.RowHover" Color="{StaticResource Color.RowHover}" />
+        <!-- ============ LIGHT — warm paper + forest green (OpenScript palette) ============ -->
+        <ResourceDictionary x:Key="Light">
+          <Color x:Key="Color.Paper">#F5F5EB</Color>
+          <Color x:Key="Color.White">#FFFEF8</Color>
+          <Color x:Key="Color.Sage">#E4EADC</Color>
+          <Color x:Key="Color.Ink">#163F35</Color>
+          <Color x:Key="Color.Green">#23614D</Color>
+          <Color x:Key="Color.GreenHover">#2E7A61</Color>
+          <Color x:Key="Color.Muted">#52685C</Color>
+          <Color x:Key="Color.Divider">#DCE2D4</Color>
+          <Color x:Key="Color.ControlBorder">#CBD4C2</Color>
+          <Color x:Key="Color.Acid">#DBE76B</Color>
+          <Color x:Key="Color.Focus">#AB5537</Color>
+          <Color x:Key="Color.Alert">#9A3F1F</Color>
+          <Color x:Key="Color.Caution">#7A5200</Color>
+          <Color x:Key="Color.Error">#A32A2A</Color>
+          <Color x:Key="Color.RowHover">#EDF0DF</Color>
+          <Color x:Key="Color.SelBg">#DCE4CF</Color>
+          <Color x:Key="Color.Sidebar">#E9EDDF</Color>
+          <Color x:Key="Color.HoverTint">#66163F35</Color>
+          <Color x:Key="Color.DangerBg">#F3E4DB</Color>
+          <Color x:Key="Color.OkBg">#E9F0DC</Color>
+          <SolidColorBrush x:Key="Brush.Paper" Color="{StaticResource Color.Paper}" />
+          <SolidColorBrush x:Key="Brush.White" Color="{StaticResource Color.White}" />
+          <SolidColorBrush x:Key="Brush.Surface" Color="{StaticResource Color.White}" />
+          <SolidColorBrush x:Key="Brush.Sage" Color="{StaticResource Color.Sage}" />
+          <SolidColorBrush x:Key="Brush.Ink" Color="{StaticResource Color.Ink}" />
+          <SolidColorBrush x:Key="Brush.Green" Color="{StaticResource Color.Green}" />
+          <SolidColorBrush x:Key="Brush.GreenHover" Color="{StaticResource Color.GreenHover}" />
+          <SolidColorBrush x:Key="Brush.Muted" Color="{StaticResource Color.Muted}" />
+          <SolidColorBrush x:Key="Brush.Divider" Color="{StaticResource Color.Divider}" />
+          <SolidColorBrush x:Key="Brush.ControlBorder" Color="{StaticResource Color.ControlBorder}" />
+          <SolidColorBrush x:Key="Brush.Acid" Color="{StaticResource Color.Acid}" />
+          <SolidColorBrush x:Key="Brush.Focus" Color="{StaticResource Color.Focus}" />
+          <SolidColorBrush x:Key="Brush.Alert" Color="{StaticResource Color.Alert}" />
+          <SolidColorBrush x:Key="Brush.Caution" Color="{StaticResource Color.Caution}" />
+          <SolidColorBrush x:Key="Brush.Error" Color="{StaticResource Color.Error}" />
+          <SolidColorBrush x:Key="Brush.RowHover" Color="{StaticResource Color.RowHover}" />
+          <SolidColorBrush x:Key="Brush.SelBg" Color="{StaticResource Color.SelBg}" />
+          <SolidColorBrush x:Key="Brush.Sidebar" Color="{StaticResource Color.Sidebar}" />
+          <SolidColorBrush x:Key="Brush.HoverTint" Color="{StaticResource Color.HoverTint}" />
+          <SolidColorBrush x:Key="Brush.DangerBg" Color="{StaticResource Color.DangerBg}" />
+          <SolidColorBrush x:Key="Brush.OkBg" Color="{StaticResource Color.OkBg}" />
+        </ResourceDictionary>
 
-    <!-- Fonts: Host Grotesk (OFL) primary, JetBrains Mono (OFL) for codes/ids/numbers -->
-    <FontFamily x:Key="Font.Ui">avares://qsppmanager/Assets/Fonts/HostGrotesk.ttf?#Host Grotesk, Helvetica, Arial, sans-serif</FontFamily>
-    <FontFamily x:Key="Font.Mono">avares://qsppmanager/Assets/Fonts/JetBrainsMono-Regular.ttf?#JetBrains Mono</FontFamily>
+        <!-- ============ DARK — derived from the same green identity ============ -->
+        <ResourceDictionary x:Key="Dark">
+          <Color x:Key="Color.Paper">#121815</Color>
+          <Color x:Key="Color.White">#1A221C</Color>
+          <Color x:Key="Color.Sage">#24312A</Color>
+          <Color x:Key="Color.Ink">#E8EFE7</Color>
+          <Color x:Key="Color.Green">#3F9A76</Color>
+          <Color x:Key="Color.GreenHover">#4CAC86</Color>
+          <Color x:Key="Color.Muted">#9DB0A6</Color>
+          <Color x:Key="Color.Divider">#27312B</Color>
+          <Color x:Key="Color.ControlBorder">#35423B</Color>
+          <Color x:Key="Color.Acid">#DBE76B</Color>
+          <Color x:Key="Color.Focus">#F0A57D</Color>
+          <Color x:Key="Color.Alert">#C75B32</Color>
+          <Color x:Key="Color.Caution">#C79B49</Color>
+          <Color x:Key="Color.Error">#DA6E6E</Color>
+          <Color x:Key="Color.RowHover">#1F2924</Color>
+          <Color x:Key="Color.SelBg">#2E4137</Color>
+          <Color x:Key="Color.Sidebar">#141A16</Color>
+          <Color x:Key="Color.HoverTint">#40E8EFE7</Color>
+          <Color x:Key="Color.DangerBg">#3B2A22</Color>
+          <Color x:Key="Color.OkBg">#25342A</Color>
+          <SolidColorBrush x:Key="Brush.Paper" Color="{StaticResource Color.Paper}" />
+          <SolidColorBrush x:Key="Brush.White" Color="{StaticResource Color.White}" />
+          <SolidColorBrush x:Key="Brush.Surface" Color="{StaticResource Color.White}" />
+          <SolidColorBrush x:Key="Brush.Sage" Color="{StaticResource Color.Sage}" />
+          <SolidColorBrush x:Key="Brush.Ink" Color="{StaticResource Color.Ink}" />
+          <SolidColorBrush x:Key="Brush.Green" Color="{StaticResource Color.Green}" />
+          <SolidColorBrush x:Key="Brush.GreenHover" Color="{StaticResource Color.GreenHover}" />
+          <SolidColorBrush x:Key="Brush.Muted" Color="{StaticResource Color.Muted}" />
+          <SolidColorBrush x:Key="Brush.Divider" Color="{StaticResource Color.Divider}" />
+          <SolidColorBrush x:Key="Brush.ControlBorder" Color="{StaticResource Color.ControlBorder}" />
+          <SolidColorBrush x:Key="Brush.Acid" Color="{StaticResource Color.Acid}" />
+          <SolidColorBrush x:Key="Brush.Focus" Color="{StaticResource Color.Focus}" />
+          <SolidColorBrush x:Key="Brush.Alert" Color="{StaticResource Color.Alert}" />
+          <SolidColorBrush x:Key="Brush.Caution" Color="{StaticResource Color.Caution}" />
+          <SolidColorBrush x:Key="Brush.Error" Color="{StaticResource Color.Error}" />
+          <SolidColorBrush x:Key="Brush.RowHover" Color="{StaticResource Color.RowHover}" />
+          <SolidColorBrush x:Key="Brush.SelBg" Color="{StaticResource Color.SelBg}" />
+          <SolidColorBrush x:Key="Brush.Sidebar" Color="{StaticResource Color.Sidebar}" />
+          <SolidColorBrush x:Key="Brush.HoverTint" Color="{StaticResource Color.HoverTint}" />
+          <SolidColorBrush x:Key="Brush.DangerBg" Color="{StaticResource Color.DangerBg}" />
+          <SolidColorBrush x:Key="Brush.OkBg" Color="{StaticResource Color.OkBg}" />
+        </ResourceDictionary>
+
+      </ResourceDictionary.ThemeDictionaries>
+
+      <!-- System UI type on macOS with the brand fallbacks; mono reserved for codes/ids -->
+      <FontFamily x:Key="Font.Ui">SF Pro Text, SF Pro, Host Grotesk, Helvetica Neue, Helvetica, Arial</FontFamily>
+      <FontFamily x:Key="Font.Mono">avares://QsppManager.Desktop/Assets/Fonts/JetBrainsMono-Regular.ttf#JetBrains Mono, SF Mono, Menlo, Consolas, monospace</FontFamily>
+      <FontFamily x:Key="Font.MonoMedium">avares://QsppManager.Desktop/Assets/Fonts/JetBrainsMono-Medium.ttf#JetBrains Mono Medium, SF Mono, Menlo, monospace</FontFamily>
+      <FontFamily x:Key="Font.Brand">avares://QsppManager.Desktop/Assets/Fonts/HostGrotesk.ttf#Host Grotesk, SF Pro Text, Helvetica Neue</FontFamily>
+    </ResourceDictionary>
 
   </Application.Resources>
 
   <Application.Styles>
     <FluentTheme />
 
-    <!-- Base window typography -->
+    <!-- Base typography: inherits everywhere -->
     <Style Selector="Window, UserControl">
       <Setter Property="FontFamily" Value="{StaticResource Font.Ui}" />
-      <Setter Property="FontSize" Value="14" />
-      <Setter Property="Foreground" Value="{StaticResource Brush.Ink}" />
-      <Setter Property="Background" Value="{StaticResource Brush.Paper}" />
+      <Setter Property="FontSize" Value="13.5" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.Ink}" />
+      <Setter Property="Background" Value="{DynamicResource Brush.Paper}" />
     </Style>
 
-    <!-- Headings/type scale (spec §5.2) -->
-    <Style Selector="TextBlock.h1"><Setter Property="FontSize" Value="28" /><Setter Property="FontWeight" Value="Medium" /><Setter Property="LetterSpacing" Value="-0.35" /></Style>
-    <Style Selector="TextBlock.h2"><Setter Property="FontSize" Value="20" /><Setter Property="FontWeight" Value="Medium" /><Setter Property="LetterSpacing" Value="-0.25" /></Style>
-    <Style Selector="TextBlock.h3"><Setter Property="FontSize" Value="16" /><Setter Property="FontWeight" Value="Medium" /><Setter Property="LetterSpacing" Value="-0.1" /></Style>
-    <Style Selector="TextBlock.lead"><Setter Property="FontSize" Value="15" /></Style>
-    <Style Selector="TextBlock.small"><Setter Property="FontSize" Value="12" /><Setter Property="Foreground" Value="{StaticResource Brush.Muted}" /></Style>
-    <Style Selector="TextBlock.label"><Setter Property="FontSize" Value="11" /><Setter Property="FontWeight" Value="Medium" /><Setter Property="LetterSpacing" Value="0.6" /><Setter Property="Foreground" Value="{StaticResource Brush.Muted}" /></Style>
+    <!-- Type scale -->
+    <Style Selector="TextBlock.h1"><Setter Property="FontSize" Value="26" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="LetterSpacing" Value="-0.4" /></Style>
+    <Style Selector="TextBlock.h2"><Setter Property="FontSize" Value="19" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="LetterSpacing" Value="-0.25" /></Style>
+    <Style Selector="TextBlock.h3"><Setter Property="FontSize" Value="15" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="LetterSpacing" Value="-0.1" /></Style>
+    <Style Selector="TextBlock.lead"><Setter Property="FontSize" Value="14" /><Setter Property="Foreground" Value="{DynamicResource Brush.Muted}" /></Style>
+    <Style Selector="TextBlock.small"><Setter Property="FontSize" Value="11.5" /><Setter Property="Foreground" Value="{DynamicResource Brush.Muted}" /></Style>
+    <Style Selector="TextBlock.label"><Setter Property="FontSize" Value="10.5" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="LetterSpacing" Value="0.5" /><Setter Property="Foreground" Value="{DynamicResource Brush.Muted}" /></Style>
     <Style Selector="TextBlock.mono"><Setter Property="FontFamily" Value="{StaticResource Font.Mono}" /><Setter Property="FontSize" Value="12" /></Style>
+    <Style Selector="TextBlock.monoSm"><Setter Property="FontFamily" Value="{StaticResource Font.Mono}" /><Setter Property="FontSize" Value="11" /></Style>
 
-    <!-- Buttons (spec §7.1): zero radius, ink primary, green hover -->
+    <!-- Buttons: rounded, compact Mac push buttons -->
     <Style Selector="Button">
-      <Setter Property="CornerRadius" Value="0" />
-      <Setter Property="Height" Value="36" />
-      <Setter Property="Padding" Value="14,0" />
-      <Setter Property="Background" Value="{StaticResource Brush.White}" />
-      <Setter Property="BorderBrush" Value="{StaticResource Brush.ControlBorder}" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Height" Value="30" />
+      <Setter Property="Padding" Value="12,0" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="Background" Value="{DynamicResource Brush.Surface}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.ControlBorder}" />
       <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="Foreground" Value="{StaticResource Brush.Ink}" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.Ink}" />
       <Setter Property="FontWeight" Value="Medium" />
     </Style>
     <Style Selector="Button.primary">
-      <Setter Property="Background" Value="{StaticResource Brush.Ink}" />
-      <Setter Property="Foreground" Value="{StaticResource Brush.White}" />
-      <Setter Property="BorderBrush" Value="{StaticResource Brush.Ink}" />
+      <Setter Property="Background" Value="{DynamicResource Brush.Green}" />
+      <Setter Property="Foreground" Value="#FFFEF8" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.Green}" />
     </Style>
     <Style Selector="Button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Background" Value="{StaticResource Brush.Green}" />
+      <Setter Property="Background" Value="{DynamicResource Brush.GreenHover}" />
+    </Style>
+    <Style Selector="Button.primary:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource Brush.Green}" />
+    </Style>
+    <Style Selector="Button.primary:disabled /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource Brush.Sage}" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.Muted}" />
     </Style>
     <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Background" Value="{StaticResource Brush.Sage}" />
+      <Setter Property="Background" Value="{DynamicResource Brush.Sage}" />
     </Style>
     <Style Selector="Button:disabled">
-      <Setter Property="Background" Value="{StaticResource Brush.Paper}" />
-      <Setter Property="Foreground" Value="{StaticResource Brush.Muted}" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.Muted}" />
     </Style>
     <Style Selector="Button.destructive">
-      <Setter Property="Background" Value="{StaticResource Brush.Alert}" />
-      <Setter Property="Foreground" Value="{StaticResource Brush.White}" />
-      <Setter Property="BorderBrush" Value="{StaticResource Brush.Alert}" />
+      <Setter Property="Background" Value="{DynamicResource Brush.Alert}" />
+      <Setter Property="Foreground" Value="#FFFEF8" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.Alert}" />
+    </Style>
+    <Style Selector="Button.ghost">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.Green}" />
     </Style>
 
-    <!-- Inputs (spec §7.2) -->
+    <!-- Inputs -->
     <Style Selector="TextBox">
-      <Setter Property="CornerRadius" Value="0" />
-      <Setter Property="Height" Value="36" />
-      <Setter Property="Background" Value="{StaticResource Brush.White}" />
-      <Setter Property="BorderBrush" Value="{StaticResource Brush.ControlBorder}" />
-      <Setter Property="Foreground" Value="{StaticResource Brush.Ink}" />
-      <Setter Property="Padding" Value="12,7" />
-      <Setter Property="MinHeight" Value="36" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Height" Value="32" />
+      <Setter Property="Background" Value="{DynamicResource Brush.Surface}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.ControlBorder}" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.Ink}" />
+      <Setter Property="Padding" Value="10,5" />
+      <Setter Property="MinHeight" Value="32" />
+    </Style>
+    <Style Selector="TextBox:focus /template/ Border#PART_Border">
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.Green}" />
     </Style>
     <Style Selector="ComboBox">
-      <Setter Property="CornerRadius" Value="0" />
-      <Setter Property="MinHeight" Value="36" />
-      <Setter Property="Background" Value="{StaticResource Brush.White}" />
-      <Setter Property="BorderBrush" Value="{StaticResource Brush.ControlBorder}" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="MinHeight" Value="32" />
+      <Setter Property="Height" Value="32" />
+      <Setter Property="Background" Value="{DynamicResource Brush.Surface}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.ControlBorder}" />
+      <Setter Property="Padding" Value="10,0" />
     </Style>
 
-    <!-- Sidebar navigation (spec §6.5): sage rail, ink selected card with 2px offset shadow -->
+    <!-- Sidebar navigation: clean pill selection, no borders -->
     <Style Selector="ListBox.nav">
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderThickness" Value="0" />
       <Setter Property="Padding" Value="0" />
+      <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Hidden" />
     </Style>
     <Style Selector="ListBoxItem.nav">
-      <Setter Property="Height" Value="36" />
-      <Setter Property="CornerRadius" Value="0" />
-      <Setter Property="Padding" Value="12,0" />
+      <Setter Property="Height" Value="34" />
+      <Setter Property="CornerRadius" Value="7" />
+      <Setter Property="Padding" Value="10,0" />
       <Setter Property="Background" Value="Transparent" />
-      <Setter Property="Foreground" Value="{StaticResource Brush.Ink}" />
-      <Setter Property="FontSize" Value="14" />
-      <Setter Property="Margin" Value="8,2" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.Ink}" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="Margin" Value="10,2" />
     </Style>
     <Style Selector="ListBoxItem.nav:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="{StaticResource Brush.Paper}" />
+      <Setter Property="Background" Value="{DynamicResource Brush.HoverTint}" />
     </Style>
     <Style Selector="ListBoxItem.nav:selected /template/ ContentPresenter">
-      <Setter Property="Background" Value="{StaticResource Brush.White}" />
-      <Setter Property="BorderBrush" Value="{StaticResource Brush.Ink}" />
-      <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="BoxShadow" Value="2 2 0 0 #163F35" />
+      <Setter Property="Background" Value="{DynamicResource Brush.SelBg}" />
+    </Style>
+    <Style Selector="ListBoxItem.nav:selected">
+      <Setter Property="FontWeight" Value="Medium" />
     </Style>
 
-    <!-- DataGrid (spec §13.6): horizontal hairlines only, sage header, hover row -->
+    <!-- DataGrid: quiet rows, hairlines, sage selection -->
     <Style Selector="dg|DataGrid">
       <Setter Property="Background" Value="Transparent" />
-      <Setter Property="RowBackground" Value="{StaticResource Brush.White}" />
+      <Setter Property="RowBackground" Value="Transparent" />
       <Setter Property="GridLinesVisibility" Value="Horizontal" />
-      <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource Brush.Divider}" />
+      <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource Brush.Divider}" />
       <Setter Property="VerticalGridLinesBrush" Value="Transparent" />
-      <Setter Property="RowHeight" Value="40" />
+      <Setter Property="RowHeight" Value="36" />
       <Setter Property="BorderThickness" Value="0" />
       <Setter Property="HeadersVisibility" Value="Column" />
       <Setter Property="CanUserReorderColumns" Value="False" />
     </Style>
     <Style Selector="dg|DataGridColumnHeader">
-      <Setter Property="Background" Value="{StaticResource Brush.Sage}" />
-      <Setter Property="Foreground" Value="{StaticResource Brush.Muted}" />
-      <Setter Property="Padding" Value="10,8" />
-      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.Muted}" />
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Padding" Value="10,7" />
+      <Setter Property="BorderThickness" Value="0,0,0,1" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.Divider}" />
+    </Style>
+    <Style Selector="dg|DataGridRow:pointerover /template/ Rectangle#BackgroundRectangle">
+      <Setter Property="Fill" Value="{DynamicResource Brush.RowHover}" />
+    </Style>
+    <Style Selector="dg|DataGridRow:selected /template/ Rectangle#BackgroundRectangle">
+      <Setter Property="Fill" Value="{DynamicResource Brush.SelBg}" />
+    </Style>
+    <Style Selector="dg|DataGridRow:selected">
+      <Setter Property="Foreground" Value="{DynamicResource Brush.Ink}" />
     </Style>
 
-    <!-- Status tags: rectangles, no radius (spec §7.8). In Avalonia 12 font properties
-         are TextElement-attached: tags inherit the app-wide 14/20 scale (density debt noted in ledger). -->
+    <!-- Status chips -->
     <Style Selector="Border.tag">
-      <Setter Property="CornerRadius" Value="0" />
-      <Setter Property="Padding" Value="8,4" />
-      <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="BorderBrush" Value="{StaticResource Brush.Divider}" />
-      <Setter Property="Background" Value="{StaticResource Brush.Sage}" />
+      <Setter Property="CornerRadius" Value="5" />
+      <Setter Property="Padding" Value="8,3" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Background" Value="{DynamicResource Brush.Sage}" />
     </Style>
 
-    <!-- Keyboard focus visibility is Fluent's default; sharpen ring colour: -->
+    <!-- Cards in XAML views -->
+    <Style Selector="Border.card">
+      <Setter Property="CornerRadius" Value="9" />
+      <Setter Property="Background" Value="{DynamicResource Brush.Surface}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.Divider}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Padding" Value="16" />
+      <Setter Property="BoxShadow" Value="0 1 0 0 #14000000" />
+    </Style>
+
+    <!-- Keyboard focus visibility: brand terracotta ring where the template exposes it -->
     <Style Selector=":is(Control):focus /template/ Border#PART_FocusVisual">
-      <Setter Property="BorderBrush" Value="{StaticResource Brush.Focus}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.Focus}" />
     </Style>
   </Application.Styles>
 </Application>

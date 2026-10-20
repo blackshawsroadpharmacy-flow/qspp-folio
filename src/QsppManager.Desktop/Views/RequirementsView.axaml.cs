@@ -523,12 +523,3 @@ internal static class MediaBrushes
     public static IBrush Caution => new SolidColorBrush(Color.Parse("#7A5200"));
     public static IBrush Alert => new SolidColorBrush(Color.Parse("#9A3F1F"));
 }
-
-internal static class ControlExtensions
-{
-    public static T With<T>(this T control, Action<T> configure) where T : Control
-    {
-        configure(control);
-        return control;
-    }
-}

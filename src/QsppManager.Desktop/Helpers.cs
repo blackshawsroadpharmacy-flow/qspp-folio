@@ -1,8 +1,6 @@
 using Avalonia.Controls;
 using System.Diagnostics;
-using Avalonia;
 using Avalonia.Media;
-using QsppManager.Desktop.ViewModels;
 
 namespace QsppManager.Desktop;
 
@@ -11,10 +9,11 @@ namespace QsppManager.Desktop;
 public static class Helpers
 {
     /// <summary>Open a managed file with the OS viewer. Used for source PDFs and as the
-    /// preview fallback when in-app rendering is unavailable on a platform.</summary>
-    public static void OpenWithSystemViewer(string absolutePath)
+    /// preview fallback when in-app rendering is unavailable on a platform.
+    /// Returns false when nothing could handle it.</summary>
+    public static bool OpenWithSystemViewer(string absolutePath)
     {
-        if (!File.Exists(absolutePath)) return;
+        if (!File.Exists(absolutePath)) return false;
         try
         {
             var psi = new ProcessStartInfo
@@ -24,25 +23,71 @@ public static class Helpers
                 UseShellExecute = true,
             };
             Process.Start(psi);
+            return true;
         }
         catch (Exception ex)
         {
             ToastWindow.Show($"Could not open the system viewer: {ex.Message}", null, error: true);
+            return false;
         }
     }
 
-    /// <summary>Text enlargement independent of density (spec §5.2 note). 1.0 = normal.</summary>
+    /// <summary>Reveal a file (or folder) in the platform file manager. macOS uses
+    /// `open -R`; Windows selects in Explorer; Linux opens the containing folder.</summary>
+    public static bool RevealInFileManager(string absolutePath)
+    {
+        try
+        {
+            if (OperatingSystem.IsMacOS())
+            {
+                Process.Start(new ProcessStartInfo("open", ["-R", absolutePath]) { UseShellExecute = true });
+            }
+            else if (OperatingSystem.IsWindows())
+            {
+                var exists = File.Exists(absolutePath);
+                Process.Start(new ProcessStartInfo("explorer.exe",
+                    exists ? $"/select,{absolutePath}" : $"/open,{Path.GetDirectoryName(absolutePath)}") { UseShellExecute = true });
+            }
+            else
+            {
+                var dir = File.Exists(absolutePath) ? Path.GetDirectoryName(absolutePath) : absolutePath;
+                Process.Start(new ProcessStartInfo("xdg-open", [dir ?? "/"]) { UseShellExecute = true });
+            }
+            return true;
+        }
+        catch (Exception ex)
+        {
+            ToastWindow.Show($"Could not reveal in the file manager: {ex.Message}", null, error: true);
+            return false;
+        }
+    }
+
+    /// <summary>Text enlargement scale (1.0 = normal, up to 1.5). Drive via the shell's
+    /// layout transform — Settings and the View menu set it.</summary>
     public static double TextScale { get; private set; } = 1.0;
     public static event Action<double>? TextScaleChanged;
-
-    /// <summary>Fetch an app-level brush resource (code-built views avoid XAML binding syntax).</summary>
-    public static Avalonia.Media.IBrush? Brush(string key)
-        => Avalonia.Application.Current?.Resources.TryGetValue(key, out var v) == true && v is Avalonia.Media.IBrush b ? b : null;
-
     public static void SetTextScale(double scale)
     {
         TextScale = scale;
         TextScaleChanged?.Invoke(scale);
+    }
+
+    /// <summary>Fired after the OS appearance change so code-built views can rebuild
+    /// (their cached controls capture brushes at build time).</summary>
+    public static event Action? ThemeChanged;
+
+    internal static void FireThemeChanged() => ThemeChanged?.Invoke();
+
+    /// <summary>Fetch an app-level brush resource, resolved against the ACTIVE theme
+    /// variant (theme dictionaries). Falls back to the default dictionary.
+    /// Callers capture the brush at build time; rebuild on Helpers.ThemeChanged.</summary>
+    public static IBrush? Brush(string key)
+    {
+        var app = Avalonia.Application.Current;
+        if (app is null) return null;
+        if (app.TryGetResource(key, app.ActualThemeVariant, out var themed) && themed is IBrush b) return b;
+        if (app.Resources.TryGetValue(key, out var plain) && plain is IBrush b2) return b2;
+        return null;
     }
 }
 
@@ -54,20 +99,23 @@ public static class ToastWindow
         var win = new Window
         {
             Title = error ? "Attention required" : "Saved",
-            Width = 380,
+            Width = 400,
             SizeToContent = SizeToContent.Height,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
             ShowInTaskbar = false,
-            
             Topmost = true,
+            SystemDecorations = Avalonia.Controls.WindowDecorations.None,
+            Background = Avalonia.Media.Brushes.Transparent,
         };
         var border = new Avalonia.Controls.Border
         {
-            Padding = new(16),
-            Background = error ? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#F7E8E3")) : new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#F5F5EB")),
-            BorderBrush = error ? new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#9A3F1F")) : new Avalonia.Media.SolidColorBrush(Avalonia.Media.Color.Parse("#163F35")),
-            BorderThickness = new Avalonia.Thickness(2),
-            Child = new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap },
+            Margin = new(14),
+            Padding = new(14, 11),
+            CornerRadius = new(10),
+            Background = Helpers.Brush(error ? "Brush.DangerBg" : "Brush.SelBg"),
+            BorderBrush = Helpers.Brush(error ? "Brush.Alert" : "Brush.Green"),
+            BorderThickness = new(1),
+            Child = new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap, FontSize = 12.5, MaxWidth = 360 },
         };
         win.Content = border;
         if (owner != null) win.Show(owner);
