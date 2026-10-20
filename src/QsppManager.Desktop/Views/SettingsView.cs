@@ -27,6 +27,7 @@ public partial class SettingsView : UserControl
     private readonly DatePicker _expiry = new();
     private readonly DatePicker _onsite = new();
     private readonly ComboBox _scale = new() { SelectedIndex = 1, MinWidth = 200, ItemsSource = new[] { "Normal", "Larger (115%)", "Largest (130%)" } };
+    private readonly ComboBox _appearance = new() { MinWidth = 200, ItemsSource = new[] { "Follow system", "Light", "Dark" } };
     private readonly ListBox _deadlineBox = new() { Height = 220, Background = Avalonia.Media.Brushes.Transparent, BorderThickness = new Avalonia.Thickness(0) };
     private readonly TextBlock _message = new() { Classes = { "small" }, TextWrapping = TextWrapping.Wrap };
 
@@ -34,6 +35,15 @@ public partial class SettingsView : UserControl
     {
         Content = Build();
         Load();
+        _appearance.SelectedIndex = (App.Config.Appearance) switch { "dark" => 2, "light" => 1, _ => 0 };
+        _appearance.SelectionChanged += (_, _) =>
+        {
+            var mode = _appearance.SelectedIndex switch { 1 => "light", 2 => "dark", _ => "system" };
+            App.Config.Appearance = mode;
+            App.Config.Save();
+            App.ApplyAppearance(mode);
+            Helpers.FireThemeChanged();
+        };
         _scale.SelectionChanged += (_, _) =>
             Helpers.SetTextScale(_scale.SelectedIndex switch { 0 => 1.0, 1 => 1.15, _ => 1.30 });
     }
@@ -81,7 +91,8 @@ public partial class SettingsView : UserControl
         // Accessibility
         var a11y = new StackPanel { Spacing = 10 };
         a11y.Children.Add(_scale);
-        a11y.Children.Add(new TextBlock { Classes = { "small" }, Text = "Applies immediately across every screen. Dark appearance and text size also live in the View menu." });
+        a11y.Children.Add(new StackPanel { Spacing = 6, Children = { new TextBlock { Classes = { "label" }, Text = "APPEARANCE" }, _appearance } });
+        a11y.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap, Text = "Applies immediately across every screen; the choice is remembered." });
         sp.Children.Add(Ui.Section("Text size", a11y));
 
         // Data + integrity
