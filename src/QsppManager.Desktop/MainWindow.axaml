@@ -1,88 +1,131 @@
 <Window xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        x:Class="QsppManager.Desktop.MainWindow"
-        xmlns:vm="using:QsppManager.Desktop.ViewModels"
-        Title="QSPP Manager" Width="1280" Height="800" MinWidth="1024" MinHeight="660"
-        WindowStartupLocation="CenterScreen"
-        Background="{StaticResource Brush.Paper}">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:QsppManager.Desktop.ViewModels"
+             xmlns:local="clr-namespace:QsppManager.Desktop"
+             mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="800"
+             x:Class="QsppManager.Desktop.MainWindow"
+             Title="QSPP Manager"
+             Width="1280" Height="800" MinWidth="940" MinHeight="580"
+             ExtendClientAreaToDecorationsHint="True"
+             ExtendClientAreaTitleBarHeightHint="-1"
+             TransparencyLevelHint="AcrylicBlur"
+             Background="Transparent"
+             AutomationProperties.AutomationId="QsppMainWindow">
 
-  <Grid RowDefinitions="52,*,28">
-    <!-- Top bar -->
-    <Border Grid.Row="0" Background="{StaticResource Brush.Paper}" BorderBrush="{StaticResource Brush.Divider}" BorderThickness="0,0,0,1">
-      <Grid ColumnDefinitions="Auto,*,240,Auto" Margin="16,0">
-        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-          <Border Width="22" Height="22" Background="{StaticResource Brush.Ink}">
-            <TextBlock Text="+" Foreground="{StaticResource Brush.Acid}" FontSize="16" FontWeight="Bold" TextAlignment="Center" Margin="0,-2,0,0" />
+  <Window.Resources>
+    <DataTemplate x:Key="PaletteResultTemplate">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10" Margin="0,6">
+        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10" VerticalAlignment="Center">
+          <Border Padding="6,2" CornerRadius="4" Background="{DynamicResource Brush.Sage}">
+            <TextBlock FontSize="10" FontWeight="SemiBold" Text="{Binding Kind}" Foreground="{DynamicResource Brush.Muted}"/>
           </Border>
-          <TextBlock Margin="10,0,0,0" VerticalAlignment="Center" FontSize="14" FontWeight="Medium">QSPP Manager</TextBlock>
-          <TextBlock Margin="10,0,0,0" VerticalAlignment="Center" Classes="small" Text="Burke Road Compounding" />
-        </StackPanel>
+          <TextBlock Grid.Column="1" Text="{Binding Title}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+        </Grid>
+        <TextBlock Grid.Column="1" Text="{Binding Meta}" Classes="monoSm" VerticalAlignment="Center"
+                   TextTrimming="CharacterEllipsis" MaxWidth="150"/>
+      </Grid>
+    </DataTemplate>
+  </Window.Resources>
 
-        <TextBox Grid.Column="2" VerticalAlignment="Center" Height="30" Watermark="Search requirements, evidence, documents (Ctrl+K)"
-                 Text="{Binding SearchText}" />
-
-        <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" Spacing="8">
-          <Border Classes="tag" IsVisible="{Binding SignedIn}">
-            <TextBlock Text="{Binding SessionLabel}" />
-          </Border>
-          <Button Content="Sign out" Command="{Binding SignOutCommand}" IsVisible="{Binding SignedIn}" Height="30" />
-        </StackPanel>
+  <Grid x:Name="RootGrid" ColumnDefinitions="Auto,*">
+    <!-- ============ Sidebar: spans both rows (transparent over the acrylic) ============ -->
+    <Border x:Name="Sidebar" Width="{Binding SidebarWidth}"
+            Background="{DynamicResource Brush.Sidebar}"
+            BorderBrush="{DynamicResource Brush.Divider}" BorderThickness="0,0,1,0"
+            AutomationProperties.AutomationId="Sidebar"
+            IsVisible="{Binding SignedIn}">
+      <Grid Grid.RowDefinitions="50,*">
+        <ListBox x:Name="NavList" Grid.Row="1"
+                 Classes="nav"
+                 ItemsSource="{Binding NavItems}"
+                 SelectedItem="{Binding SelectedNav}"
+                 AutomationProperties.AutomationId="NavList">
+          <ListBox.ItemTemplate>
+            <DataTemplate>
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <local:LucideGlyph Glyph="{Binding Icon}" GlyphSize="17"
+                                   GlyphBrush="{DynamicResource Brush.Ink}"/>
+                <TextBlock Text="{Binding Label}" VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis"
+                           IsVisible="{Binding $parent[Window].DataContext.SidebarExpanded}"/>
+              </StackPanel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
       </Grid>
     </Border>
 
-    <!-- Body: sidebar + content -->
-    <Grid Grid.Row="1" ColumnDefinitions="248,*">
-      <Border Grid.Column="0" Background="{StaticResource Brush.Sage}" BorderBrush="{StaticResource Brush.Divider}" BorderThickness="0,0,1,0">
-        <DockPanel>
-          <StackPanel DockPanel.Dock="Bottom" Margin="12,10">
-            <TextBlock Classes="small" Text="{Binding DataViewLabel}" TextWrapping="Wrap" />
-            <TextBlock Classes="small" Margin="0,4,0,0" Text="Local-only database. Cloud sync is off." TextWrapping="Wrap" />
-          </StackPanel>
-          <ListBox Classes="nav" ItemsSource="{Binding NavItems}" SelectedItem="{Binding SelectedNav}"
-                   Margin="0,12,0,0">
-            <ListBox.ItemTemplate>
-              <DataTemplate>
-                <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
-              </DataTemplate>
-            </ListBox.ItemTemplate>
-          </ListBox>
-        </DockPanel>
-      </Border>
-
-      <ContentControl Grid.Column="1" Content="{Binding CurrentPage}" Margin="0" />
-
-      <!-- Command palette overlay -->
-      <Border Grid.Column="1" IsVisible="{Binding PaletteOpen}" Background="#AA163F35" ZIndex="100">
-        <ScrollViewer>
-          <Border Background="{StaticResource Brush.White}" BorderBrush="{StaticResource Brush.Ink}" BorderThickness="1"
-                  Margin="160,60,160,0" Padding="20">
-            <StackPanel>
-              <TextBox Text="{Binding SearchText}" Watermark="Find a requirement, evidence item or document…" FontSize="15" Height="44" />
-              <TextBlock Classes="label" Margin="0,12,0,4">RESULTS</TextBlock>
-              <ListBox ItemsSource="{Binding SearchResults}" Height="300"
-                       SelectedItem="{Binding SelectedSearchResult}" BorderBrush="{StaticResource Brush.Divider}" BorderThickness="0,0,0,1">
-                <ListBox.ItemTemplate>
-                  <DataTemplate>
-                    <StackPanel Margin="2,4">
-                      <TextBlock Text="{Binding Title}" />
-                      <TextBlock Classes="small" Text="{Binding Meta}" />
-                    </StackPanel>
-                  </DataTemplate>
-                </ListBox.ItemTemplate>
-              </ListBox>
-              <TextBlock Classes="small" Margin="0,8,0,0" Text="Enter opens · Escape closes" />
+    <!-- ============ Right column — the single page host (always visible; pre-auth pages fill the window) ============ -->
+    <Grid Grid.Column="1" Grid.RowDefinitions="52,*">
+      <!-- Toolbar: transparent so the acrylic strip shows through (mac material) -->
+      <Border x:Name="ToolbarRow" Background="Transparent"
+              BorderBrush="{DynamicResource Brush.Divider}" BorderThickness="0,0,0,1"
+              AutomationProperties.AutomationId="Toolbar">
+        <Grid x:Name="ToolbarContent" ColumnDefinitions="Auto,10,Auto,*,Auto,10,Auto,Auto,16" VerticalAlignment="Center" Margin="16,26,14,0"
+              IsVisible="{Binding SignedIn}">
+          <Button x:Name="SidebarToggle" Classes="ghost" Height="30" Width="32" Padding="4,0"
+                  Command="{Binding ToggleSidebarCommand}"
+                  AutomationProperties.Name="Toggle sidebar"
+                  ToolTip.Tip="Toggle sidebar (⌥⌘S)">
+            <Grid Width="17" Height="17">
+              <local:LucideGlyph Glyph="panel-left-close" GlyphBrush="{DynamicResource Brush.Ink}" IsVisible="{Binding SidebarExpanded}" />
+              <local:LucideGlyph Glyph="panel-left-open"  GlyphBrush="{DynamicResource Brush.Ink}" IsVisible="{Binding SidebarCollapsed}" />
+            </Grid>
+          </Button>
+          <TextBlock x:Name="PageHeading" Grid.Column="2" Classes="h3"
+                     Text="{Binding PageTitle}" VerticalAlignment="Center"/>
+          <!-- empty stretch: dragging here moves the window (handled in code-behind) -->
+          <Border x:Name="ToolbarDragStrip" Grid.Column="3" Background="Transparent" />
+          <TextBox x:Name="ToolbarSearch" Grid.Column="4" Width="250" Height="30" FontSize="12.5"
+                   Watermark="Filter current screen ⌘F"
+                   AutomationProperties.AutomationId="ToolbarSearch"/>
+          <Button x:Name="PaletteButton" Grid.Column="6" Classes="ghost" Height="30" Padding="6,0"
+                  Command="{Binding TogglePaletteCommand}"
+                  AutomationProperties.AutomationId="PaletteButton"
+                  ToolTip.Tip="Command palette (⌘K)">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <local:LucideGlyph Glyph="command" GlyphSize="13" GlyphBrush="{DynamicResource Brush.Ink}" />
+              <TextBlock Text="Commands ⌘K" FontSize="11.5" VerticalAlignment="Center"/>
             </StackPanel>
-          </Border>
-        </ScrollViewer>
+          </Button>
+          <TextBlock x:Name="SessionText" Grid.Column="7" Classes="small" VerticalAlignment="Center"
+                     Text="{Binding SessionLabel}"/>
+        </Grid>
       </Border>
+
+      <!-- content area (one host — the page control instance is single-owned;
+           the text-scale wrapper is attached in code-behind on page change) -->
+      <ContentControl x:Name="PageHost" Grid.Row="1" Background="{DynamicResource Brush.Paper}"
+                      AutomationProperties.AutomationId="PageHost" />
     </Grid>
 
-    <!-- Status bar -->
-    <Border Grid.Row="2" Background="{StaticResource Brush.Sage}" BorderBrush="{StaticResource Brush.Divider}" BorderThickness="0,1,0,0">
-      <Grid ColumnDefinitions="*,Auto" Margin="16,0">
-        <TextBlock Grid.Column="0" Classes="small" VerticalAlignment="Center" Text="{Binding StatusBar}" />
-        <TextBlock Grid.Column="1" Classes="small" VerticalAlignment="Center" Text="{Binding StatusRight}" />
-      </Grid>
-    </Border>
+    <!-- ============ command palette overlay (on top) ============ -->
+    <Grid Grid.ColumnSpan="2" Grid.RowSpan="2"
+          x:Name="PaletteOverlay"
+          IsVisible="{Binding PaletteOpen}"
+          AutomationProperties.AutomationId="CommandPalette">
+      <Border Background="#44000000" />
+      <Border x:Name="PaletteBackdrop" Background="Transparent" />
+      <Border Width="600" MaxHeight="420" HorizontalAlignment="Center" VerticalAlignment="Top"
+              Margin="0,60,0,0" CornerRadius="10"
+              Background="{DynamicResource Brush.Surface}"
+              BorderBrush="{DynamicResource Brush.ControlBorder}"
+              BorderThickness="1" Padding="10"
+              BoxShadow="0 10 24 0 #33000000">
+        <StackPanel Spacing="6">
+          <TextBox x:Name="PaletteSearch" Height="36" FontSize="14"
+                   Watermark="Search requirements, evidence, issues, sources — Return opens"
+                   Text="{Binding SearchText, Mode=TwoWay}"
+                   AutomationProperties.AutomationId="PaletteSearch"/>
+          <ListBox x:Name="PaletteResults"
+                   ItemsSource="{Binding SearchResults}"
+                   SelectedItem="{Binding SelectedSearchResult, Mode=TwoWay}"
+                   MinHeight="40" MaxHeight="300" Background="Transparent" BorderThickness="0"
+                   ItemTemplate="{StaticResource PaletteResultTemplate}" />
+        </StackPanel>
+      </Border>
+    </Grid>
   </Grid>
 </Window>

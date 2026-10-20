@@ -13,12 +13,13 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using AvaloniaPath = Avalonia.Controls.Shapes.Path;
 using AvaloniaGroup = Avalonia.Media.GeometryGroup;
+using AvaloniaGrid = Avalonia.Controls.Grid;
 
 namespace QsppManager.Desktop;
 
 /// <summary>Mac shell contracts. Views implement these so the toolbar/menu shortcuts
 /// can route to the right control on the current page.</summary>
-public interface IPageSearchFocus { void FocusSearch(); }
+public interface IPageSearchFocus { void FocusSearch(); void SetFilter(string text); }
 
 public interface IPagePrintRequest { void OpenPrintRequest(); }
 
@@ -256,7 +257,7 @@ public static class Ui
     {
         return new AvaloniaPath
         {
-            Data = LucideIconCache.Get(name),
+            Data = Shape(name),
             Stretch = Stretch.Uniform,
             Stroke = stroke ?? Br("Brush.Ink"),
             StrokeThickness = 2,
@@ -269,7 +270,46 @@ public static class Ui
         };
     }
 
+
+    public static Geometry? Shape(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return null;
+        try { return LucideIconCache.Get(name); }
+        catch { return null; }
+    }
+
     public static IBrush? Br(string key) => Helpers.Brush(key);
+
+    /// <summary>Small two-column fact row for the About dialog (label / value).</summary>
+    public static Control InfoLine(string label, string value)
+    {
+        var grid = new AvaloniaGrid { ColumnDefinitions = new ColumnDefinitions("Auto,*,12") };
+        var lbl = new TextBlock
+        {
+            Text = label,
+            Classes = { "label" },
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        var val = new TextBlock
+        {
+            Text = value,
+            Classes = { "monoSm" },
+            TextWrapping = TextWrapping.Wrap,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        AvaloniaGrid.SetColumn(lbl, 0);
+        AvaloniaGrid.SetColumn(val, 1);
+        grid.Children.Add(lbl);
+        grid.Children.Add(val);
+        return new Border
+        {
+            Background = Br("Brush.Surface"),
+            BorderBrush = Br("Brush.Divider"),
+            BorderThickness = new Thickness(0, 1, 0, 0),
+            Padding = new Thickness(0, 8, 0, 8),
+            Child = grid,
+        };
+    }
 
     private sealed class LucideIconCache
     {
@@ -370,5 +410,37 @@ internal static class ControlExtensions
     {
         configure(control);
         return control;
+    }
+}
+
+/// <summary>XAML-usable Lucide icon glyph: sidebar and toolbar icons bind the brand
+/// stroke colour with DynamicResource so appearance changes repaint correctly.
+/// (Top-level class — the XAML compiler cannot resolve nested types.)</summary>
+public class LucideGlyph : Control
+{
+    public static readonly StyledProperty<string> GlyphProperty =
+        AvaloniaProperty.Register<LucideGlyph, string>("Glyph", "");
+
+    public static readonly StyledProperty<double> GlyphSizeProperty =
+        AvaloniaProperty.Register<LucideGlyph, double>("GlyphSize", 16);
+
+    public static readonly StyledProperty<IBrush?> GlyphBrushProperty =
+        AvaloniaProperty.Register<LucideGlyph, IBrush?>("GlyphBrush");
+
+    public string Glyph { get => GetValue(GlyphProperty); set => SetValue(GlyphProperty, value); }
+    public double GlyphSize { get => GetValue(GlyphSizeProperty); set => SetValue(GlyphSizeProperty, value); }
+    public IBrush? GlyphBrush { get => GetValue(GlyphBrushProperty); set => SetValue(GlyphBrushProperty, value); }
+
+    protected override Size MeasureOverride(Size availableSize) => new(GlyphSize, GlyphSize);
+
+    public override void Render(DrawingContext context)
+    {
+        var geo = Ui.Shape(Glyph);
+        if (geo is null || GlyphBrush is null) return;
+        var scale = GlyphSize / 24;
+        using (context.PushTransform(new Matrix(scale, 0, 0, scale, (GlyphSize - 24 * scale) / 2, (GlyphSize - 24 * scale) / 2)))
+        {
+            context.DrawGeometry(null, new Pen(GlyphBrush, 2, null, PenLineCap.Round, PenLineJoin.Round), geo);
+        }
     }
 }

@@ -110,7 +110,7 @@ public partial class SettingsView : UserControl
     {
         var ph = App.Workspace.EnsurePharmacy();
         _name.Text = ph.Name;
-        var jurs = ((System.Collections.Generic.List<string?>)_jur.ItemsSource!).Select(x => x ?? "").ToList();
+        var jurs = ((_jur.ItemsSource as System.Collections.IEnumerable) ?? Array.Empty<object>()).Cast<object?>().Select(x => x?.ToString() ?? "").ToList();
         var idx = jurs.FindIndex(j => j.StartsWith(ph.Jurisdiction));
         _jur.SelectedIndex = idx >= 0 ? idx : 0;
         var flags = (ServiceScopeFlag)ph.ServiceScopeFlags;

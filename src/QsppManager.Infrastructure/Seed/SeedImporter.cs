@@ -20,14 +20,20 @@ public class SeedImporter(QsppDbContext db, AttachmentStore store, AuditService 
         return new Guid(bytes.Take(16).ToArray());
     }
 
-    /// <summary>Where the reference pack's source files live. Resolution order (M4 · DD-26):
-    /// 1. QSPP_PACK_ROOT environment variable; 2. a vendored copy at &lt;repo&gt;/vendor/qspp-pack
-    /// (portable handoff); 3. the original path on the authoring machine. The last one only
-    /// exists on the Linux box this app was built on — Mac/Windows machines use one of the first two.</summary>
+    /// <summary>Where the reference pack's source files live. Resolution order (M5 · DD-27):
+    /// 1. QSPP_PACK_ROOT environment variable; 2. the Settings/config override
+    /// (SeedImporter.PackRootOverride); 3. a vendored copy at &lt;repo&gt;/vendor/qspp-pack
+    /// (portable handoff / dev builds); 4. a pack bundled inside the macOS .app
+    /// (Contents/Resources/qspp-pack) or beside the executable (&lt;exe&gt;/pack/qspp-pack for
+    /// portable Linux layouts); 5. the original path on the authoring machine, kept last
+    /// for Linux continuity — it only exists on the Linux box this app was built on.</summary>
+    public static string? PackRootOverride { get; set; }
+
     private static string ResolvePackRoot()
     {
         var env = Environment.GetEnvironmentVariable("QSPP_PACK_ROOT");
         if (!string.IsNullOrWhiteSpace(env) && Directory.Exists(env)) return env;
+        if (!string.IsNullOrWhiteSpace(PackRootOverride) && Directory.Exists(PackRootOverride)) return PackRootOverride!;
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         for (var i = 0; i < 8 && dir != null; i++, dir = dir.Parent)
         {
@@ -35,10 +41,20 @@ public class SeedImporter(QsppDbContext db, AttachmentStore store, AuditService 
             if (Directory.Exists(Path.Combine(vendored, "website-scrape", "downloads")))
                 return vendored;
         }
+        // bundled inside a .app: exe at …/Contents/MacOS, pack at …/Contents/Resources/qspp-pack
+        var bundledResources = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "Resources", "qspp-pack"));
+        if (Directory.Exists(Path.Combine(bundledResources, "website-scrape", "downloads"))) return bundledResources;
+        // portable layout: pack sits beside the executable
+        var besideExe = Path.Combine(AppContext.BaseDirectory, "pack", "qspp-pack");
+        if (Directory.Exists(Path.Combine(besideExe, "website-scrape", "downloads"))) return besideExe;
         return "/home/vpnhugh/Projects/qspp-pack";
     }
 
-    private static readonly string PackRoot = ResolvePackRoot();
+    private static string PackRootValue => ResolvePackRoot();
+
+    /// <summary>Resolved pack root for this process (re-resolved per call so a Settings
+    /// override or late-installed pack takes effect without an app restart).</summary>
+    public static string PackRoot() => PackRootValue;
 
     public (int reqs, int examples, int issues, int docs) ImportAll(CancellationToken ct = default)
     {
@@ -253,11 +269,12 @@ public class SeedImporter(QsppDbContext db, AttachmentStore store, AuditService 
     }
 
     // ---------- source documents ----------
-    private int ImportDocuments(CancellationToken ct)
+    public int ImportDocuments(CancellationToken ct)
     {
+        var packRoot = PackRoot();
         if (db.SourceDocuments.Any()) return db.SourceDocuments.Count();
         var docsPath = Path.Combine(repoRoot, "seed", "documents.json");
-        var manifestPath = Path.Combine(PackRoot, "website-scrape", "downloads", "manifest.json");
+        var manifestPath = Path.Combine(packRoot, "website-scrape", "downloads", "manifest.json");
         var count = 0;
 
         if (File.Exists(docsPath))
@@ -268,7 +285,7 @@ public class SeedImporter(QsppDbContext db, AttachmentStore store, AuditService 
             {
                 var rel = S(el, "sourcePath");
                 if (string.IsNullOrWhiteSpace(rel) || el.TryGetProperty("excluded", out var ex) && ex.ValueKind == JsonValueKind.True) continue;
-                count += ImportOne(Path.Combine(PackRoot, rel), S(el, "displayName"), S(el, "role"), S(el, "sourceVersion"), S(el, "sha256"), S(el, "provenanceNote"));
+                count += ImportOne(Path.Combine(packRoot, rel), S(el, "displayName"), S(el, "role"), S(el, "sourceVersion"), S(el, "sha256"), S(el, "provenanceNote"));
             }
         }
         else if (File.Exists(manifestPath))

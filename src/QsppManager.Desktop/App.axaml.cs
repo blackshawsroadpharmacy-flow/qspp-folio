@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Styling;
 using Microsoft.EntityFrameworkCore;
 using QsppManager.Infrastructure.Persistence;
 using QsppManager.Infrastructure.Printing;
@@ -27,11 +28,14 @@ public partial class App : Avalonia.Application
     public static CorpusSearch Search { get; private set; } = null!;
     public static DocumentTextIndex TextIndex { get; private set; } = null!;
     public static bool DemoMode { get; private set; }
+    public static AppConfig Config { get; private set; } = new();
 
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
 
     public override void OnFrameworkInitializationCompleted()
     {
+        var (dataRoot, migrated, migrationWarning) = AppData.MigrateLegacyOnFirstRun();
+        AppData.SessionRoot = dataRoot;
         AppData.EnsureAll();
         RestoreStagedBackupIfAny();
         RepoRoot = FindRepoRoot();
@@ -41,6 +45,17 @@ public partial class App : Avalonia.Application
             .WriteTo.File(Path.Combine(AppData.LogsDir, "app-.log"), rollingInterval: RollingInterval.Day,
                 restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Information)
             .CreateLogger();
+        if (migrationWarning != null) Log.Warning("{Warn}", migrationWarning);
+
+        // A UI-thread exception should not take the whole session down: log it and keep running.
+        // (⌘, previously crashed the app via a latent SettingsView cast bug — caught this way too.)
+        Avalonia.Threading.Dispatcher.UIThread.UnhandledException += (_, e) =>
+        {
+            e.Handled = true;
+            try { Log.Error(e.Exception, "UI-thread exception caught; app keeps running"); } catch { }
+        };
+
+        Config = AppConfig.Load();
 
         var options = new DbContextOptionsBuilder<QsppDbContext>()
             .UseSqlite($"Data Source={AppData.DatabasePath(DemoMode)}")
@@ -50,18 +65,24 @@ public partial class App : Avalonia.Application
 
         var fontsDir = Path.Combine(RepoRoot, "assets", "fonts");
         if (!Directory.Exists(fontsDir))
+            fontsDir = Path.Combine(AppContext.BaseDirectory, "..", "Resources", "assets", "fonts"); // bundled in the .app
+        if (!Directory.Exists(fontsDir))
             fontsDir = AppData.Root; // installed app: fonts copied to appdata at packaging time
         PdfComposer.ConfigureLicense();
 
         Store = new AttachmentStore(AppData.AttachmentsDir);
         Audit = new AuditService(Db);
         Auth = new AuthService(Db, Audit);
+        Config.PackRoot = string.IsNullOrWhiteSpace(Config.PackRoot) ? null : Config.PackRoot;
+        SeedImporter.PackRootOverride = Config.PackRoot;
         Seeds = new SeedImporter(Db, Store, Audit, RepoRoot);
         Search = new CorpusSearch(Db);
         TextIndex = new DocumentTextIndex(Db, Store, Search, AppData.Ensure("document-text"));
         Workspace = new QsppWorkspace(Db, Store, Audit, Search);
         Printer = new CupsPrintService(Db, Audit);
         Composer = new PdfComposer(fontsDir);
+
+        ApplyAppearance(Config.Appearance);
 
         try
         {
@@ -78,11 +99,22 @@ public partial class App : Avalonia.Application
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            Main = desktop.MainWindow!;
             desktop.MainWindow = new MainWindow();
             Main = desktop.MainWindow;
         }
         base.OnFrameworkInitializationCompleted();
+    }
+
+    public static void ApplyAppearance(string mode)
+    {
+        var app = Current;
+        if (app is null) return;
+        app.RequestedThemeVariant = mode switch
+        {
+            "light" => ThemeVariant.Light,
+            "dark" => ThemeVariant.Dark,
+            _ => ThemeVariant.Default,
+        };
     }
 
     /// <summary>If a verified restore left files in appsdata/restore-staging, promote them
@@ -120,9 +152,11 @@ public partial class App : Avalonia.Application
         for (var i = 0; i < 6 && dir != null; i++, dir = dir.Parent)
             if (Directory.Exists(Path.Combine(dir.FullName, "seed")) && Directory.Exists(Path.Combine(dir.FullName, "docs")))
                 return dir.FullName;
-        // packaged/installed layout: seed bundled next to the executable instead
         var nearExe = Path.Combine(AppContext.BaseDirectory, "seed");
         if (Directory.Exists(nearExe)) return AppContext.BaseDirectory;
+        // packaged .app: Resources sits at Contents/Resources (Contents/Resources/seed + /docs)
+        var resources = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "Resources"));
+        if (Directory.Exists(Path.Combine(resources, "seed"))) return resources;
         return AppContext.BaseDirectory;
     }
 }

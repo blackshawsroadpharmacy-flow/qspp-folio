@@ -203,7 +203,7 @@
       <Setter Property="Padding" Value="0" />
       <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Hidden" />
     </Style>
-    <Style Selector="ListBoxItem.nav">
+    <Style Selector="ListBox.nav ListBoxItem">
       <Setter Property="Height" Value="34" />
       <Setter Property="CornerRadius" Value="7" />
       <Setter Property="Padding" Value="10,0" />
@@ -212,13 +212,13 @@
       <Setter Property="FontSize" Value="13" />
       <Setter Property="Margin" Value="10,2" />
     </Style>
-    <Style Selector="ListBoxItem.nav:pointerover /template/ ContentPresenter">
+    <Style Selector="ListBox.nav ListBoxItem:pointerover /template/ ContentPresenter">
       <Setter Property="Background" Value="{DynamicResource Brush.HoverTint}" />
     </Style>
-    <Style Selector="ListBoxItem.nav:selected /template/ ContentPresenter">
+    <Style Selector="ListBox.nav ListBoxItem:selected /template/ ContentPresenter">
       <Setter Property="Background" Value="{DynamicResource Brush.SelBg}" />
     </Style>
-    <Style Selector="ListBoxItem.nav:selected">
+    <Style Selector="ListBox.nav ListBoxItem:selected">
       <Setter Property="FontWeight" Value="Medium" />
     </Style>
 

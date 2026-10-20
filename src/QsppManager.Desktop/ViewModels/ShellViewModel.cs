@@ -5,6 +5,7 @@ using QsppManager.Application;
 using QsppManager.Desktop.Views;
 using QsppManager.Domain;
 using QsppManager.Infrastructure.Services;
+using QsppManager.Infrastructure.Runtime;
 
 namespace QsppManager.Desktop.ViewModels;
 
@@ -15,13 +16,32 @@ public class NavItem(string label, ShellPage page)
 {
     public string Label { get; } = label;
     public ShellPage Page { get; } = page;
+
+    /// <summary>Lucide icon name for the sidebar (bundled assets/Icons, ISC).</summary>
+    public string Icon { get; } = page switch
+    {
+        ShellPage.Today => "house",
+        ShellPage.Requirements => "list-checks",
+        ShellPage.Documents => "files",
+        ShellPage.Tasks => "calendar-days",
+        ShellPage.Registers => "clipboard-list",
+        ShellPage.People => "users",
+        ShellPage.Assessments => "clipboard-check",
+        ShellPage.Library => "book-open",
+        ShellPage.PrintCentre => "printer",
+        ShellPage.Settings => "settings",
+        _ => "circle-dashed",
+    };
 }
 
-/// <summary>Shell state: navigation, session, palette, status bar. Pages are created
-/// through the factory below so every page shares the same services and session.</summary>
+/// <summary>Shell state: navigation, session, palette, sidebar. Pages are created
+/// through the factory below so every page shares the same services and session.
+/// The macOS shell exposes no permanent status bar — per-screen message lines and
+/// toasts carry state; the toolbar shows the current destination and context search.</summary>
 public class ShellViewModel : ViewModelBase
 {
     private Control _currentPage = new LoadingView();
+    private ShellPage _currentPageEnum = ShellPage.Loading;
 
     public ObservableCollection<NavItem> NavItems { get; } =
     [
@@ -50,12 +70,44 @@ public class ShellViewModel : ViewModelBase
 
     public Control CurrentPage { get => _currentPage; private set => SetProperty(ref _currentPage, value); }
 
+    /// <summary>Heading shown in the toolbar for the current destination.</summary>
+    public string PageTitle { get; private set; } = "Today";
+
+    /// <summary>Collapsible sidebar (macOS standard). Persisted in app-config.json.</summary>
+    public bool SidebarCollapsed
+    {
+        get => _sidebarCollapsed;
+        set
+        {
+            if (SetProperty(ref _sidebarCollapsed, value))
+            {
+                OnPropertyChanged(nameof(SidebarWidth));
+                OnPropertyChanged(nameof(SidebarExpanded));
+            }
+        }
+    }
+    private bool _sidebarCollapsed = App.Config.SidebarCollapsed;
+
+    public double SidebarWidth => _sidebarCollapsed ? 52 : 232;
+    public bool SidebarExpanded => !_sidebarCollapsed;
+    public bool IsDemo => App.DemoMode;
+
+    public ICommand ToggleSidebarCommand => _toggleSidebar ??= new RelayCommand(_ => ToggleSidebar());
+    private ICommand? _toggleSidebar;
+
+    public ICommand TogglePaletteCommand => _togglePalette ??= new RelayCommand(_ => TogglePalette());
+    private ICommand? _togglePalette;
+
+    public void ToggleSidebar()
+    {
+        SidebarCollapsed = !SidebarCollapsed;
+        App.Config.SidebarCollapsed = SidebarCollapsed;
+        App.Config.Save();
+    }
+
     public bool SignedIn { get; private set; }
     public string SessionLabel { get; private set; } = "";
-    public string StatusRight { get; private set; } = "";
     public string DataViewLabel { get; private set; } = App.DemoMode ? "DEMO DATA — fictional pharmacy" : "Production data";
-
-    public string StatusBar { get; private set; } = "Starting…";
 
     // Command palette
     public string SearchText { get => _searchText; set { if (SetProperty(ref _searchText, value)) RunSearch(); } }
@@ -71,7 +123,6 @@ public class ShellViewModel : ViewModelBase
 
     public ShellViewModel()
     {
-        StatusBar = $"Corpus: imported at startup · Data: {Infrastructure.Runtime.AppData.Root} · Offline mode";
         RefreshSessionAwareUi();
 
         if (App.Auth.ListUsers().Count == 0)
@@ -85,7 +136,7 @@ public class ShellViewModel : ViewModelBase
         App.Session = session;
         _session = session;
         SignedIn = true;
-        SessionLabel = $"{session.DisplayName} · {RoleLabel(session.Role)}";
+        SessionLabel = $"{session.DisplayName} · {RoleLabel(session.Role)}" + (App.DemoMode ? " · DEMO DATA" : "");
         RefreshSessionAwareUi();
         try
         {
@@ -112,12 +163,18 @@ public class ShellViewModel : ViewModelBase
     {
         OnPropertyChanged(nameof(SignedIn));
         OnPropertyChanged(nameof(SessionLabel));
+        OnPropertyChanged(nameof(DataViewLabel));
     }
 
     public void Navigate(ShellPage page)
     {
         if (!SignedIn && page is not (ShellPage.Login or ShellPage.Onboarding)) page = _session == null ? ShellPage.Login : ShellPage.Today;
 
+        _currentPageEnum = page;
+        // Keep the sidebar selection in sync for programmatic navigation (⌘1–⌘0, palette, menus).
+        var navMatch = NavItems.FirstOrDefault(n => n.Page == page);
+        if (navMatch != null && !ReferenceEquals(_selectedNav, navMatch)) _selectedNav = navMatch;
+        OnPropertyChanged(nameof(SelectedNav));
         CurrentPage = page switch
         {
             ShellPage.Onboarding => new OnboardingView(this),
@@ -135,8 +192,50 @@ public class ShellViewModel : ViewModelBase
             _ => new LoadingView(),
         };
 
-        StatusBar = $"Viewing {page} · {NowLabel()}";
-        OnPropertyChanged(nameof(CurrentPage));
+        PageTitle = page switch
+        {
+            ShellPage.Login => "Sign in",
+            ShellPage.Onboarding => "Welcome",
+            ShellPage.Documents => "Evidence & documents",
+            ShellPage.Tasks => "Tasks & calendar",
+            ShellPage.People => "People & training",
+            ShellPage.PrintCentre => "Print centre",
+            _ => NavItems.FirstOrDefault(n => n.Page == page)?.Label ?? "QSPP Manager",
+        };
+        OnPropertyChanged(nameof(PageTitle));
+    }
+
+    /// <summary>Rebuild the current page from scratch — used by theme/appearance change
+    /// (code-built views capture brushes at build time) and by explicit refreshes.</summary>
+    public void RebuildCurrentPage() => Navigate(_currentPageEnum);
+
+    /// <summary>⌘F: focus the current screen's filter/search box when it has one,
+    /// falling back to the command palette.</summary>
+    public void RequestFind()
+    {
+        if (CurrentPage is IPageSearchFocus searchable)
+        {
+            searchable.FocusSearch();
+            return;
+        }
+        TogglePalette();
+    }
+
+    /// <summary>⌘P: hand the current context to the print centre, or re-render there
+    /// when already showing it.</summary>
+    public void RequestPrint()
+    {
+        if (CurrentPage is not IPagePrintRequest printable)
+        {
+            if (SelectedNav?.Page != ShellPage.PrintCentre)
+            {
+                SelectedNav = NavItems.FirstOrDefault(n => n.Page == ShellPage.PrintCentre);
+                Navigate(ShellPage.PrintCentre);
+                SelectedNav = NavItems.FirstOrDefault(n => n.Page == ShellPage.PrintCentre);
+            }
+            return;
+        }
+        printable.OpenPrintRequest();
     }
 
     public void ClosePalette() { PaletteOpen = false; SearchText = ""; }
@@ -175,8 +274,6 @@ public class ShellViewModel : ViewModelBase
         UserRole.ReviewerReadOnly => "Reviewer (read-only)",
         _ => r.ToString(),
     };
-
-    private static string NowLabel() => DateTime.Now.ToString("dd MMM yyyy — h:mm tt");
 }
 
 public class ViewModelBase : System.ComponentModel.INotifyPropertyChanged
