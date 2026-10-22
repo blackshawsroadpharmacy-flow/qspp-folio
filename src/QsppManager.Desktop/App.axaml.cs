@@ -82,6 +82,9 @@ public partial class App : Avalonia.Application
         TextIndex = new DocumentTextIndex(Db, Store, Search, AppData.Ensure("document-text"));
         Workspace = new QsppWorkspace(Db, Store, Audit, Search);
         Folio = new FolioWorkspace(Db, Workspace, Store, Audit, AppData.Ensure("folio-cache"));
+        // Stage-2 connects only if a LOCAL decision server is up on loopback; a
+        // missing/down server leaves deterministic stage-1 exactly as before.
+        try { Folio.SetStage2(new FolioDecisionStage2()); } catch { /* non-loopback configured: refuse quietly */ }
         Printer = new CupsPrintService(Db, Audit);
         Composer = new PdfComposer(fontsDir);
 

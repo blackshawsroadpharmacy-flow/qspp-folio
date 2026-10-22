@@ -26,8 +26,13 @@ public sealed class FolioWorkspace(
 {
     private FolioOcr? ocrEngine = FolioOcr.LocateHelper() is { } helper ? new FolioOcr(helper) : null;
     private FolioExtractor _extractor = null!;
+    private FolioDecisionStage2? stage2;
 
     public void SetOcrEngine(FolioOcr? engine) { ocrEngine = engine; _extractor = new FolioExtractor(folioCacheRoot, ocrEngine); }
+
+    /// <summary>Stage-2 is opt-in wiring: only reachable when a LOCAL loopback
+    /// decision server is up. A null or unreachable server leaves stage-1 exact.</summary>
+    public void SetStage2(FolioDecisionStage2? client) => stage2 = client;
 
     private FolioExtractor Extractor => _extractor ??= new FolioExtractor(folioCacheRoot, ocrEngine);
 
@@ -107,9 +112,12 @@ public sealed class FolioWorkspace(
         }
         batch.ScannedCount = scan.Files.Count(f => true);
         batch.SkippedCount = scan.Skipped.Count;
-        batch.ModeDescription = ocrEngine == null
-            ? "digital-pdf: pdfpig; ocr: queued (helper not installed); decision model: deterministic-v1 (stage 1 only)"
-            : $"digital-pdf: pdfpig; ocr: {FolioOcr.EngineKey} (on-device); decision model: deterministic-v1 (stage 1 only)";
+        batch.ModeDescription = (ocrEngine == null
+            ? "digital-pdf: pdfpig; ocr: queued (helper not installed)"
+            : $"digital-pdf: pdfpig; ocr: {FolioOcr.EngineKey} (on-device)")
+            + (stage2 != null && stage2.Available()
+                ? $"; stage-2: {FolioDecisionStage2.ModelName} (local, loopback)"
+                : "; decision model: deterministic-v1 (stage 1 only)");
         db.SaveChanges();
         audit.Append(session.DisplayName, session.UserId, "folio.batch.scan", "folio", batch.Id.ToString(),
             $"scanned={batch.ScannedCount}; skipped={batch.SkippedCount}; source={sourceDirectory}");
@@ -149,7 +157,7 @@ public sealed class FolioWorkspace(
             foreach (var item in batch.Items.Where(i => i.State is FolioItemState.Pending or FolioItemState.Processing or FolioItemState.ExtractError).ToList())
             {
                 ct.ThrowIfCancellationRequested();
-                ProcessItem(batch, item, classifier, session);
+                ProcessItem(batch, item, classifier, session, candidates);
                 processed++;
                 progress?.Report((item.SourceRelativePath, item.State.ToString()));
                 db.SaveChanges(); // per item: resumability + progress durability
@@ -171,7 +179,7 @@ public sealed class FolioWorkspace(
         return (ServiceResult.Succeed(), processed);
     }
 
-    private void ProcessItem(FolioBatch batch, FolioItem item, FolioClassifier classifier, UserSession session)
+    private void ProcessItem(FolioBatch batch, FolioItem item, FolioClassifier classifier, UserSession session, List<FolioCandidate> candidates)
     {
         try
         {
@@ -198,14 +206,37 @@ public sealed class FolioWorkspace(
             var sensitive = SensitiveDetector.Detect(text, Path.GetFileName(item.SourceRelativePath));
             item.SensitiveReasonsJson = JsonSerializer.Serialize(sensitive, FolioJson.Opts);
             var cleanText = text ?? "";
-            var suggestions = classifier.Classify(cleanText, Path.GetFileName(item.SourceRelativePath));
-            item.ProposalsJson = JsonSerializer.Serialize(suggestions, FolioJson.Opts);
-
             if (sensitive.Count > 0) { item.State = FolioItemState.SensitiveHold; return; }
-            item.State = suggestions.Count == 0 ? FolioItemState.Abstained
+            var suggestions = classifier.Classify(cleanText, Path.GetFileName(item.SourceRelativePath));
+            var itemState = suggestions.Count == 0 ? FolioItemState.Abstained
                 : suggestions[0].Score != 0 && suggestions.Count > 1 && suggestions[1].Score >= suggestions[0].Score * 0.85
                     ? FolioItemState.MultipleCandidates
                     : FolioItemState.Proposed;
+
+            // Stage-2 refinement, strictly optional: a local typed-decision model
+            // re-ranks the stage-1 shortlist (choice / multiple / abstain). It can
+            // never invent destinations or set review trust; unreachable servers,
+            // low confidence and failures leave stage-1 exactly as computed.
+            if (stage2 != null && suggestions.Count > 0 &&
+                (itemState is FolioItemState.Proposed or FolioItemState.MultipleCandidates))
+            {
+                try
+                {
+                    var answer = stage2.Decide(Path.GetFileName(item.SourceRelativePath), cleanText, ClassifierTopFor(suggestions, candidates));
+                    if (answer != null)
+                    {
+                        var (refined, refinedState) = FolioStage2Mapping.Map(suggestions, itemState, answer, candidates);
+                        suggestions = refined;
+                        itemState = refinedState;
+                        audit.Append(AuditActor, null, "folio.item.stage2", "folio", item.Id.ToString(),
+                            $"{answer.Identifier}; choice={answer.Choice[..Math.Min(12, answer.Choice.Length)]}; conf={answer.AnswerConfidence:0.00}");
+                    }
+                }
+                catch { /* stage-2 failure must never break the batch */ }
+            }
+
+            item.ProposalsJson = JsonSerializer.Serialize(suggestions, FolioJson.Opts);
+            item.State = itemState;
         }
         catch (OperationCanceledException) { throw; }
         catch (Exception ex)
@@ -213,6 +244,12 @@ public sealed class FolioWorkspace(
             item.State = FolioItemState.ExtractError;
             item.ErrorText = ex.Message;
         }
+    }
+
+    private static List<FolioCandidate> ClassifierTopFor(List<FolioSuggestion> suggestions, List<FolioCandidate> all)
+    {
+        var order = suggestions.Select(s => s.RequirementId).Take(5).ToHashSet();
+        return all.Where(c => order.Contains(c.Id)).ToList();
     }
 
     /// <summary>Candidates come from the LIVE database — wording, examples, REM items as imported.</summary>
