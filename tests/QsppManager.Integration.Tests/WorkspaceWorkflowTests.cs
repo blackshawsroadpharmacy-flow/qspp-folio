@@ -55,7 +55,7 @@ public abstract class TestBase : IDisposable
         Owner = new UserSession(user!.Id, user.UserName, user.DisplayName, user.Role);
     }
 
-    public void Dispose()
+    public virtual void Dispose()
     {
         Db.Dispose();
         try { File.Delete(DbPath); } catch { }

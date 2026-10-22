@@ -402,6 +402,146 @@ namespace QsppManager.Infrastructure.Persistence.Migrations
                     b.ToTable("Findings");
                 });
 
+            modelBuilder.Entity("QsppManager.Domain.Entities.FolioBatch", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("FinishedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ManifestRelativePath")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ModeDescription")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OutputDirectory")
+                        .IsRequired()
+                        .HasMaxLength(800)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ScanErrorsJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ScannedCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SettingsJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SkippedCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SourceDirectory")
+                        .IsRequired()
+                        .HasMaxLength(800)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("StartedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("State")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("FolioBatches");
+                });
+
+            modelBuilder.Entity("QsppManager.Domain.Entities.FolioItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("AddedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ApprovedJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("BatchId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DestinationClonesJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ErrorText")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("EvidenceItemId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("FileBytes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("FolioBatchId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("MimeType")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("PageCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ParserUsed")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProposalsJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("PublishedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SensitiveReasonsJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SourceRelativePath")
+                        .IsRequired()
+                        .HasMaxLength(600)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SourceSha256")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("State")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("TextCacheRelative")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BatchId");
+
+                    b.HasIndex("EvidenceItemId");
+
+                    b.HasIndex("FolioBatchId");
+
+                    b.HasIndex("SourceSha256");
+
+                    b.ToTable("FolioItems");
+                });
+
             modelBuilder.Entity("QsppManager.Domain.Entities.Incident", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1126,6 +1266,19 @@ namespace QsppManager.Infrastructure.Persistence.Migrations
                     b.ToTable("Tasks");
                 });
 
+            modelBuilder.Entity("QsppManager.Domain.Entities.FolioItem", b =>
+                {
+                    b.HasOne("QsppManager.Domain.Entities.EvidenceItem", "EvidenceItem")
+                        .WithMany()
+                        .HasForeignKey("EvidenceItemId");
+
+                    b.HasOne("QsppManager.Domain.Entities.FolioBatch", null)
+                        .WithMany("Items")
+                        .HasForeignKey("FolioBatchId");
+
+                    b.Navigation("EvidenceItem");
+                });
+
             modelBuilder.Entity("QsppManager.Domain.Entities.RequirementEvidenceExample", b =>
                 {
                     b.HasOne("QsppManager.Domain.Entities.Requirement", null)
@@ -1133,6 +1286,11 @@ namespace QsppManager.Infrastructure.Persistence.Migrations
                         .HasForeignKey("RequirementId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("QsppManager.Domain.Entities.FolioBatch", b =>
+                {
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("QsppManager.Domain.Entities.Requirement", b =>

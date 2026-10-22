@@ -242,3 +242,25 @@ three, all audited by distinct actions so the audit always answers "who set whic
 | `AuthService.ResetStaffPassphrase` + Settings "Set/reset a passphrase…" (Owner-admin only) | ✔ | service + UI; non-owner attempt refused in test |
 | `AuthService.ChangeOwnPassphrase` — signed-in change requires the CURRENT passphrase; old stops working immediately | ✔ | test: old login fails, new works, role/data unchanged |
 | Packaged app redistributed with the reset flow | ✔ | M7.3 package; real-DB reset applied, hash round-trip verified, audit chain intact (29 events) |
+
+## M8-A · Process and Sort — local pipeline core · **CODE COMPLETE (verified 22 Oct 2026)**
+
+**Owner brief:** turn a directory of pharmacy documents into an organised, reviewable QSPP
+evidence folio — entirely local, with classification targets including the standing
+requirements and the REM-01…19 surveillance asks. (Full plan: `docs/plans/2026-10-22-process-and-sort.md`.)
+
+| Item | Status | Evidence |
+|---|---|---|
+| In Evidence & documents: "Process and Sort…" — pick source + output folder, scan summary, run, per-file progress list, cancel (stops after the current file, batch resumable), review queue, publish, open result | ✔ | `ProcessSortDialog`/`FolioApproveDialog`; approval reuses the manual evidence flow exactly — links start Proposed, nothing self-verifies |
+| Scan: recursive, extension-vs-signature validated, size guard, bookkeeping files ignored, unsupported kinds listed honestly (DOCX joins in a later stage; never guessed) | ✔ | `FolioScanner`; tests incl. HTML-named-.pdf rejection and oversized reasons |
+| Extraction: PdfPig digital PDFs with per-page text cached by sha256 (`folio-cache/`); effectively-empty pages (scans/images) route to the OCR queue instead of being mis-filed — OCR tiers land in M8-B (Apple Vision light tier; benchmarked MinerU heavy tier; local only) | ✔ | `FolioExtractor`; routing asserted by test, never silent |
+| Deterministic classifier v1 vs the live corpus (wording, summaries, evidence examples, REM refs): exact-ref hits, full-title phrase, weighted token overlap; abstains below threshold; flags "multiple" when top scores tie within 15% — every suggestion records `deterministic-v1` + version | ✔ | `FolioClassifier`; namespace-confusion tests (Std 1.1.2 vs UAG 1.1.2 never swap), REM-05 direct-hit test, abstention test |
+| Sensitive gate BEFORE proposals: patient-identifier/personnel/credential heuristics hold the file for review; attaching still demands the explicit redaction attestation (existing rule, unchanged) | ✔ | `SensitiveDetector`; attestation-refusal test |
+| Transactional folio publish: staging → sha-verify → publish via APFS clonefile (hardlink only from the managed copy; copy fallback cross-volume); sources never moved or deleted; manifest.json records original path, sha, managed evidence id, parser + model/version, proposed + approved destinations, review state, errors | ✔ | `FolioStager` + tests (clone verified + source untouched; checksum-mismatch aborts publication) |
+| Resumable, failure-isolated batches: per-item state persisted; one broken PDF isolates to its own row while the rest completes; re-runs recognise unchanged files by sha and import nothing new | ✔ | corrupt-PDF, interruption/resume and duplicate-recognition tests |
+| Latent M1 bug found and fixed: `"\x89PNG"u8` encodes U+0089 as C2 89 — the PNG signature check never matched a real PNG; now numeric byte comparison (DD-38) | ✔ | image-signature test |
+| Migration `M8ProcessSort` + Entitysets FolioBatches/FolioItems; audit lines `folio.batch.*`, `folio.item.*`, `folio.published` | ✔ | `Folio.cs`, migration, tests |
+| Tests | ✔ | 14 new (9 pipeline + 4 classifier + probe retired); suite green across Domain + Integration projects |
+
+**Not yet (M8-B/C, next stages per plan):** Apple Vision light OCR + benchmarked MinerU heavy tier with managed-worker harness; local Laya decision model (loopback, pinned checkpoint) as stage 2; Settings mode block with real measured numbers; 8 GB M1 unclaimed until actually exercised.
+Nothing here transmits document content or extracted text off-device — all parsing, caching and classification are on-disk, on-this-Mac operations.

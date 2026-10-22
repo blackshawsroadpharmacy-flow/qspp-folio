@@ -6,6 +6,7 @@ using Avalonia.Styling;
 using Microsoft.EntityFrameworkCore;
 using QsppManager.Infrastructure.Persistence;
 using QsppManager.Infrastructure.Printing;
+using QsppManager.Infrastructure.ProcessSort;
 using QsppManager.Infrastructure.Runtime;
 using QsppManager.Infrastructure.Seed;
 using QsppManager.Infrastructure.Services;
@@ -23,6 +24,7 @@ public partial class App : Avalonia.Application
     public static AuthService Auth { get; private set; } = null!;
     public static SeedImporter Seeds { get; private set; } = null!;
     public static QsppWorkspace Workspace { get; private set; } = null!;
+    public static QsppManager.Infrastructure.ProcessSort.FolioWorkspace Folio { get; private set; } = null!;
     public static CupsPrintService Printer { get; private set; } = null!;
     public static PdfComposer Composer { get; private set; } = null!;
     public static CorpusSearch Search { get; private set; } = null!;
@@ -79,6 +81,7 @@ public partial class App : Avalonia.Application
         Search = new CorpusSearch(Db);
         TextIndex = new DocumentTextIndex(Db, Store, Search, AppData.Ensure("document-text"));
         Workspace = new QsppWorkspace(Db, Store, Audit, Search);
+        Folio = new FolioWorkspace(Db, Workspace, Store, Audit, AppData.Ensure("folio-cache"));
         Printer = new CupsPrintService(Db, Audit);
         Composer = new PdfComposer(fontsDir);
 

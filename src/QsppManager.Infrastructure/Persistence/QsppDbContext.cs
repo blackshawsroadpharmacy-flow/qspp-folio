@@ -28,6 +28,8 @@ public class QsppDbContext(DbContextOptions<QsppDbContext> options) : DbContext(
     public DbSet<PotencyRecord> PotencyRecords => Set<PotencyRecord>();
     public DbSet<AssessmentEvent> AssessmentEvents => Set<AssessmentEvent>();
     public DbSet<Finding> Findings => Set<Finding>();
+    public DbSet<FolioBatch> FolioBatches => Set<FolioBatch>();
+    public DbSet<FolioItem> FolioItems => Set<FolioItem>();
 
     protected override void OnModelCreating(ModelBuilder mb)
     {
@@ -101,5 +103,18 @@ public class QsppDbContext(DbContextOptions<QsppDbContext> options) : DbContext(
             e.Property(x => x.Notes).HasMaxLength(2000);
         });
         mb.Entity<PolicyAcknowledgement>(e => e.HasIndex(x => new { x.StaffMemberId, x.PolicyName, x.PolicyVersion }).IsUnique());
+        mb.Entity<FolioItem>(e =>
+        {
+            e.HasIndex(x => x.SourceSha256);
+            e.HasIndex(x => x.BatchId);
+            e.Property(x => x.SourceRelativePath).HasMaxLength(600);
+            e.HasOne(x => x.EvidenceItem).WithMany().HasForeignKey(x => x.EvidenceItemId);
+        });
+        mb.Entity<FolioBatch>(e =>
+        {
+            e.Property(x => x.SourceDirectory).HasMaxLength(800);
+            e.Property(x => x.OutputDirectory).HasMaxLength(800);
+            e.Property(x => x.ModeDescription).HasMaxLength(400);
+        });
     }
 }

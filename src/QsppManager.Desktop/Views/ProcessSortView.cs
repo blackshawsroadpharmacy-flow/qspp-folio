@@ -1,0 +1,293 @@
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Text.Json;
+using Avalonia.Controls;
+using Avalonia.Layout;
+using Avalonia.Media;
+using Avalonia.Threading;
+using Microsoft.EntityFrameworkCore;
+using QsppManager.Domain;
+using QsppManager.Domain.Entities;
+using QsppManager.Infrastructure.ProcessSort;
+
+namespace QsppManager.Desktop.Views;
+
+/// <summary>"Process and Sort" modal: pick source + output, scan, process, review
+/// uncertain files, then publish the folio. All work is local; the per-file grid
+/// shows state as it happens and a failed file never stops the batch.</summary>
+public partial class ProcessSortDialog : Window
+{
+    private readonly TextBox _sourceBox = new() { IsReadOnly = true, Watermark = "Folder holding the pharmacy documents…" };
+    private readonly TextBox _outputBox = new() { IsReadOnly = true, Watermark = "Where the folio is built (never the source folder)…" };
+    private readonly TextBlock _summary = new() { TextWrapping = TextWrapping.Wrap };
+    private readonly ObservableCollection<Row> _rows = new();
+    private readonly DataGrid _grid = new() { Height = 330, AutoGenerateColumns = false, IsReadOnly = true };
+    private CancellationTokenSource? _cts;
+    private Guid? _batchId;
+    private string _sourceDir = "", _outputDir = "";
+
+    public sealed record Row(string File, string State, string Detail, Guid ItemId, Guid BatchId);
+
+    public ProcessSortDialog()
+    {
+        Title = "Process and Sort";
+        Width = 1080; Height = 780;
+        WindowStartupLocation = WindowStartupLocation.CenterOwner;
+
+        var sp = new StackPanel { Margin = new(24, 20), Spacing = 10 };
+        sp.Children.Add(new TextBlock { Classes = { "h2" }, Text = "Process and Sort a document folder" });
+        sp.Children.Add(new TextBlock
+        {
+            Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
+            Text = "Everything stays on this Mac: text extraction (PdfPig), the OCR tier and destination suggestions (deterministic matching against the imported corpus). No document content ever leaves the device. Source files are never moved or deleted.",
+        });
+
+        var chooseSource = new Button { Content = "Choose…" };
+        var chooseOutput = new Button { Content = "Choose…" };
+        chooseSource.Click += async (_, _) => { var d = await PickFolder(); if (d != null) { _sourceDir = d; _sourceBox.Text = d; } };
+        chooseOutput.Click += async (_, _) => { var d = await PickFolder(); if (d != null) { _outputDir = d; _outputBox.Text = d; } };
+        sp.Children.Add(Ui.Row(8,
+            Ui.FormField("Documents folder", _sourceBox),
+            chooseSource,
+            Ui.FormField("Output folder", _outputBox),
+            chooseOutput));
+
+        var actionRow = Ui.Row(8,
+            Ui.PrimaryBtn("Scan folder", axHelpText: "Count supported files and show what will happen"),
+            Ui.PrimaryBtn("Process and Sort", axHelpText: "Extract, classify and prepare destinations"),
+            Ui.PrimaryBtn("Cancel run", axHelpText: "Stop after the current file; processed files keep their state"),
+            Ui.PrimaryBtn("Approve selected…", axHelpText: "Correct or accept destinations for the selected file"),
+            Ui.PrimaryBtn("Publish folio", axHelpText: "Write the sorted tree with checksum-verified copies and manifest"),
+            Ui.PrimaryBtn("Open output", axHelpText: "Reveal the built folio in Finder"));
+        var buttons = actionRow.Children.OfType<Button>().ToArray();
+        buttons[0].Click += async (_, _) => await ScanAsync();
+        buttons[1].Click += async (_, _) => await ProcessAsync();
+        buttons[2].Click += (_, _) => CancelRun();
+        buttons[3].Click += async (_, _) => await ApproveSelectedAsync();
+        buttons[4].Click += async (_, _) => await PublishAsync();
+        buttons[5].Click += (_, _) => OpenOutput();
+        sp.Children.Add(actionRow);
+
+        sp.Children.Add(_summary);
+
+        _grid.Columns.Add(new DataGridTextColumn { Header = "File", Binding = new Avalonia.Data.Binding("File"), Width = new DataGridLength(340) });
+        _grid.Columns.Add(new DataGridTextColumn { Header = "State", Binding = new Avalonia.Data.Binding("State"), Width = new DataGridLength(140) });
+        _grid.Columns.Add(new DataGridTextColumn { Header = "Detail", Binding = new Avalonia.Data.Binding("Detail"), Width = new DataGridLength(500) });
+        Ui.Ax(_grid, "Per-file progress", "One failed file never stops the batch — correct and retry after the run");
+        _grid.ItemsSource = _rows;
+        sp.Children.Add(_grid);
+
+        Content = new ScrollViewer { Content = sp };
+    }
+
+    private async Task<string?> PickFolder()
+    {
+        var tl = TopLevel.GetTopLevel(this);
+        if (tl == null) return null;
+        var folders = await tl.StorageProvider.OpenFolderPickerAsync(new Avalonia.Platform.Storage.FolderPickerOpenOptions { AllowMultiple = false, Title = "Choose folder" });
+        return folders.Count > 0 ? folders[0].Path.LocalPath : null;
+    }
+
+    private async Task ScanAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_sourceDir)) { Say("Choose a documents folder first."); return; }
+        if (string.IsNullOrWhiteSpace(_outputDir)) { Say("Choose an output folder first — never the source folder."); return; }
+        var (res, id) = App.Folio.ScanAndQueue(App.Session!, _sourceDir, _outputDir);
+        if (id == null) { Say(res.Error); return; }
+        _batchId = id;
+        await ReloadHistory();
+        Say("Scan complete. Press Process and Sort when ready — processing is cancellable and resumable.");
+    }
+
+    private async Task ProcessAsync()
+    {
+        if (_batchId == null) { Say("Scan a folder first."); return; }
+        _cts = new CancellationTokenSource();
+        Say("Processing… one file at a time; a problem isolates that file only.");
+        var session = App.Session!;
+        var batchId = _batchId.Value;
+        await Task.Run(() =>
+        {
+            var progress = new Progress<(string relPath, string state)>(t => Dispatcher.UIThread.Post(() =>
+            {
+                var r = _rows.FirstOrDefault(x => x.File == t.relPath);
+                if (r != null) { var i = _rows.IndexOf(r); _rows[i] = r with { State = t.state, Detail = "" }; }
+            }));
+            App.Folio.ProcessBatch(batchId, session, progress, _cts.Token);
+        });
+        await ReloadHistory();
+    }
+
+    private void CancelRun() { _cts?.Cancel(); Say("Cancel requested — finishing the current file. Already-processed files keep their state."); }
+
+    private async Task ApproveSelectedAsync()
+    {
+        if (_grid.SelectedItem is not Row row) { Say("Select a file in the list first."); return; }
+        if (_batchId == null) { Say("Scan a folder first."); return; }
+        var dlg = new FolioApproveDialog(row.ItemId);
+        await dlg.ShowDialog(App.Main!);
+        await ReloadHistory();
+        if (dlg.Approved) Say("Approved — links are created as proposed, exactly like a manual attach; review stays with the manager.");
+    }
+
+    private async Task PublishAsync()
+    {
+        if (_batchId == null) { Say("Nothing to publish yet — scan, then process, then approve files."); return; }
+        var (res, manifest) = App.Folio.PublishFolio(_batchId.Value, App.Session!);
+        Say(res.Ok ? $"Folio published. Manifest: {manifest}" : res.Error);
+        await ReloadHistory();
+    }
+
+    private void OpenOutput()
+    {
+        if (string.IsNullOrWhiteSpace(_outputDir)) { Say("Choose an output folder first."); return; }
+        try { Process.Start(new ProcessStartInfo("/usr/bin/open", $"\"{_outputDir}\"") { UseShellExecute = true }); }
+        catch (Exception ex) { Say($"Could not open the folder: {ex.Message}"); }
+    }
+
+    private void Say(string message) => Dispatcher.UIThread.Post(() => _summary.Text = message);
+
+    private async Task ReloadHistory()
+    {
+        if (_batchId == null) return;
+        var batch = await App.Db.FolioBatches.AsNoTracking().Include(b => b.Items).FirstOrDefaultAsync(b => b.Id == _batchId);
+        if (batch == null) return;
+        Dispatcher.UIThread.Post(() =>
+        {
+            _rows.Clear();
+            foreach (var i in batch.Items)
+                _rows.Add(new Row(i.SourceRelativePath, i.State.ToString(), DetailOf(i), i.Id, batch.Id));
+            _summary.Text = $"Batch {batch.State} — {batch.Items.Count} files processed or queued ({batch.SkippedCount} skipped at scan).";
+        });
+        await Task.CompletedTask;
+    }
+
+    private static string DetailOf(FolioItem i)
+    {
+        if (!string.IsNullOrEmpty(i.ErrorText)) return i.ErrorText;
+        try
+        {
+            var props = JsonSerializer.Deserialize<List<FolioSuggestion>>(i.ProposalsJson) ?? [];
+            if (props.Count > 0 && i.State is FolioItemState.Proposed or FolioItemState.MultipleCandidates)
+                return "→ " + string.Join(", ", props.Take(3).Select(p => $"{p.Ref} ({p.Score})"));
+        }
+        catch { /* detail is best-effort */ }
+        return i.ParserUsed.Length > 0 && PageCountOf(i) > 0 ? $"parsed via {i.ParserUsed}, {i.PageCount} pages" : "";
+    }
+
+    private static int PageCountOf(FolioItem i) => i.PageCount;
+}
+
+/// <summary>Review dialog for ONE folio file: choose title, kind and destination
+/// requirements. Opens pre-filtered to the classifier's top picks; the search
+/// narrows across the whole corpus. Sensitive items demand the explicit
+/// patient-data attestation before they can be attached at all.</summary>
+public partial class FolioApproveDialog : Window
+{
+    public bool Approved { get; private set; }
+    private readonly ObservableCollection<PickRow> _candidates = new();
+    private readonly ListBox _list = new() { Height = 300, SelectionMode = SelectionMode.Multiple };
+    private readonly TextBox _title = new();
+    private readonly TextBox _kind = new() { Text = "PolicyOrSop" };
+    private readonly TextBox _search = new() { Watermark = "Search every requirement by ref or words" };
+    private readonly CheckBox _patient = new() { Content = "Contains patient information" };
+    private readonly TextBox _attestation = new() { Watermark = "Required when the file contains patient data: what was redacted, who reviewed" };
+    private readonly Guid _itemId;
+    private List<FolioCandidate> _all = new();
+
+    private sealed record PickRow(Guid Id, string Ref, string RefKind, string Title, string Label);
+
+    public FolioApproveDialog(Guid itemId)
+    {
+        _itemId = itemId;
+        Title = "Approve destinations";
+        Width = 840; Height = 740;
+        WindowStartupLocation = WindowStartupLocation.CenterOwner;
+
+        var sp = new StackPanel { Margin = new(20), Spacing = 10 };
+        sp.Children.Add(new TextBlock { Classes = { "h3" }, Text = "Where does this document belong?" });
+
+        var searchBtn = new Button { Content = "Search" };
+        searchBtn.Click += (_, _) => Refilter(_search.Text ?? "");
+        sp.Children.Add(Ui.Row(8, Ui.FormField("Search", _search), searchBtn));
+
+        _list.ItemsSource = _candidates;
+        _list.DisplayMemberBinding = new Avalonia.Data.Binding("Label");
+        Ui.Ax(_list, "Requirement destinations", "Select one or more — tick as many as the document supports");
+        sp.Children.Add(_list);
+        sp.Children.Add(new TextBlock
+        {
+            Classes = { "small" }, TextWrapping = TextWrapping.Wrap, Foreground = Ui.Br("Brush.Muted"),
+            Text = "★ marks the destinations proposed by deterministic matching. A document may genuinely support several requirements.",
+        });
+
+        sp.Children.Add(Ui.FormField("Evidence title", _title));
+        sp.Children.Add(Ui.FormField("Kind — PolicyOrSop, Certificate, Record, Register, TrainingRecord, PhotoOrScan, Other", _kind));
+        sp.Children.Add(_patient);
+        sp.Children.Add(Ui.FormField("Redaction attestation", _attestation));
+
+        var approveBtn = new Button { Content = "Approve and attach", Classes = { "primary" } };
+        var closeBtn = new Button { Content = "Close" };
+        approveBtn.Click += (_, _) => ApproveNow();
+        closeBtn.Click += (_, _) => Close();
+        sp.Children.Add(Ui.Row(8, approveBtn, closeBtn));
+
+        Content = new ScrollViewer { Content = sp };
+        AttachedToVisualTree += (_, _) => LoadAll();
+    }
+
+    private void LoadAll()
+    {
+        try
+        {
+            var item = App.Db.FolioItems.AsNoTracking().First(i => i.Id == _itemId);
+            var props = JsonSerializer.Deserialize<List<FolioSuggestion>>(item.ProposalsJson) ?? [];
+            _all = App.Folio.CandidatesForDialog(props);
+            _title.Text = DefaultTitleFrom(item.SourceRelativePath);
+            Refilter("");
+            // Preselect the top proposal when the classifier was confident.
+            var top = props.FirstOrDefault();
+            var pre = _candidates.FirstOrDefault(p => top != null && p.Id == top.RequirementId);
+            if (pre != null && props[0].Score >= 10) _list.SelectedItems?.Add(pre);
+        }
+        catch (Exception ex)
+        {
+            _all = App.Folio.CandidatesForDialog(null);
+            Refilter("");
+            _attestation.Watermark = $"Note: {ex.Message}";
+        }
+    }
+
+    private static string DefaultTitleFrom(string relPath)
+    {
+        var name = Path.GetFileNameWithoutExtension(relPath);
+        return name.Length > 1 && char.IsLower(name[0]) ? name : name;
+    }
+
+    private void Refilter(string query)
+    {
+        var q = (query ?? "").Trim();
+        _candidates.Clear();
+        var filtered = _all.Where(c =>
+            q.Length == 0 ||
+            c.Ref.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+            c.Title.Contains(q, StringComparison.OrdinalIgnoreCase)).ToList();
+        foreach (var c in filtered.Take(120))
+            _candidates.Add(new PickRow(c.Id, c.Ref, c.RefKind, c.Title, $"{c.Ref}  {c.Title}   [{c.RefKind}]"));
+        if (filtered.Count > 120) _candidates.Add(new PickRow(Guid.Empty, "…", "…", $"{filtered.Count - 120} more — narrow the search", $"{filtered.Count - 120} more — narrow the search"));
+    }
+
+    private void ApproveNow()
+    {
+        var picks = (_list.SelectedItems?.Cast<PickRow>().Where(p => p.Id != Guid.Empty) ?? []).ToList();
+        if (picks.Count == 0) { Close(); return; }
+        var approvedJson = JsonSerializer.Serialize(picks.Select(p => new FolioSuggestion(p.Id, p.Ref, p.RefKind, p.Title, 0, "user-approved", FolioClassifier.Stage1Model, FolioClassifier.Stage1ModelVersion)));
+        var (res, _) = App.Folio.ApproveItem(_itemId, App.Session!, _title.Text.Trim(), _kind.Text.Trim(), approvedJson, _patient.IsChecked == true, _attestation.Text ?? "");
+        if (res.Ok) { Approved = true; Close(); }
+        else
+        {
+            _attestation.Watermark = res.Error; // the refusal surfaces inside the dialog
+            _attestation.Focus();
+        }
+    }
+}

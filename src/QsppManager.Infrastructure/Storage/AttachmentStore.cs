@@ -38,13 +38,17 @@ public class AttachmentStore(string rootDirectory)
     public static (bool ok, string error, string mime) ValidateSignature(string fileName, byte[] head10k)
     {
         var head = head10k.AsSpan(0, Math.Min(head10k.Length, 10));
+        if (head.Length < 4) return (false, "File is too small to inspect.", "application/octet-stream");
         var lower = Path.GetFileName(fileName).ToLowerInvariant();
         string? mime = null;
 
-        if (head.StartsWith("%PDF-"u8)) mime = "application/pdf";
-        else if (head.StartsWith("\x89PNG"u8)) mime = "image/png";
+        // Binary signatures as NUMBERS, not u8 string literals: "\x89PNG"u8 encodes the
+        // U+0089 code point as C2 89 (UTF-8) and never matches a real PNG's raw 0x89 —
+        // a latent M1 bug surfaced by the folio image guard (fixed 22 Oct 2026).
+        if (head[0] == 0x25 && head[1] == 0x50 && head[2] == 0x44 && head[3] == 0x46 && head[4] == 0x2D) mime = "application/pdf"; // %PDF-
+        else if (head[0] == 0x89 && head[1] == 0x50 && head[2] == 0x4E && head[3] == 0x47) mime = "image/png";
         else if (head.Length >= 2 && head[0] == 0xFF && head[1] == 0xD8) mime = "image/jpeg";
-        else if (head.StartsWith("PK\x03\x04"u8)) mime = lower.EndsWith(".docx") ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        else if (head[0] == 0x50 && head[1] == 0x4B && head[2] == 0x03 && head[3] == 0x04) mime = lower.EndsWith(".docx") ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                                                              : lower.EndsWith(".xlsx") ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                                                              : "application/zip";
         else if (head.Length > 5 && System.Text.Encoding.ASCII.GetString(head).Contains("<html", StringComparison.OrdinalIgnoreCase)) mime = "text/html";

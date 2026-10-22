@@ -54,6 +54,8 @@ public partial class DocumentsView : UserControl
         var row = Ui.Row(8,
             PrimaryBtn("Attach evidence file", "Choose a file — it is imported with signature and checksum verification",
                 async (_, _) => await AttachAsync()),
+            PrimaryBtn("Process and Sort…", "Turn a folder of documents into a sorted, reviewable evidence folio",
+                async (_, _) => await OpenProcessSortAsync()),
             Btn("Submit selected for review", "Move the selected evidence to ready for review", (_, _) => ReviewSelected(EvidenceReviewState.ReadyForReview)),
             Btn("Manager verifies", "Manager-verifies the selected evidence", (_, _) => ReviewSelected(EvidenceReviewState.ManagerVerified)),
             Btn("Needs rework", "Send the selected evidence back for rework", (_, _) => ReviewSelected(EvidenceReviewState.NeedsRework)),
@@ -109,6 +111,13 @@ public partial class DocumentsView : UserControl
         if (!dlg.Confirmed) return;
         var (evidResult, _) = App.Workspace.ImportEvidence(path, dlg.TitleText, dlg.Kind, dlg.EffectiveFrom, dlg.EffectiveTo, dlg.HasPatientData, dlg.PatientDataAttestation, App.Session!);
         _resultBar.Text = evidResult.Ok ? "Attached. Signature and checksum verified; review starts at Draft." : evidResult.Error;
+        Load();
+    }
+
+    private async Task OpenProcessSortAsync()
+    {
+        var dlg = new ProcessSortDialog();
+        await dlg.ShowDialog(App.Main!);
         Load();
     }
 
