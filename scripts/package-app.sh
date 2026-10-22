@@ -50,6 +50,16 @@ else
   echo "  (no seed corpus at $ROOT/seed — packaged app will import nothing)"
 fi
 
+# Bundle the local OCR worker (Apple Vision helper; tools/ocr/qspp-ocr.swift).
+# Falls back to compiling it if build/qspp-ocr is missing. The helper is the app's
+# ONLY OCR path — on-device, no network, no model downloads (see DD-37).
+if [ ! -x "$ROOT/build/qspp-ocr" ]; then
+  echo "→ compiling the Apple Vision OCR helper (tools/ocr/qspp-ocr.swift)"
+  swiftc -O -o "$ROOT/build/qspp-ocr" "$ROOT/tools/ocr/qspp-ocr.swift"
+fi
+cp "$ROOT/build/qspp-ocr" "$CONTENTS/MacOS/qspp-ocr"
+chmod +x "$CONTENTS/MacOS/qspp-ocr"
+
 cat > "$CONTENTS/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">

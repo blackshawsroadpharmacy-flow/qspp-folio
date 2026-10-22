@@ -24,7 +24,12 @@ public sealed class FolioWorkspace(
     AuditService audit,
     string folioCacheRoot)
 {
-    private readonly FolioExtractor _extractor = new(folioCacheRoot);
+    private FolioOcr? ocrEngine = FolioOcr.LocateHelper() is { } helper ? new FolioOcr(helper) : null;
+    private FolioExtractor _extractor = null!;
+
+    public void SetOcrEngine(FolioOcr? engine) { ocrEngine = engine; _extractor = new FolioExtractor(folioCacheRoot, ocrEngine); }
+
+    private FolioExtractor Extractor => _extractor ??= new FolioExtractor(folioCacheRoot, ocrEngine);
 
     private const string AuditActor = "folio";
 
@@ -72,7 +77,7 @@ public sealed class FolioWorkspace(
                 SourceDirectory = sourceDirectory,
                 OutputDirectory = outputDirectory,
                 CreatedByUserId = session.UserId,
-                SettingsJson = JsonSerializer.Serialize(new { maxFileMb = 200, ocrMode = "light (Apple Vision); heavy tier pending benchmark", model = FolioClassifier.Stage1Model }, FolioJson.Opts),
+                SettingsJson = JsonSerializer.Serialize(new { maxFileMb = 200, ocrMode = ocrEngine == null ? "queued (helper not installed)" : $"light ({FolioOcr.EngineKey}); heavy tier pending benchmark", model = FolioClassifier.Stage1Model }, FolioJson.Opts),
             };
             db.FolioBatches.Add(batch);
         }
@@ -102,7 +107,9 @@ public sealed class FolioWorkspace(
         }
         batch.ScannedCount = scan.Files.Count(f => true);
         batch.SkippedCount = scan.Skipped.Count;
-        batch.ModeDescription = "digital-pdf: pdfpig; ocr tier: light (pending M8-B); decision model: deterministic-v1 (stage 1 only)";
+        batch.ModeDescription = ocrEngine == null
+            ? "digital-pdf: pdfpig; ocr: queued (helper not installed); decision model: deterministic-v1 (stage 1 only)"
+            : $"digital-pdf: pdfpig; ocr: {FolioOcr.EngineKey} (on-device); decision model: deterministic-v1 (stage 1 only)";
         db.SaveChanges();
         audit.Append(session.DisplayName, session.UserId, "folio.batch.scan", "folio", batch.Id.ToString(),
             $"scanned={batch.ScannedCount}; skipped={batch.SkippedCount}; source={sourceDirectory}");
@@ -172,12 +179,19 @@ public sealed class FolioWorkspace(
             if (!File.Exists(fullPath)) { item.State = FolioItemState.ExtractError; item.ErrorText = "Source file is gone — it may have been moved or deleted."; return; }
 
             item.State = FolioItemState.Processing;
-            var extraction = _extractor.Extract(fullPath, item.SourceSha256, item.MimeType);
+            var extraction = Extractor.Extract(fullPath, item.SourceSha256, item.MimeType);
             item.PageCount = extraction.PageCount;
             item.ParserUsed = extraction.Parser;
 
-            if (!extraction.Ok) { item.State = FolioItemState.Unreadable; item.ErrorText = extraction.Error; return; }
-            if (extraction.NeedsOcr) { item.State = FolioItemState.NeedsOcr; item.ErrorText = "Needs OCR. The local OCR tier ships in the next stage; the file is queued, not mis-filed."; item.ParserUsed = extraction.Parser; return; }
+            if (!extraction.Ok && !extraction.NeedsOcr) { item.State = FolioItemState.Unreadable; item.ErrorText = extraction.Error; return; }
+            if (extraction.NeedsOcr)
+            {
+                item.State = FolioItemState.NeedsOcr;
+                item.ErrorText = extraction.Error.Length > 0
+                    ? $"Queued for the local OCR tier: {extraction.Error}"
+                    : "Queued for the local OCR tier (scanned or image content).";
+                return;
+            }
 
             // Sensitive gate BEFORE proposals: patient/staff/security content waits.
             var text = extraction.FullText;
