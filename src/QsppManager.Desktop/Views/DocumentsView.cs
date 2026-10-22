@@ -16,6 +16,7 @@ public partial class DocumentsView : UserControl
 {
     private readonly DataGrid _grid = new() { Height = 260, AutoGenerateColumns = false, IsReadOnly = true };
     private readonly DataGrid _sources = new() { Height = 240, AutoGenerateColumns = false, IsReadOnly = true };
+    private readonly ShellViewModel _shell = null!;
     private readonly TextBox _resultBar = new()
     {
         IsReadOnly = true, TextWrapping = TextWrapping.Wrap, MinHeight = 34,
@@ -26,6 +27,7 @@ public partial class DocumentsView : UserControl
 
     public DocumentsView(ShellViewModel shell)
     {
+        _shell = shell;
         Content = Build(shell);
         Load();
     }
@@ -116,7 +118,7 @@ public partial class DocumentsView : UserControl
 
     private async Task OpenProcessSortAsync()
     {
-        var dlg = new ProcessSortDialog();
+        var dlg = new ProcessSortDialog(_shell);
         await dlg.ShowDialog(App.Main!);
         Load();
     }

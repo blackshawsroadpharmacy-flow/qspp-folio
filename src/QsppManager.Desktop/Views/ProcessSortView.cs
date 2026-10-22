@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using QsppManager.Domain;
 using QsppManager.Domain.Entities;
 using QsppManager.Infrastructure.ProcessSort;
+using QsppManager.Desktop.ViewModels;
 
 namespace QsppManager.Desktop.Views;
 
@@ -28,11 +29,16 @@ public partial class ProcessSortDialog : Window
     private CancellationTokenSource? _cts;
     private Guid? _batchId;
     private string _sourceDir = "", _outputDir = "";
+    private readonly ShellViewModel? _shell;
+    private readonly ProgressBar _busy = new() { IsIndeterminate = true, IsVisible = false, Height = 4 };
+    private readonly TextBlock _busyText = new() { Classes = { "small" }, IsVisible = false, TextWrapping = TextWrapping.Wrap };
+    private bool _working;
 
     public sealed record Row(string File, string State, string Detail, Guid ItemId, Guid BatchId);
 
-    public ProcessSortDialog()
+    public ProcessSortDialog(ShellViewModel? shell = null)
     {
+        _shell = shell;
         Title = "Process and Sort";
         Width = 1080; Height = 780;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
@@ -76,10 +82,14 @@ public partial class ProcessSortDialog : Window
         buttons[6].Click += (_, _) => OpenOutput();
         sp.Children.Add(actionRow);
 
-        sp.Children.Add(Ui.Row(8, Ui.FormField("Batch history", _batchPicker)));
+        var openReqs = Ui.PrimaryBtn("Open Requirements →", axHelpText: "See the attachments on their requirements");
+        openReqs.Click += (_, _) => { Close(); _shell?.Navigate(ShellPage.Requirements); };
+        sp.Children.Add(Ui.Row(8, Ui.FormField("Batch history", _batchPicker), openReqs));
         _batchPicker.SelectionChanged += async (_, _) => await LoadSelectedBatch();
 
         sp.Children.Add(_summary);
+        sp.Children.Add(_busy);
+        sp.Children.Add(_busyText);
 
         _grid.Columns.Add(new DataGridTextColumn { Header = "File", Binding = new Avalonia.Data.Binding("File"), Width = new DataGridLength(340) });
         _grid.Columns.Add(new DataGridTextColumn { Header = "State", Binding = new Avalonia.Data.Binding("State"), Width = new DataGridLength(140) });
@@ -132,7 +142,9 @@ public partial class ProcessSortDialog : Window
         var batchId = _batchId.Value;
         var session = App.Session!;
         Say("Approving every clear proposal…");
+        _working = true; BusyOn("Attaching clear proposals — each one imports and links through the normal pipeline…");
         var result = await Task.Run(() => App.Folio.ApproveProposed(batchId, session));
+        _working = false; BusyOff();
         await ReloadHistory();
         if (result.approved == 0 && result.failed == 0)
             Say("No clear proposals here yet — process the batch first, or approve the remaining files one at a time.");
@@ -144,7 +156,8 @@ public partial class ProcessSortDialog : Window
                 or "NeedsOcr" or "Unreadable" or "Pending" or "Processing" or "Abstained" or "Duplicate");
             Say($"Approved {result.approved} — imported and attached to their proposed requirements (evidence kinds guessed from file names; correct any in the evidence detail)."
                 + (result.failed > 0 ? $" Failures: {result.firstError} " : "")
-                + (inReview > 0 ? $" {inReview} still need your review (multiple, sensitive, unclear)." : ""));
+                + (inReview > 0 ? $" {inReview} still need your review (multiple, sensitive, unclear)." : "")
+                + " Press Open Requirements → to see the attachments on each requirement.");
         }
     }
 
@@ -160,9 +173,14 @@ public partial class ProcessSortDialog : Window
     {
         if (string.IsNullOrWhiteSpace(_sourceDir)) { Say("Choose a documents folder first."); return; }
         if (string.IsNullOrWhiteSpace(_outputDir)) { Say("Choose an output folder first — never the source folder."); return; }
-        var (res, id) = App.Folio.ScanAndQueue(App.Session!, _sourceDir, _outputDir);
+        if (_working) { Say("Already working — press Cancel run to stop."); return; }
+        _working = true; BusyOn("Scanning the folder… hashing every file to recognise unchanged content next time.");
+        var (res, id) = (await Task.Run(() => App.Folio.ScanAndQueue(App.Session!, _sourceDir, _outputDir)));
+        _working = false; BusyOff();
         if (id == null) { Say(res.Error); return; }
         _batchId = id;
+        await LoadBatchList();
+        if (_batchIds.Contains(_batchId.Value)) _batchPicker.SelectedIndex = _batchIds.IndexOf(_batchId.Value);
         await ReloadHistory();
         Say("Scan complete. Press Process and Sort when ready — processing is cancellable and resumable.");
     }
@@ -170,20 +188,55 @@ public partial class ProcessSortDialog : Window
     private async Task ProcessAsync()
     {
         if (_batchId == null) { Say("Scan a folder first."); return; }
+        if (_working) { Say("Already working — press Cancel run to stop."); return; }
         _cts = new CancellationTokenSource();
+        _working = true;
+        var total = _rows.Count;
+        var done = 0;
         Say("Processing… one file at a time; a problem isolates that file only.");
+        BusyOn($"Preparing to process {total} files…");
         var session = App.Session!;
         var batchId = _batchId.Value;
         await Task.Run(() =>
         {
             var progress = new Progress<(string relPath, string state)>(t => Dispatcher.UIThread.Post(() =>
             {
+                done++;
+                BusyText($"Processing {done} of {total} — {t.relPath}");
                 var r = _rows.FirstOrDefault(x => x.File == t.relPath);
-                if (r != null) { var i = _rows.IndexOf(r); _rows[i] = r with { State = t.state, Detail = "" }; }
+                if (r != null)
+                {
+                    var i = _rows.IndexOf(r);
+                    _rows[i] = r with { State = t.state, Detail = "" };
+                    _grid.SelectedItem = _rows[i];
+                    if (_grid.Columns.Count > 0) _grid.ScrollIntoView(_rows[i], _grid.Columns[0]);
+                }
             }));
             App.Folio.ProcessBatch(batchId, session, progress, _cts.Token);
         });
+        _working = false; BusyOff();
         await ReloadHistory();
+    }
+
+    private void BusyOn(string text)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            _busy.IsVisible = true;
+            _busyText.IsVisible = true;
+            _busyText.Text = text;
+        });
+    }
+
+    private void BusyText(string text) => Dispatcher.UIThread.Post(() => _busyText.Text = text);
+
+    private void BusyOff()
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            _busy.IsVisible = false;
+            _busyText.IsVisible = false;
+        });
     }
 
     private void CancelRun() { _cts?.Cancel(); Say("Cancel requested — finishing the current file. Already-processed files keep their state."); }
