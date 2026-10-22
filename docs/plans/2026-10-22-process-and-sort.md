@@ -50,6 +50,7 @@
 | Machine pythons | CLT python3 = 3.9.6 (too old); brew 3.12 + 3.14; uv 0.12.1 present → `uv venv --python 3.12` + `uv pip install laya-apple==1.7.0` is the reproducible route |
 | Apple Vision OCR (shipped M8-B) | `tools/ocr/qspp-ocr.swift` → `build/qspp-ocr` (110 KB, no download); benchmarks: PNG 0.28 s/76 MiB; rotated 0.28 s/80 MiB; 2-page 0.52 s/159 MiB; 10-page 1.61 s/500 MiB peak (M5-class 24 GB, macOS 26.6) |
 | Honesty gates | checkpoint ≈943 MiB = USER-APPROVED INITIAL DOWNLOAD; record model+version per suggestion; 8 GB M1 claims stay unclaimed until exercised |
+| Download manifest (verified on completion) | `laya-apple download` fetches ALL three checkpoints, sha256-verified: base `laya@c5d78730f349` 1.6 GiB, `laya-multilingual@052592a15d19` 1.3 GiB, typed-decisions `f9ab0b228f0f` 1.6 GiB — ≈4.5 GiB total in `~/.cache/huggingface/hub/` (585 GiB free at the time: keep all three) |
 
 ## Not yet (next stages)
 1. **Laya stage-2 (M8-C)**: uv venv (python 3.12) → pin `laya-apple==1.7.0` → checkpoint download (user-approved) → `serve` on loopback → concise excerpts + candidate descriptions (never OCR dumps) → accuracy on app fixtures → stage-1 suggestions re-ranked only.
