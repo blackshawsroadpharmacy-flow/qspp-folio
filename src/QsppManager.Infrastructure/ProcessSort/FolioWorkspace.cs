@@ -34,6 +34,23 @@ public sealed class FolioWorkspace(
     /// decision server is up. A null or unreachable server leaves stage-1 exact.</summary>
     public void SetStage2(FolioDecisionStage2? client) => stage2 = client;
 
+    /// <summary>What Settings shows the user about the active OCR tier.</summary>
+    public string OcrMode => ocrEngine == null
+        ? "queued honestly (the on-device helper is not installed)"
+        : "on-device, Apple Vision, no download";
+
+    /// <summary>What Settings shows about stage-2 (probe is loopback, 1 s).</summary>
+    public string Stage2Mode
+    {
+        get
+        {
+            if (stage2 == null) return "stage-2 not wired — deterministic stage 1 stands alone.";
+            return stage2.Available()
+                ? $"optional stage-2 refinement from a LOCAL typed-decision model ({FolioDecisionStage2.ModelName}, confidence-gated, loopback-only)."
+                : "stage-2 decision server not running (optional; stage 1 stands alone).";
+        }
+    }
+
     private FolioExtractor Extractor => _extractor ??= new FolioExtractor(folioCacheRoot, ocrEngine);
 
     private const string AuditActor = "folio";

@@ -122,6 +122,18 @@ public partial class SettingsView : UserControl
         corpus.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap, Text = "Authentication cookies material (website-scrape/cookies.json, browser profiles) is deliberately kept out of the application database, backups, exports and source control." });
         sp.Children.Add(Ui.Section("Reference corpus", corpus));
 
+        // Document intelligence (Process and Sort)
+        var intel = new StackPanel { Spacing = 6 };
+        var ocrMode = App.Folio.OcrMode;
+        var stage2Line = App.Folio.Stage2Mode;
+        intel.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
+            Text = $"Process and Sort runs entirely on this Mac. Text extraction: PdfPig for digital PDFs; image and scanned files go to the Apple Vision OCR tier ({ocrMode})." });
+        intel.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
+            Text = $"Classification: deterministic matching against the live requirement text first (always authoritative); {stage2Line}" });
+        intel.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
+            Text = "No document content or extracted text ever leaves this machine — no cloud OCR, no remote APIs, no telemetry. Model choices never mark evidence verified: human approval is the only review trust." });
+        sp.Children.Add(Ui.Section("Document intelligence (on-device)", intel));
+
         return new ScrollViewer { Content = sp };
     }
 
