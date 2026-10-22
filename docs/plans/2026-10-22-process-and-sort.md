@@ -39,3 +39,21 @@
 4. Review-queue completion: per-file propose/approve/correct UI depth, stale/expired surfacing, multi-doc request gap hints on the folio tree.
 
 **Hard rules carried into every stage:** deterministic retrieval before any model; model suggestions never set review state (approval is user-only, via existing proposed-link flow); private information stays on-device; sensitive review before publication or assessor export; never move/delete source files; DB stays source of truth (folders are an aid).
+
+## Verified facts 22 Oct 2026 (terminal + registry queries)
+| Item | Verified fact |
+|---|---|
+| laya-apple on PyPI | **YES — 1.7.0** (CLT pip 21.2.4 fails with "No matching distribution"; use uv/python3.12). Versions 1.5.0…1.7.0; requires Python ≥3.11,<3.14. Apache-2.0 repo `tc3oliver/laya-apple` (23★, pushed 21 Oct 2026) |
+| Model checkpoint | `convaiinnovations/laya-typed-decisions` on HF: `model.safetensors`, Apache-2.0, 3,484 downloads. Typed model: `choice`/`score`/`noul` in one forward pass — not a doc reader, not a generator |
+| Known-good runtime path | `laya-apple serve` = local Jev-compatible API; loopback |
+| ANE W8 artifact (1.7.0) | Experimental, off by default, preregistered gate NOT passed → do NOT enable for the M8 pin; default GPU path only |
+| Machine pythons | CLT python3 = 3.9.6 (too old); brew 3.12 + 3.14; uv 0.12.1 present → `uv venv --python 3.12` + `uv pip install laya-apple==1.7.0` is the reproducible route |
+| Apple Vision OCR (shipped M8-B) | `tools/ocr/qspp-ocr.swift` → `build/qspp-ocr` (110 KB, no download); benchmarks: PNG 0.28 s/76 MiB; rotated 0.28 s/80 MiB; 2-page 0.52 s/159 MiB; 10-page 1.61 s/500 MiB peak (M5-class 24 GB, macOS 26.6) |
+| Honesty gates | checkpoint ≈943 MiB = USER-APPROVED INITIAL DOWNLOAD; record model+version per suggestion; 8 GB M1 claims stay unclaimed until exercised |
+
+## Not yet (next stages)
+1. **Laya stage-2 (M8-C)**: uv venv (python 3.12) → pin `laya-apple==1.7.0` → checkpoint download (user-approved) → `serve` on loopback → concise excerpts + candidate descriptions (never OCR dumps) → accuracy on app fixtures → stage-1 suggestions re-ranked only.
+2. **MinerU heavy tier**: benchmark on this 24 GB machine before any default switch; Apple Vision light tier already live.
+3. Settings "document intelligence" block: modes + measured numbers per machine.
+4. Wider corpus: tables/forms, expired/conflicting dates, low-quality noise scans; DOCX via a proven local parser.
+5. Packaged-app end-to-end demo + relaunch-persistence proof + screenshots for the ledger.
