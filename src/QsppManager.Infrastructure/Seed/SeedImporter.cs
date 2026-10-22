@@ -222,7 +222,7 @@ public class SeedImporter(QsppDbContext db, AttachmentStore store, AuditService 
     // ---------- requirements ----------
     private (int reqs, int examples) ImportRequirements(CancellationToken ct)
     {
-        if (db.Requirements.Any()) return (db.Requirements.Count(), db.RequirementEvidenceExamples.Count());
+        if (db.Requirements.Any()) return WordingRefresh(ct);
         var path = Path.Combine(repoRoot, "seed", "requirements.json");
         if (!File.Exists(path)) return (0, 0);
 
@@ -289,6 +289,48 @@ public class SeedImporter(QsppDbContext db, AttachmentStore store, AuditService 
         if (db.Requirements.Any())
             audit.Append("system", null, "corpus.imported", "requirements", "*", $"Imported {db.Requirements.Count()} requirements, {db.RequirementEvidenceExamples.Count()} evidence examples from seed");
         return (db.Requirements.Count(), db.RequirementEvidenceExamples.Count());
+    }
+
+    /// <summary>M7.2: existing installs keep their requirements (corpus import stays one-shot, DD-32) but the
+    /// wording the M1 build shipped was capped at 400 characters mid-sentence. DD-35 re-derives each quote as
+    /// the requirement's FULL anchored segment from the source text; this pass brings stored rows in line:
+    /// wording (and plain summary, if the seed differs) updates per deterministic id; anchors, states, links,
+    /// examples and every owner decision stay exactly as recorded. Zero diffs → zero writes (idempotent).</summary>
+    private (int reqs, int examples) WordingRefresh(CancellationToken ct)
+    {
+        var count = (db.Requirements.Count(), db.RequirementEvidenceExamples.Count());
+        var path = Path.Combine(repoRoot, "seed", "requirements.json");
+        if (!File.Exists(path)) return count;
+
+        using var doc = JsonDocument.Parse(File.ReadAllText(path), new JsonDocumentOptions { AllowTrailingCommas = true });
+        var reqs = doc.RootElement.ValueKind == JsonValueKind.Array
+            ? doc.RootElement.EnumerateArray()
+            : doc.RootElement.GetProperty("requirements").EnumerateArray();
+
+        var updates = 0;
+        foreach (var el in reqs)
+        {
+            if (el.ValueKind != JsonValueKind.Object) continue;
+            var kind = ParseEnum<RefKind>(el.GetProperty("refKind").GetString() ?? "Std");
+            var refKey = el.GetProperty("ref").GetString() ?? "";
+            var id = el.TryGetProperty("id", out var idEl) && idEl.ValueKind == JsonValueKind.String && Guid.TryParse(idEl.GetString(), out var g)
+                ? g : DeterministicId($"{kind}", $"{el.GetProperty("sourceDoc").GetString() ?? ""}:{refKey}");
+            var w = S(el, "wording");
+            var s = S(el, "summary");
+            var r = db.Requirements.IgnoreQueryFilters().FirstOrDefault(x => x.Id == id);
+            if (r is null || (r.WordingExcerpt == w && r.PlainSummary == s)) continue;
+            r.WordingExcerpt = w;
+            r.PlainSummary = s;
+            updates++;
+            ct.ThrowIfCancellationRequested();
+        }
+        if (updates > 0)
+        {
+            db.SaveChanges();
+            audit.Append("system", null, "corpus.wording_refresh", "requirements", "*",
+                $"updated={updates} wording from re-derived anchored segments");
+        }
+        return count;
     }
 
     // ---------- interpretation issues ----------

@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Text.Json;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;   // M7.2: ScrollBarVisibility for the AutoGrow helper
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -131,13 +132,20 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
         tabs.Items.Add(new TabItem { Header = "Notes & issues", Content = Pad(notes) });
         sp.Children.Add(tabs);
 
-        _resultBar = new TextBox { IsReadOnly = true, TextWrapping = TextWrapping.Wrap, MinHeight = 34, Watermark = "Result messages appear here", Classes = { "result" } };
+        _resultBar = AutoGrow(new TextBox { IsReadOnly = true, TextWrapping = TextWrapping.Wrap, MinHeight = 34, MaxHeight = 110, Watermark = "Result messages appear here", Classes = { "result" } });
         sp.Children.Insert(2, _resultBar);   // under the status row, above the tabs
 
         return new ScrollViewer { Content = sp };
     }
 
-    private static ScrollViewer Pad(StackPanel p) => new() { Content = p, MaxHeight = 560 };
+    // M7.2: content first gets the room the window affords; the outer page ScrollViewer
+    // handles the true overflow, so inner clipping only appears on extreme lengths.
+    private static ScrollViewer Pad(StackPanel p) => new() { Content = p, MaxHeight = 900 };
+
+    /// <summary>M7.2: autosize contract for the detail-page text areas — grow with content
+    /// (expand and contract), scroll only past the MaxHeight cap. ScrollBarVisibility is an
+    /// attached property on Avalonia's TextBox, hence the helper.</summary>
+    private static TextBox AutoGrow(TextBox b) { ScrollViewer.SetVerticalScrollBarVisibility(b, ScrollBarVisibility.Auto); return b; }
 
     private Control Header(RequirementDetail d)
     {
@@ -213,13 +221,16 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
     {
         var st = new StackPanel { Spacing = 10 };
         st.Children.Add(new TextBlock { Text = "What the source requires (verbatim excerpt)", Classes = { "label" } });
-        st.Children.Add(new TextBox
+        st.Children.Add(AutoGrow(new TextBox
         {
             Text = string.IsNullOrWhiteSpace(d.Requirement.WordingExcerpt)
                 ? "(no verbatim excerpt was imported for this requirement — open the source document from the Library)"
                 : d.Requirement.WordingExcerpt,
-            IsReadOnly = true, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 60, FontSize = 12,
-        });
+            // M7.2: the quote expands and contracts with the information — short asks stay
+            // compact, full source passages grow, anything beyond MaxHeight scrolls inside.
+            IsReadOnly = true, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap,
+            MinHeight = 96, MaxHeight = 480, FontSize = 12.5,
+        }));
         if (!string.IsNullOrWhiteSpace(d.Requirement.PlainSummary))
             st.Children.Add(new TextBlock { Text = "Plain English: " + d.Requirement.PlainSummary, TextWrapping = TextWrapping.Wrap });
 
@@ -231,7 +242,7 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
         }
 
         st.Children.Add(new TextBlock { Text = "Applicability", Classes = { "h3" } });
-        var reason = new TextBox { Text = d.State.ApplicabilityReason, Watermark = "Reason for the decision — assessors and future staff need it", TextWrapping = TextWrapping.Wrap, AcceptsReturn = true, MinHeight = 44 };
+        var reason = AutoGrow(new TextBox { Text = d.State.ApplicabilityReason, Watermark = "Reason for the decision — assessors and future staff need it", TextWrapping = TextWrapping.Wrap, AcceptsReturn = true, MinHeight = 44, MaxHeight = 280 });
         var combo = new ComboBox { Width = 190, ItemsSource = new[] { "— choose —", "Applicable", "Not applicable", "Unknown" }, SelectedIndex = (int)d.State.Applicability + 1 };
         var apply = new Button { Content = "Record decision", Height = 32 };
         apply.Click += (_, _) =>
@@ -246,7 +257,7 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
         st.Children.Add(Ui.FormField("REASON FOR THE DECISION", reason));
 
         st.Children.Add(new TextBlock { Text = "Next action", Classes = { "h3" } });
-        var next = new TextBox { Text = d.State.NextAction, Watermark = "What must happen next, and why it matters" };
+        var next = AutoGrow(new TextBox { Text = d.State.NextAction, Watermark = "What must happen next, and why it matters", TextWrapping = TextWrapping.Wrap, AcceptsReturn = true, MinHeight = 44, MaxHeight = 280 });
         st.Children.Add(Ui.FormField("NEXT ACTION", next));
         var savenext = new Button { Content = "Save next action", Height = 32 };
         savenext.Click += (_, _) => { var r = App.Workspace.SetNextAction(d.Requirement.Id, next.Text ?? "", App.Session!); ShowResult(r.Ok ? "Next action saved." : r.Error); Reload(); };
@@ -413,7 +424,7 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
     {
         var st = new StackPanel { Spacing = 10 };
         st.Children.Add(new TextBlock { Text = "Notes", Classes = { "h3" } });
-        _notesBox = new TextBox { Text = d.State.Notes, AcceptsReturn = true, MinHeight = 80, TextWrapping = TextWrapping.Wrap, Watermark = "Working notes visible to the team" };
+        _notesBox = AutoGrow(new TextBox { Text = d.State.Notes, AcceptsReturn = true, MinHeight = 80, MaxHeight = 340, TextWrapping = TextWrapping.Wrap, Watermark = "Working notes visible to the team" });
         st.Children.Add(_notesBox);
         var save = new Button { Content = "Save notes", Height = 32 };
         save.Click += (_, _) =>

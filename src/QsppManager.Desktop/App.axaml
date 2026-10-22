@@ -107,6 +107,10 @@
       <FontFamily x:Key="Font.Mono">avares://QsppManager.Desktop/Assets/Fonts/JetBrainsMono-Regular.ttf#JetBrains Mono, SF Mono, Menlo, Consolas, monospace</FontFamily>
       <FontFamily x:Key="Font.MonoMedium">avares://QsppManager.Desktop/Assets/Fonts/JetBrainsMono-Medium.ttf#JetBrains Mono Medium, SF Mono, Menlo, monospace</FontFamily>
       <FontFamily x:Key="Font.Brand">avares://QsppManager.Desktop/Assets/Fonts/HostGrotesk.ttf#Host Grotesk, SF Pro Text, Helvetica Neue</FontFamily>
+
+      <!-- Fluent theme tab-header font: shrink from the 24px default (M7.2) -->
+      <x:Double x:Key="TabItemHeaderFontSize">13.5</x:Double>
+      <x:Double x:Key="TabItemMinHeight">34</x:Double>
     </ResourceDictionary>
 
   </Application.Resources>
@@ -131,6 +135,14 @@
     <Style Selector="TextBlock.label"><Setter Property="FontSize" Value="10.5" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="LetterSpacing" Value="0.5" /><Setter Property="Foreground" Value="{DynamicResource Brush.Muted}" /></Style>
     <Style Selector="TextBlock.mono"><Setter Property="FontFamily" Value="{StaticResource Font.Mono}" /><Setter Property="FontSize" Value="12" /></Style>
     <Style Selector="TextBlock.monoSm"><Setter Property="FontFamily" Value="{StaticResource Font.Mono}" /><Setter Property="FontSize" Value="11" /></Style>
+
+    <!-- Tab headers: Fluent's TabItemHeaderFontSize default of 24 blew out the detail-page
+         tabs (four oversized headers wrapped, leaving a giant orphan line). M7.2 keeps them
+         compact, one line, and quiet until selected. -->
+    <Style Selector="TabItem">
+      <Setter Property="FontSize" Value="13.5" />
+      <Setter Property="FontWeight" Value="Medium" />
+    </Style>
 
     <!-- Buttons: rounded, compact Mac push buttons -->
     <Style Selector="Button">
