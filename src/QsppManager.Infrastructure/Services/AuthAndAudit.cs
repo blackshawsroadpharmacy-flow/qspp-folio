@@ -124,6 +124,64 @@ public class AuthService(QsppDbContext db, AuditService audit)
     }
 
     public List<AppUser> ListUsers() => db.Users.AsNoTracking().Where(u => u.IsActive).OrderBy(u => u.DisplayName).ToList();
+
+    /// <summary>Signed-in self-service passphrase change: the CURRENT passphrase must verify
+    /// (this is the ordinary "change password", not a reset). Old passphrase stops working
+    /// immediately; audit records the change without ever recording the passphrase itself.</summary>
+    public ServiceResult ChangeOwnPassphrase(UserSession session, string current, string newPassphrase)
+    {
+        if (string.IsNullOrWhiteSpace(newPassphrase) || newPassphrase.Length < 8)
+            return ServiceResult.Fail("The new passphrase must be at least 8 characters.");
+        var user = db.Users.FirstOrDefault(u => u.Id == session.UserId && u.IsActive);
+        if (user is null) return ServiceResult.Fail("Account not found.");
+        if (!VerifyPassphrase(current, user.PassphraseSalt, user.PassphraseHash, user.PassphraseIterations))
+            return ServiceResult.Fail("The current passphrase is not correct.");
+        return ApplyNewPassphrase(user, session.DisplayName, session.UserId, "user.passphrase.changed", "changed their own passphrase", newPassphrase);
+    }
+
+    /// <summary>Owner-admin resets any staff account's passphrase from Settings. Owner role
+    /// required; the reset never touches the account's role, data or links.</summary>
+    public ServiceResult ResetStaffPassphrase(UserSession session, string targetUserName, string newPassphrase)
+    {
+        if (session.Role != UserRole.OwnerAdmin)
+            return ServiceResult.Fail("Only the pharmacy owner can set another account's passphrase.");
+        if (string.IsNullOrWhiteSpace(newPassphrase) || newPassphrase.Length < 8)
+            return ServiceResult.Fail("The new passphrase must be at least 8 characters.");
+        var user = db.Users.FirstOrDefault(u => u.UserName == targetUserName.Trim() && u.IsActive);
+        if (user is null) return ServiceResult.Fail("No active account with that user name.");
+        return ApplyNewPassphrase(user, session.DisplayName, session.UserId, "user.passphrase.reset", $"reset the passphrase for '{user.UserName}'", newPassphrase);
+    }
+
+    /// <summary>The forgotten-passphrase safety net (no session, login screen). A passphrase
+    /// is PBKDF2-hash-only — it can never be shown again, only replaced. This deliberately
+    /// carries friction: the actor must type an exact confirmation phrase, and the audit
+    /// records the event loudly (actor 'workstation', distinct action) so any reset that
+    /// happened without the owner present is visible. Threat model: the database lives on
+    /// the same workstation, so this replaces access; it does NOT bypass hash-chain
+    /// verification or change roles/data.</summary>
+    public const string ForgotConfirmPhrase = "RESET MY PASSPHRASE";
+    public ServiceResult ForgotPassphraseReset(string userName, string confirmation, string newPassphrase)
+    {
+        if (confirmation.Trim().ToUpperInvariant() != ForgotConfirmPhrase)
+            return ServiceResult.Fail($"Type {ForgotConfirmPhrase} to confirm the reset.");
+        if (string.IsNullOrWhiteSpace(newPassphrase) || newPassphrase.Length < 8)
+            return ServiceResult.Fail("The new passphrase must be at least 8 characters.");
+        var user = db.Users.FirstOrDefault(u => u.UserName == userName.Trim() && u.IsActive);
+        if (user is null) return ServiceResult.Fail("No active account with that user name.");
+        return ApplyNewPassphrase(user, "workstation", null, "user.passphrase.forgot_reset", $"forgot-passphrase reset for '{user.UserName}' (roles and data unchanged)", newPassphrase);
+    }
+
+    private ServiceResult ApplyNewPassphrase(AppUser user, string actorName, Guid? actorId, string action, string detailsPhrase, string newPassphrase)
+    {
+        // HashPassphrase draws a fresh random salt every call (same path as CreateFirstUser).
+        var (salt, hash, iters) = HashPassphrase(newPassphrase);
+        user.PassphraseSalt = salt;
+        user.PassphraseHash = hash;
+        user.PassphraseIterations = iters;
+        db.SaveChanges();
+        audit.Append(actorName, actorId, action, "user", user.Id.ToString(), detailsPhrase);
+        return ServiceResult.Succeed(user.Id);
+    }
 }
 
 public record UserSession(Guid UserId, string UserName, string DisplayName, UserRole Role)

@@ -204,6 +204,41 @@ evidence-backed close-out. Linux/Windows packaging deferred (below).
    app re-renders; relaunch the app to confirm the settings persisted.
 5. Library → corpus search "potency" → results with bracketed highlights;
    double-click a result → record opens.
+
 6. Print centre → render a checklist PDF → result strip shows the file path;
    "Open" hands it to Preview; print via the native dialog when a printer is
    attached (physical-printer validation is the remaining loose end).
+
+## M7.2 · full source wording + proportional detail page · **CODE COMPLETE (verified 22 Oct 2026)**
+
+Two problems from the owner's Requirements detail screenshot: the verbatim quote was
+cut mid-sentence at 400 characters (M1 `trim400`), and the detail page wasted the
+window (four oversized tab headers wrapped into a giant orphan line, the excerpt box
+stayed small, the tab content capped at 560px).
+
+| Item | Status | Evidence |
+|---|---|---|
+| Corpus wording enrichment: all 44 truncated quotes re-derived as the requirement's FULL anchored segment (Rule 10: 400 → 879 chars, clean sentence end) | ✔ | `build/enrich_wording.py` + enriched `seed/requirements.json`; per-item containment gate (old quote ⊂ new segment) — 44/44 validated, 0 forced |
+| Boot-time wording refresh for already-imported databases: wording-only upsert by deterministic id, one audited `corpus.wording_refresh` line, zero-diff boots write nothing | ✔ | `SeedImporter.WordingRefresh()`; 3 integration tests (`CorpusWordingRefreshTests`); live on the owner's real DB: `updated=44` at first boot, chain verified |
+| Detail-page text areas expand and contract with their content (excerpt MinHeight 96/cap 480, reason + next action cap 280, notes cap 340); only extreme lengths scroll internally | ✔ | `RequirementsView` M7.2 edits; live boot |
+| Detail tabs compact (13.5px, Fluent `TabItemHeaderFontSize` override), tab content pane 560 → 900, result bar capped 110 with internal scroll | ✔ | `App.axaml` + `RequirementsView` |
+| Tests | ✔ | 84/84 green (was 80/80) |
+
+Honest label: the regen extraction used fresh `pdftotext`; anchor line ranges for 4
+files were re-located by content (recorded in the seed's anchor note); the 13 hitlist
+items and obligations keep their original complete short wordings (analysis text, not
+source quotes). REM-01…19 wordings were never truncated.
+
+## M7.3 · passphrase resets · **CODE COMPLETE (verified 22 Oct 2026)**
+
+The owner forgot the workspace passphrase. A passphrase is PBKDF2-hash-only (it can
+never be shown again — only replaced), and the app had no reset path at all. Shipped
+three, all audited by distinct actions so the audit always answers "who set which".
+
+| Item | Status | Evidence |
+|---|---|---|
+| Login screen "Forgotten your passphrase? Reset it" flip-panel: typed confirmation phrase (`RESET MY PASSPHRASE`), new passphrase + repeat; success message in brand green | ✔ | `LoginView.axaml(.cs)`; live on the real DB |
+| `AuthService.ForgotPassphraseReset` — workstation safety net: exact confirm phrase, 8+ chars, distinct loud audit (`user.passphrase.forgot_reset`, actor `workstation`); roles/data untouched | ✔ | 4 `PasswordResetTests` including refused wrong-phrase attempts and data-intactness |
+| `AuthService.ResetStaffPassphrase` + Settings "Set/reset a passphrase…" (Owner-admin only) | ✔ | service + UI; non-owner attempt refused in test |
+| `AuthService.ChangeOwnPassphrase` — signed-in change requires the CURRENT passphrase; old stops working immediately | ✔ | test: old login fails, new works, role/data unchanged |
+| Packaged app redistributed with the reset flow | ✔ | M7.3 package; real-DB reset applied, hash round-trip verified, audit chain intact (29 events) |

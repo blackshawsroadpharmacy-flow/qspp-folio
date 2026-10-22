@@ -86,6 +86,10 @@ public partial class SettingsView : UserControl
         var addUser = new Button { Content = "Add user…" };
         addUser.Click += (_, _) => AddUser();
         users.Children.Add(addUser);
+        // M7.3: owner can reset a staff passphrase straight from the users card.
+        var resetPass = new Button { Content = "Set/reset a passphrase…" };
+        resetPass.Click += (_, _) => ResetStaffPassphrase();
+        users.Children.Add(resetPass);
         sp.Children.Add(Ui.Section("Users and roles", users));
 
         // Accessibility
@@ -179,10 +183,21 @@ public partial class SettingsView : UserControl
         LoadDeadlines();
     }
 
+    // M7.3: owner resets a staff passphrase, prompt-driven like AddUser.
+    private async void ResetStaffPassphrase()
+    {
+        var userName = await Dialogs.Prompt(this, "Set/reset passphrase — account", "User name to reset (see the list above)");
+        if (string.IsNullOrWhiteSpace(userName)) return;
+        var passphrase = await Dialogs.Prompt(this, $"Set a passphrase for '{userName.Trim()}'", "At least 8 characters");
+        if (string.IsNullOrWhiteSpace(passphrase)) return;
+        if (App.Session is null) { _message.Text = "Sign in first."; return; }
+        var result = App.Auth.ResetStaffPassphrase(App.Session, userName, passphrase);
+        _message.Text = result.Ok ? $"Passphrase set for '{userName.Trim()}'. The audit trail records the change." : result.Error;
+    }
+
     private async void AddUser()
     {
         var userName = await Dialogs.Prompt(this, "Add user — user name", "Login name");
-        if (string.IsNullOrWhiteSpace(userName)) return;
         var displayName = await Dialogs.Prompt(this, "Add user — full name", "Display name") ?? userName;
         var roleRaw = await Dialogs.Prompt(this, "Add user — role", "OwnerAdmin, ManagerReviewer, Contributor or ReviewerReadOnly", "Contributor");
         if (!Enum.TryParse<UserRole>(roleRaw, true, out var role))

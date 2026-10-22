@@ -14,17 +14,49 @@
             <TextBlock Classes="small" Text="Burke Road Compounding Pharmacy" />
           </StackPanel>
         </StackPanel>
-        <TextBlock Classes="small" TextWrapping="Wrap" Margin="0,2,0,6">Local practice accreditation workspace. Accounts and records stay on this computer; roles decide who can verify evidence and change readiness.</TextBlock>
-        <StackPanel Spacing="6">
-          <TextBlock Classes="label">USER NAME</TextBlock>
-          <TextBox x:Name="UserName" Watermark="User name" Height="34" />
+
+        <!-- ============ sign-in mode ============ -->
+        <StackPanel x:Name="SignInPanel" Spacing="12">
+          <TextBlock Classes="small" TextWrapping="Wrap" Margin="0,2,0,6">Local practice accreditation workspace. Accounts and records stay on this computer; roles decide who can verify evidence and change readiness.</TextBlock>
+          <StackPanel Spacing="6">
+            <TextBlock Classes="label">USER NAME</TextBlock>
+            <TextBox x:Name="UserName" Watermark="User name" Height="34" />
+          </StackPanel>
+          <StackPanel Spacing="6">
+            <TextBlock Classes="label">PASSPHRASE</TextBlock>
+            <TextBox x:Name="Passphrase" Watermark="Passphrase" PasswordChar="•" Height="34" />
+          </StackPanel>
+          <TextBlock x:Name="Message" Classes="small" TextWrapping="Wrap" Foreground="{DynamicResource Brush.Caution}" />
+          <TextBlock x:Name="SuccessMessage" Classes="small" TextWrapping="Wrap" Foreground="{DynamicResource Brush.Green}" IsVisible="False" />
+          <Button x:Name="LoginBtn" Classes="primary" Content="Sign in" Height="38" HorizontalAlignment="Stretch" Margin="0,8,0,0" />
+          <Button x:Name="ForgotBtn" Classes="tertiary" Content="Forgotten your passphrase? Reset it" Height="28" HorizontalAlignment="Stretch" Margin="0,2,0,0" />
         </StackPanel>
-        <StackPanel Spacing="6">
-          <TextBlock Classes="label">PASSPHRASE</TextBlock>
-          <TextBox x:Name="Passphrase" Watermark="Passphrase" PasswordChar="•" Height="34" />
+
+        <!-- ============ forgot-passphrase reset mode (M7.3) ============ -->
+        <StackPanel x:Name="ResetPanel" Spacing="12" IsVisible="False">
+          <TextBlock Classes="small" TextWrapping="Wrap" Margin="0,2,0,4">A passphrase can never be shown again, only replaced. This replaces the passphrase for one account; roles, records and evidence stay exactly as they are. Every reset is written to the audit trail so it is always visible who reset what.</TextBlock>
+          <StackPanel Spacing="6">
+            <TextBlock Classes="label">ACCOUNT TO RESET</TextBlock>
+            <TextBox x:Name="ResetUserName" Watermark="User name to reset" Height="34" />
+          </StackPanel>
+          <StackPanel Spacing="6">
+            <TextBlock Classes="label">TYPE TO CONFIRM</TextBlock>
+            <TextBox x:Name="ConfirmPhrase" Watermark="Type exactly: RESET MY PASSPHRASE" Height="34" />
+          </StackPanel>
+          <StackPanel Spacing="6">
+            <TextBlock Classes="label">NEW PASSPHRASE</TextBlock>
+            <TextBox x:Name="NewPass" Watermark="At least 8 characters" PasswordChar="•" Height="34" />
+          </StackPanel>
+          <StackPanel Spacing="6">
+            <TextBlock Classes="label">REPEAT NEW PASSPHRASE</TextBlock>
+            <TextBox x:Name="NewPass2" Watermark="Repeat to confirm" PasswordChar="•" Height="34" />
+          </StackPanel>
+          <TextBlock x:Name="ResetMessage" Classes="small" TextWrapping="Wrap" Foreground="{DynamicResource Brush.Caution}" />
+          <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,6,0,0">
+            <Button x:Name="ResetBtn" Classes="primary" Content="Reset passphrase" Height="38" HorizontalAlignment="Stretch" />
+            <Button x:Name="BackBtn" Classes="tertiary" Content="Back to sign in" Height="38" HorizontalAlignment="Stretch" />
+          </StackPanel>
         </StackPanel>
-        <TextBlock x:Name="Message" Classes="small" TextWrapping="Wrap" Foreground="{DynamicResource Brush.Caution}" />
-        <Button x:Name="LoginBtn" Classes="primary" Content="Sign in" Height="38" HorizontalAlignment="Stretch" Margin="0,8,0,0" />
       </StackPanel>
     </Border>
   </Grid>
