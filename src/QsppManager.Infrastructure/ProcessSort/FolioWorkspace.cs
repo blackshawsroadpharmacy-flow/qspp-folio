@@ -130,8 +130,8 @@ public sealed class FolioWorkspace(
         batch.ScannedCount = scan.Files.Count(f => true);
         batch.SkippedCount = scan.Skipped.Count;
         batch.ModeDescription = (ocrEngine == null
-            ? "digital-pdf: pdfpig; ocr: queued (helper not installed)"
-            : $"digital-pdf: pdfpig; ocr: {FolioOcr.EngineKey} (on-device)")
+            ? "digital-pdf: pdfpig; docx: docx-openxml; ocr: queued (helper not installed)"
+            : $"digital-pdf: pdfpig; docx: docx-openxml; ocr: {FolioOcr.EngineKey} (on-device)")
             + (stage2 != null && stage2.Available()
                 ? $"; stage-2: {FolioDecisionStage2.ModelName} (local, loopback)"
                 : "; decision model: deterministic-v1 (stage 1 only)");
@@ -340,6 +340,71 @@ public sealed class FolioWorkspace(
             $"destinations={string.Join(",", approved.Select(a => a.Ref))}; evidence={evidenceId.ToString()[..8]}…");
         return (ServiceResult.Succeed(evidenceId), evidenceId);
     }
+
+    /// <summary>Evidence kind guessed from the file name for bulk approval — deliberately
+    /// conservative: a certificate-shaped name becomes Certificate, training-shaped names
+    /// become TrainingRecord, register-shaped names Register, everything else PolicyOrSop.
+    /// Any kind is correctable afterwards in the evidence detail (supersede flow).</summary>
+    public static string FolioKindHint(string relativePath)
+    {
+        var name = Path.GetFileName(relativePath).ToLowerInvariant();
+        if (name.Contains("indemnity") || name.Contains("insurance") || name.Contains("certificate")
+            || name.Contains("ahpra") || name.Contains(" registration")) return Enum.GetName(EvidenceKind.Certificate)!;
+        if (name.Contains("training") || name.Contains("induction") || name.Contains("in-service")) return Enum.GetName(EvidenceKind.TrainingRecord)!;
+        if (name.Contains("register") || name.Contains("log-") || name.Contains("log.")) return Enum.GetName(EvidenceKind.Register)!;
+        return Enum.GetName(EvidenceKind.PolicyOrSop)!;
+    }
+
+    /// <summary>Bulk approval of the review queue's CLEAR proposals: every item with a
+    /// single confident destination (State = Proposed) becomes managed evidence linked
+    /// to its proposed requirement, exactly like a manual attach per item. Multiple-
+    /// candidate, sensitive, duplicate and unreadable items always wait for a human
+    /// choice. One failed item never stops the bulk; results are counted and the
+    /// first failure surfaced.</summary>
+    public (int approved, int failed, string firstError, List<Guid> evidenceIds) ApproveProposed(Guid batchId, UserSession session)
+    {
+        var batch = db.FolioBatches.Include(b => b.Items).FirstOrDefault(b => b.Id == batchId);
+        if (batch == null) return (0, 0, "Batch not found.", []);
+        if (session == null || session.ReadOnly) return (0, 0, "Sign in as Contributor or above to approve folio items.", []);
+
+        int approved = 0, failed = 0;
+        string firstError = "";
+        var evidenceIds = new List<Guid>();
+        foreach (var item in batch.Items.Where(i => i.State == FolioItemState.Proposed && i.EvidenceItemId == null).ToList())
+        {
+            try
+            {
+                var suggestions = JsonSerializer.Deserialize<List<FolioSuggestion>>(item.ProposalsJson, FolioJson.Opts) ?? [];
+                if (suggestions.Count == 0)
+                {
+                    failed++;
+                    if (firstError.Length == 0) firstError = $"{item.SourceRelativePath}: no proposal stored.";
+                    continue;
+                }
+                var top = suggestions[0];
+                var approvedJson = JsonSerializer.Serialize(new List<FolioSuggestion>
+                {
+                    new(top.RequirementId, top.Ref, top.RefKind, top.Title, 0, "user-approved (bulk)",
+                        FolioClassifier.Stage1Model, FolioClassifier.Stage1ModelVersion)
+                }, FolioJson.Opts);
+                var (res, evidenceId) = ApproveItem(item.Id, session, DefaultTitleFrom(item.SourceRelativePath),
+                    FolioKindHint(item.SourceRelativePath), approvedJson, containsPatientData: false, patientDataAttestation: "");
+                if (res.Ok && evidenceId != null) { approved++; evidenceIds.Add(evidenceId.Value); }
+                else { failed++; if (firstError.Length == 0) firstError = $"{item.SourceRelativePath}: {res.Error}"; }
+            }
+            catch (Exception ex)
+            {
+                failed++;
+                if (firstError.Length == 0) firstError = $"{item.SourceRelativePath}: {ex.Message}";
+            }
+        }
+        audit.Append(session.DisplayName, session.UserId, "folio.batch.bulk-approved", "folio", batchId.ToString(),
+            $"proposed approved={approved}; failed={failed}; remaining in review={batch.Items.Count(i => i.State != FolioItemState.Approved && i.State != FolioItemState.Published)}");
+        return (approved, failed, firstError, evidenceIds);
+    }
+
+    /// <summary>Evidence title derived from the file name (shared with the review dialog).</summary>
+    public static string DefaultTitleFrom(string relativePath) => Path.GetFileNameWithoutExtension(relativePath);
 
     /// <summary>Publishes all approved items into the folio tree (staging → verify → publish).</summary>
     public (ServiceResult result, string manifestPath) PublishFolio(Guid batchId, UserSession session)

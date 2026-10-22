@@ -22,6 +22,9 @@ public partial class ProcessSortDialog : Window
     private readonly TextBlock _summary = new() { TextWrapping = TextWrapping.Wrap };
     private readonly ObservableCollection<Row> _rows = new();
     private readonly DataGrid _grid = new() { Height = 330, AutoGenerateColumns = false, IsReadOnly = true };
+    private readonly ComboBox _batchPicker = new() { MinWidth = 560, PlaceholderText = "Batch history…" };
+    private readonly Button _bulkApprove = new();
+    private readonly List<Guid> _batchIds = [];
     private CancellationTokenSource? _cts;
     private Guid? _batchId;
     private string _sourceDir = "", _outputDir = "";
@@ -52,21 +55,29 @@ public partial class ProcessSortDialog : Window
             Ui.FormField("Output folder", _outputBox),
             chooseOutput));
 
+        var approveBtn = Ui.PrimaryBtn("Approve selected…", axHelpText: "Correct or accept destinations for the selected file");
+        _bulkApprove = Ui.PrimaryBtn("Approve proposed…", axHelpText: "Attach every clear proposal to its requirement — a human pressed the button once for the batch");
         var actionRow = Ui.Row(8,
             Ui.PrimaryBtn("Scan folder", axHelpText: "Count supported files and show what will happen"),
             Ui.PrimaryBtn("Process and Sort", axHelpText: "Extract, classify and prepare destinations"),
             Ui.PrimaryBtn("Cancel run", axHelpText: "Stop after the current file; processed files keep their state"),
-            Ui.PrimaryBtn("Approve selected…", axHelpText: "Correct or accept destinations for the selected file"),
+            approveBtn,
+            _bulkApprove,
             Ui.PrimaryBtn("Publish folio", axHelpText: "Write the sorted tree with checksum-verified copies and manifest"),
             Ui.PrimaryBtn("Open output", axHelpText: "Reveal the built folio in Finder"));
         var buttons = actionRow.Children.OfType<Button>().ToArray();
+
         buttons[0].Click += async (_, _) => await ScanAsync();
         buttons[1].Click += async (_, _) => await ProcessAsync();
         buttons[2].Click += (_, _) => CancelRun();
-        buttons[3].Click += async (_, _) => await ApproveSelectedAsync();
-        buttons[4].Click += async (_, _) => await PublishAsync();
-        buttons[5].Click += (_, _) => OpenOutput();
+        approveBtn.Click += async (_, _) => await ApproveSelectedAsync();
+        _bulkApprove.Click += async (_, _) => await BulkApproveAsync();
+        buttons[5].Click += async (_, _) => await PublishAsync();
+        buttons[6].Click += (_, _) => OpenOutput();
         sp.Children.Add(actionRow);
+
+        sp.Children.Add(Ui.Row(8, Ui.FormField("Batch history", _batchPicker)));
+        _batchPicker.SelectionChanged += async (_, _) => await LoadSelectedBatch();
 
         sp.Children.Add(_summary);
 
@@ -78,6 +89,63 @@ public partial class ProcessSortDialog : Window
         sp.Children.Add(_grid);
 
         Content = new ScrollViewer { Content = sp };
+        Opened += async (_, _) => await LoadBatchList();
+    }
+
+    /// <summary>Batch history: past batches stay reachable, so review and publish are
+    /// resumable in a later session (a completed batch is not a dead end).</summary>
+    private async Task LoadBatchList()
+    {
+        var batches = await App.Db.FolioBatches.AsNoTracking()
+            .OrderByDescending(b => b.StartedAtUtc).Take(15).ToListAsync();
+        _batchIds.Clear();
+        _batchPicker.Items.Clear();
+        foreach (var b in batches)
+        {
+            _batchIds.Add(b.Id);
+            var tail = string.Join('/', b.SourceDirectory.Split('/', StringSplitOptions.RemoveEmptyEntries).TakeLast(2));
+            _batchPicker.Items.Add($"{b.StartedAtUtc:dd MMM HH:mm} — {b.State} — {b.ScannedCount} scanned, {b.SkippedCount} skipped — …{tail}");
+        }
+        if (_batchIds.Count > 0 && _batchId == null) _batchPicker.SelectedIndex = 0;
+    }
+
+    private async Task LoadSelectedBatch()
+    {
+        var i = _batchPicker.SelectedIndex;
+        if (i < 0 || i >= _batchIds.Count) return;
+        var batch = await App.Db.FolioBatches.AsNoTracking()
+            .FirstOrDefaultAsync(b => b.Id == _batchIds[i]);
+        if (batch == null) return;
+        _batchId = batch.Id;
+        _sourceDir = batch.SourceDirectory; _outputDir = batch.OutputDirectory;
+        _sourceBox.Text = _sourceDir; _outputBox.Text = _outputDir;
+        await ReloadHistory();
+    }
+
+    /// <summary>One press attaches every CLEAR proposal (single confident destination) to
+    /// its requirement: evidence is imported and linked exactly like a manual attach per
+    /// item. Files needing a human choice (multiple, sensitive, duplicate, unreadable,
+    /// OCR-queued) stay in the queue.</summary>
+    private async Task BulkApproveAsync()
+    {
+        if (_batchId == null) { Say("Load or scan a batch first."); return; }
+        var batchId = _batchId.Value;
+        var session = App.Session!;
+        Say("Approving every clear proposal…");
+        var result = await Task.Run(() => App.Folio.ApproveProposed(batchId, session));
+        await ReloadHistory();
+        if (result.approved == 0 && result.failed == 0)
+            Say("No clear proposals here yet — process the batch first, or approve the remaining files one at a time.");
+        else if (result.approved == 0)
+            Say($"Nothing approved: {result.firstError}");
+        else
+        {
+            var inReview = _rows.Count(r => r.State is "Proposed" or "MultipleCandidates" or "SensitiveHold"
+                or "NeedsOcr" or "Unreadable" or "Pending" or "Processing" or "Abstained" or "Duplicate");
+            Say($"Approved {result.approved} — imported and attached to their proposed requirements (evidence kinds guessed from file names; correct any in the evidence detail)."
+                + (result.failed > 0 ? $" Failures: {result.firstError} " : "")
+                + (inReview > 0 ? $" {inReview} still need your review (multiple, sensitive, unclear)." : ""));
+        }
     }
 
     private async Task<string?> PickFolder()
@@ -157,7 +225,13 @@ public partial class ProcessSortDialog : Window
             _rows.Clear();
             foreach (var i in batch.Items)
                 _rows.Add(new Row(i.SourceRelativePath, i.State.ToString(), DetailOf(i), i.Id, batch.Id));
-            _summary.Text = $"Batch {batch.State} — {batch.Items.Count} files processed or queued ({batch.SkippedCount} skipped at scan).";
+            var props = batch.Items.Count(i => i.State == FolioItemState.Proposed);
+            var mult = batch.Items.Count(i => i.State == FolioItemState.MultipleCandidates);
+            var sens = batch.Items.Count(i => i.State == FolioItemState.SensitiveHold);
+            var ocr = batch.Items.Count(i => i.State == FolioItemState.NeedsOcr);
+            var done = batch.Items.Count(i => i.State is FolioItemState.Approved or FolioItemState.Published);
+            _summary.Text = $"Batch {batch.State}: {done}/{batch.Items.Count} attached so far. Queue: {props} clear proposals — {mult} multiple choice — {sens} sensitive — {ocr} awaiting OCR. Skipped at scan: {batch.SkippedCount}." + (props > 0 ? " Approve the clear proposals to attach them, then review the rest one by one." : "");
+            _bulkApprove.Content = props > 0 ? $"Approve {props} proposed…" : "Approve proposed…";
         });
         await Task.CompletedTask;
     }
@@ -258,11 +332,7 @@ public partial class FolioApproveDialog : Window
         }
     }
 
-    private static string DefaultTitleFrom(string relPath)
-    {
-        var name = Path.GetFileNameWithoutExtension(relPath);
-        return name.Length > 1 && char.IsLower(name[0]) ? name : name;
-    }
+    private static string DefaultTitleFrom(string relPath) => FolioWorkspace.DefaultTitleFrom(relPath);
 
     private void Refilter(string query)
     {

@@ -9,9 +9,9 @@ namespace QsppManager.Infrastructure.ProcessSort;
 /// extraction happens later, per item, so a scan stays fast and cancellable.</summary>
 public sealed class FolioScanner(string sourceDirectory, string outputDirectory, long maxFileBytes)
 {
-    // v1 local parsers: PDFs (digital + scanned) and images. DOCX/other formats join
-    // later stages; they are listed honestly as "unsupported (later stage)" — never guessed.
-    private static readonly string[] SupportedExtensions = [".pdf", ".png", ".jpg", ".jpeg", ".tif", ".tiff"];
+    // v1 local parsers: PDFs (digital + scanned), images, and DOCX body text.
+    // Everything else is listed honestly as "unsupported" — never guessed.
+    private static readonly string[] SupportedExtensions = [".pdf", ".png", ".jpg", ".jpeg", ".tif", ".tiff", ".docx"];
 
     public sealed record ScanEntry(string SourceRelativePath, string FullPath, long Bytes, string Extension);
     public sealed record SkippedEntry(string SourceRelativePath, string Reason, string Detail);
@@ -51,7 +51,14 @@ public sealed class FolioScanner(string sourceDirectory, string outputDirectory,
         var fi = new FileInfo(absolutePath);
         if (!fi.Exists) return;
         if (fi.Length > maxFileBytes) { skipped.Add(new SkippedEntry(rel, "oversized", $"File is larger than the {maxFileBytes / (1024 * 1024)} MB guard ({fi.Length / (1024 * 1024)} MB).")); return; }
-        if (!SupportedExtensions.Contains(ext)) { skipped.Add(new SkippedEntry(rel, "unsupported", "Only PDF and image files are processed in this stage; DOCX and other formats come later.")); return; }
+        if (!SupportedExtensions.Contains(ext))
+        {
+            skipped.Add(new SkippedEntry(rel, "unsupported",
+                ext == ".doc" ? "Legacy .doc is not parseable locally — save it as .docx or PDF, then re-run."
+                : ext is ".xlsx" or ".pptx" ? "Spreadsheets and slides are a later stage; PDF, image and DOCX files are processed now."
+                : "Only PDF, image and DOCX files are processed in this stage; other formats come later."));
+            return;
+        }
 
         byte[] head = new byte[Math.Min(10240, fi.Length)];
         using (var fs = File.OpenRead(absolutePath)) fs.ReadExactly(head);

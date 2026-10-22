@@ -35,6 +35,11 @@ public sealed class FolioExtractor(string cacheRoot, FolioOcr? ocr = null)
         if (mimeType == "image/png" || mimeType == "image/jpeg" || lowerExt is ".png" or ".jpg" or ".jpeg" or ".tif" or ".tiff")
             return ExtractViaOcr(fullPath, sha256, ct);
 
+        // DOCX: local OpenXML body text (paragraphs, including those inside tables) —
+        // no remote parsing, cached by sha256 + parser version like every other route.
+        if (lowerExt == ".docx" || mimeType == "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+            return ExtractDocx(fullPath, sha256);
+
         // PDF v1 parser: PdfPig (already a project dependency, no native pieces).
         if (IsCached(sha256, "pdfpig"))
         {
@@ -131,5 +136,50 @@ public sealed class FolioExtractor(string cacheRoot, FolioOcr? ocr = null)
         // Without the helper the item is queued for the OCR tier honestly, with
         // the reason shown — never mis-filed, never silently dropped.
         return new Extraction(fullPath, sha256, $"route-{kind}", NeedsOcr: true, Ok: true, Error: reason, PageCount: 0, Pages: []);
+    }
+
+    /// <summary>Local DOCX body-text extraction: reads word/document.xml from the zip
+    /// (paragraph text in document order, including paragraphs inside tables), with the
+    /// zip structure itself providing the size guard. Parser version "docx-openxml"
+    /// participates in the cache key, so a parser change re-extracts cleanly.</summary>
+    private Extraction ExtractDocx(string fullPath, string sha256)
+    {
+        const string engine = "docx-openxml";
+        if (IsCached(sha256, engine))
+        {
+            var cached = JsonSerializer.Deserialize<Extraction>(File.ReadAllText(CachePathFor(sha256, engine)));
+            if (cached != null && cached.Ok) return cached;
+        }
+        try
+        {
+            using var zip = System.IO.Compression.ZipFile.OpenRead(fullPath);
+            var entry = zip.GetEntry("word/document.xml");
+            if (entry == null)
+                return new Extraction(fullPath, sha256, engine, NeedsOcr: false, Ok: false,
+                    Error: "Not a readable Word document (no word/document.xml).", PageCount: 0, Pages: []);
+            using var stream = entry.Open();
+            var w = System.Xml.Linq.XNamespace.Get("http://schemas.openxmlformats.org/wordprocessingml/2006/main");
+            var doc = System.Xml.Linq.XDocument.Load(stream);
+            var sb = new System.Text.StringBuilder();
+            foreach (var p in doc.Root!.Descendants(w + "p"))
+            {
+                var line = string.Concat(p.Descendants(w + "t").Select(t => t.Value)).Trim();
+                if (line.Length > 0) sb.AppendLine(line);
+            }
+            var text = sb.ToString().Trim();
+            if (text.Length == 0)
+                return new Extraction(fullPath, sha256, engine, NeedsOcr: false, Ok: false,
+                    Error: "DOCX has no readable body text.", PageCount: 0, Pages: []);
+            var result = new Extraction(fullPath, sha256, engine, NeedsOcr: false, Ok: true,
+                Error: "", PageCount: 0, Pages: [new Page(1, text.Length, text)]);
+            Directory.CreateDirectory(cacheRoot);
+            File.WriteAllText(CachePathFor(sha256, engine), JsonSerializer.Serialize(result));
+            return result;
+        }
+        catch (Exception ex)
+        {
+            return new Extraction(fullPath, sha256, engine, NeedsOcr: false, Ok: false,
+                Error: $"DOCX unreadable: {ex.Message}", PageCount: 0, Pages: []);
+        }
     }
 }

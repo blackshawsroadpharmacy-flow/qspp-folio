@@ -314,6 +314,128 @@ public class ProcessSortPipelineTests : TestBase
         Directory.Delete(staging, true);
         File.Delete(a);
     }
+
+    [Fact]
+    public void BulkApproveProposed_AttachesClearWinners_LeavesHumanChoiceStatesUntouched_IsIdempotent()
+    {
+        MakePdf(Path.Combine(_srcDir, "bookings-sop.pdf"),
+            "Assessment bookings and cancellations. Our pharmacy records bookings and cancellations " +
+            "within the required windows. Cancellation windows apply to booked assessments, and the " +
+            "booking register lists every cancellation with its notice period.");
+        MakePdf(Path.Combine(_srcDir, "medicare-batch-report.pdf"),
+            "Medicare card numbers recorded for this patient: 4111 1111 1 plus confidential clinical notes.");
+        var (res, batchId0) = _folio.ScanAndQueue(Owner, _srcDir, _outDir);
+        Assert.True(res.Ok, res.Error);
+        var batch = Assert.IsType<Guid>(batchId0);
+        var (pres, _) = _folio.ProcessBatch(batch, Owner);
+        Assert.True(pres.Ok, pres.Error);
+
+        var proposedCount = Db.FolioItems.AsNoTracking().Count(i => i.BatchId == batch && i.State == FolioItemState.Proposed);
+        Assert.True(proposedCount >= 1, "fixture must yield at least one clear proposal");
+        var sensitive = Db.FolioItems.AsNoTracking().First(i => i.SourceRelativePath == "medicare-batch-report.pdf");
+        Assert.Equal(FolioItemState.SensitiveHold, sensitive.State);
+
+        var (approved, failed, err, evidenceIds) = _folio.ApproveProposed(batch, Owner);
+        Assert.True(failed == 0, err);
+        Assert.Equal(proposedCount, approved);
+        Assert.Equal(proposedCount, evidenceIds.Count);
+
+        // every item that got evidence is now Approved, and the link is Proposed (never verified)
+        foreach (var item in Db.FolioItems.AsNoTracking().Where(i => i.BatchId == batch && i.EvidenceItemId != null))
+            Assert.Equal(FolioItemState.Approved, item.State);
+        var bookings = Db.FolioItems.AsNoTracking().First(i => i.SourceRelativePath == "bookings-sop.pdf");
+        Assert.Equal(FolioItemState.Approved, bookings.State);
+        var link = Db.EvidenceLinks.AsNoTracking().First(l => l.EvidenceItemId == bookings.EvidenceItemId);
+        Assert.Equal(LinkState.Proposed, link.State);
+        Assert.Equal(FolioWorkspace.DefaultTitleFrom("folder/bookings-sop.pdf"), "bookings-sop");
+
+        // sensitive item untouched: still waiting, no evidence created
+        var after = Db.FolioItems.AsNoTracking().First(i => i.Id == sensitive.Id);
+        Assert.Null(after.EvidenceItemId);
+        Assert.Equal(FolioItemState.SensitiveHold, after.State);
+
+        // a second press is a no-op (idempotent)
+        Assert.Equal(0, _folio.ApproveProposed(batch, Owner).approved);
+
+        // read-only sessions are refused outright
+        var reviewer = new UserSession(Guid.NewGuid(), "rev", "Reviewer", UserRole.ReviewerReadOnly);
+        var refused = _folio.ApproveProposed(batch, reviewer);
+        Assert.Equal(0, refused.approved);
+        Assert.Contains("Sign in", refused.firstError);
+    }
+
+    /// <summary>Builds a minimal real DOCX (zip + word/document.xml) with the given
+    /// paragraph texts in document order — same route real Word files take.</summary>
+    private static void MakeDocx(string path, params string[] paragraphs)
+    {
+        var w = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+        var body = string.Join("", paragraphs.Select(p =>
+            $"<w:p><w:r><w:t xml:space=\"preserve\">{System.Security.SecurityElement.Escape(p)}</w:t></w:r></w:p>"));
+        var xml = $"<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><w:document xmlns:w=\"{w}\"><w:body>{body}</w:body></w:document>";
+        using var fs = File.Create(path);
+        using var zip = new System.IO.Compression.ZipArchive(fs, System.IO.Compression.ZipArchiveMode.Create);
+        var entry = zip.CreateEntry("word/document.xml");
+        using var sw = new StreamWriter(entry.Open());
+        sw.Write(xml);
+    }
+
+    [Fact]
+    public void Docx_ParsesBodyText_ClassifiesLikePdf()
+    {
+        MakeDocx(Path.Combine(_srcDir, "SOP - Bookings.docx"),
+            "Assessment bookings and cancellations. Our pharmacy records bookings and cancellations " +
+            "within the required windows. Cancellation windows apply to booked assessments, and the " +
+            "booking register lists every cancellation with its notice period.");
+        var (res, batchId0) = _folio.ScanAndQueue(Owner, _srcDir, _outDir);
+        Assert.True(res.Ok, res.Error);
+        var batch = Assert.IsType<Guid>(batchId0);
+        Assert.Equal(1, Db.FolioItems.Count(i => i.BatchId == batch)); // the docx is queued, not skipped
+        var (pres, _) = _folio.ProcessBatch(batch, Owner);
+        Assert.True(pres.Ok, pres.Error);
+        var item = Db.FolioItems.AsNoTracking().First(i => i.BatchId == batch && i.SourceRelativePath == "SOP - Bookings.docx");
+        Assert.Equal("docx-openxml", item.ParserUsed);
+        Assert.True(item.State is FolioItemState.Proposed or FolioItemState.MultipleCandidates,
+            $"docx should classify like a pdf, got {item.State}: {item.ErrorText}");
+        var props = Props(item.ProposalsJson);
+        Assert.True(props.Count > 0, "no proposals for docx");
+        // the doc is NOT mis-filed into the scanned/OCR route
+        Assert.NotEqual(FolioItemState.NeedsOcr, item.State);
+
+        // cache hit: re-running the SAME file must not change state (extraction cached by sha+parser)
+        _folio.ProcessBatch(batch, Owner);   // resumable no-op
+        var after = Db.FolioItems.AsNoTracking().First(i => i.BatchId == batch && i.SourceRelativePath == "SOP - Bookings.docx");
+        Assert.Equal(item.State, after.State);
+    }
+
+    [Fact]
+    public void ZipWithoutWordDocument_IsUnreadable_NeverCrashes()
+    {
+        using (var fs = File.Create(Path.Combine(_srcDir, "pretend.docx")))
+        using (var zip = new System.IO.Compression.ZipArchive(fs, System.IO.Compression.ZipArchiveMode.Create))
+            zip.CreateEntry("unrelated/readme.txt"); // zip signature legal for .docx, but no body
+        var (res, batchId0) = _folio.ScanAndQueue(Owner, _srcDir, _outDir);
+        Assert.True(res.Ok, res.Error);
+        var batch = Assert.IsType<Guid>(batchId0);
+        _folio.ProcessBatch(batch, Owner);
+        var item = Db.FolioItems.AsNoTracking().First(i => i.BatchId == batch);
+        Assert.Equal(FolioItemState.Unreadable, item.State);
+        Assert.Contains("Not a readable Word document", item.ErrorText);
+    }
+
+    [Fact]
+    public void LegacyDoc_IsRejectedWithGuidance()
+    {
+        // OLE2 compound-file magic for a real legacy .doc
+        File.WriteAllBytes(Path.Combine(_srcDir, "old-policy.doc"),
+            [0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1, 0, 0]);
+        var out2 = Path.Combine(Path.GetTempPath(), $"qspp-out2-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(out2);
+        var scanner = new FolioScanner(_srcDir, out2, 200L * 1024 * 1024);
+        var r = scanner.Scan();
+        Assert.Empty(r.Files);
+        Assert.Contains(r.Skipped, s => s.Reason == "unsupported" && s.Detail.Contains(".docx"));
+        Directory.Delete(out2, true);
+    }
 }
 
 /// <summary>Stage-1 classifier invariants at unit level: namespace discipline
@@ -390,5 +512,15 @@ public class ProcessSortClassifierTests
         var s = clf.Classify(doc, "policy-compendium.pdf");
         Assert.True(s.Count >= 2, $"expected multiple viable candidates, got {s.Count}");
         // close top scores must be flagged for human choice (state set by the pipeline)
+    }
+
+    [Fact]
+    public void KindHint_SetsConservativeEvidenceKinds()
+    {
+        Assert.Equal("Certificate", FolioWorkspace.FolioKindHint("Certificats/Stephanie - Indemnity Insurance.pdf"));
+        Assert.Equal("Certificate", FolioWorkspace.FolioKindHint("Staff/Sophie Hannebery - AHPRA Certificate of Registration.pdf"));
+        Assert.Equal("TrainingRecord", FolioWorkspace.FolioKindHint("Staff/New Employee Induction Checklist 2027.pdf"));
+        Assert.Equal("Register", FolioWorkspace.FolioKindHint("Program rules/booking register 2026.pdf"));
+        Assert.Equal("PolicyOrSop", FolioWorkspace.FolioKindHint("QCPP Remedials/SOP - Cold Chain.pdf"));
     }
 }
