@@ -270,5 +270,16 @@ requirements and the REM-01…19 surveillance asks. (Full plan: `docs/plans/2026
 | Migration `M8ProcessSort` + Entitysets FolioBatches/FolioItems; audit lines `folio.batch.*`, `folio.item.*` (incl. `folio.item.stage2`), `folio.published` | ✔ | `Folio.cs`, migration, tests |
 | Tests | ✔ | 34 folio tests (14 pipeline + 12 classifier + 5 OCR + 1 runner + 8 stage-2 — see the suites); suite green: 86 Integration + 30 Domain |
 
-**Not yet (next stages per plan):** MinerU heavy-tier benchmark before any default switch; Settings "document intelligence" block with measured numbers; wider corpus (tables/forms, expired/dates); packaged-app end-to-end demo + relaunch persistence.
+**MinerU heavy-tier benchmark (24 Oct, standard tier, user-approved ~2 GB install; 16 GB gate exercised on THIS Mac):**
+| Measurement | Result |
+|---|---|
+| Install | `mineru` 4.0.12, Python 3.12, `tools/ocr-heavy/.venv` (never committed); models 2.0 GB in `~/.mineru/models/` (859 MB torch pipeline + 1.2 GB GGUF VLM); license Apache-2.0-based (checked April 2026 text); telemetry disabled; doclib server loopback-only by default (`127.0.0.1`, config `doclib.tcp` + UDS socket) |
+| Benchmarked on the same synthetic fixtures as Apple Vision | 2-page scan: 3.0 s warm (3.2 cold incl. engine load) vs Vision 0.7 s; 10-page scan: 6.8 s (terminal-spot variance 8.7–10.8 s) vs Vision 1.3 s; table image: 5.3 s vs 0.3 s |
+| Table structure | MinerU only: emits an HTML `<table>` with the header row intact and every cell recovered (`Area/Frequency/Last done/Next due/Signed` + rows incl. `Narcotics safe`); Apple Vision reads the same tokens correctly but FLAT (no structure) |
+| Text recall on synthetic scans | TIE — full-line recall equal on the fixed fixture; the one earlier miss ("…required wind") was the FIXTURE's clipped line, not an OCR gap (both engines identical) |
+| Memory (16 GB gate input) | doclib server RESIDENT with engines loaded ≈ 3.66 GiB; batch peak (server + workers + CLI, sampled during runs) ≈ 4.3 GiB transient. Fits a 16 GB Mac IF the server starts on demand and stops after the batch; NOT a resident companion. 8 GB M1 remains unclaimed |
+| Wire format | `content.content` markdown with `<!-- page N of M -->` markers; sha256 + `short_id` per doc; parse cache by content hash (`--force` bypasses) |
+| Decision | DEFAULT STAYS APPLE VISION for this phase — 5–30× faster at equal text recall on this fixture set; MinerU's advantage is structure (tables) and it costs 3.7 GiB resident. Default change (if ever) decided by the REAL scanned pharmacy corpus, not synthetic fixtures. Helper must be start/stop per batch (laya-serve pattern), never resident |
+
+**Not yet (next stages per plan):** Settings "document intelligence" disclosure gains the MinerU numbers + opt-in heavy tier; wider corpus (tables/forms, expired/dates); packaged-app end-to-end demo + relaunch persistence. MinerU heavy-tier benchmark is DONE (24 Oct; default unchanged — see its table).
 Nothing here transmits document content or extracted text off-device — all parsing, caching and classification are on-disk, on-this-Mac operations.
