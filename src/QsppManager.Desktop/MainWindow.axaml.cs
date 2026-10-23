@@ -138,10 +138,15 @@ public partial class MainWindow : Window
     }
 
     /// <summary>Page instance is single-owned: build the scale wrapper here, never
-    /// via a ContentTemplate (double-parent race during re-templating).</summary>
+    /// via a ContentTemplate (double-parent race during re-templating). When the
+    /// wrapper is replaced, unparent the old child FIRST — a control still parented
+    /// throws "The Control already has a parent" on the next wrap (logged 24 Oct
+    /// from a double theme-change; app survived, page rebuild did not).</summary>
+    private TextScaleContent? _pageWrapper;
     private void RebuildPageHost()
     {
-        PageHost.Content = _shell.CurrentPage is Control page ? new TextScaleContent { Child = page } : null;
+        if (_pageWrapper?.Child is not null) _pageWrapper.Child = null;
+        PageHost.Content = _pageWrapper = _shell.CurrentPage is Control page ? new TextScaleContent { Child = page } : null;
     }
 
     // ==================== window lifecycle ====================
