@@ -8,7 +8,7 @@ namespace QsppManager.Infrastructure.ProcessSort;
 /// low-text PDFs are ROUTED to the OCR tier instead of being mis-processed.
 /// Results are cached by source sha256 + parser, so unchanged files cost
 /// nothing on later runs. No network access happens anywhere in this class.</summary>
-public sealed class FolioExtractor(string cacheRoot, FolioOcr? ocr = null)
+public sealed class FolioExtractor(string cacheRoot, FolioOcrEngine? ocr = null)
 {
     /// <summary>Effectively EMPTY text (a scanned page contributes only OCR noise/zero
     /// characters) routes to the OCR tier. A short-but-real digital PDF (~90 chars) is
@@ -82,9 +82,9 @@ public sealed class FolioExtractor(string cacheRoot, FolioOcr? ocr = null)
             return RouteToOcr(fullPath, sha256, "no-helper",
                 "the Apple Vision OCR helper is not installed on this machine");
 
-        if (IsCached(sha256, FolioOcr.EngineKey))
+        if (IsCached(sha256, ocr!.EngineKeyName))
         {
-            var cached = JsonSerializer.Deserialize<Extraction>(File.ReadAllText(CachePathFor(sha256, FolioOcr.EngineKey)));
+            var cached = JsonSerializer.Deserialize<Extraction>(File.ReadAllText(CachePathFor(sha256, ocr!.EngineKeyName)));
             if (cached != null) return cached;
         }
 
@@ -97,7 +97,7 @@ public sealed class FolioExtractor(string cacheRoot, FolioOcr? ocr = null)
             // failures are NOT cached (a later run may retry an install path);
             // a timeout is cached as NeedsOcr so the batch stays resumable.
             Directory.CreateDirectory(cacheRoot);
-            File.WriteAllText(CachePathFor(sha256, FolioOcr.EngineKey), JsonSerializer.Serialize(result));
+            File.WriteAllText(CachePathFor(sha256, ocr!.EngineKeyName), JsonSerializer.Serialize(result));
         }
         return result;
     }
@@ -106,13 +106,25 @@ public sealed class FolioExtractor(string cacheRoot, FolioOcr? ocr = null)
     {
         var res = ocr!.Ocr(fullPath, null, 200, ct);
         return res.Ok
-            ? new Extraction(fullPath, sha256, FolioOcr.EngineKey, NeedsOcr: false, Ok: true, Error: "", PageCount: 1,
+            ? new Extraction(fullPath, sha256, ParserLabel(res), NeedsOcr: false, Ok: true, Error: "", PageCount: 1,
                 Pages: res.Pages.Select(p => new Page(p.Page, p.Text.Length, p.Text)).ToList())
-            : new Extraction(fullPath, sha256, FolioOcr.EngineKey, NeedsOcr: true, Ok: false, Error: $"OCR: {res.Error}", PageCount: 0, Pages: []);
+            : new Extraction(fullPath, sha256, ParserLabel(res), NeedsOcr: true, Ok: false, Error: $"OCR: {res.Error}", PageCount: 0, Pages: []);
     }
 
-    private static Extraction ToExtraction(FolioOcr.OcrResult r, string fullPath, string sha256) =>
-        new(fullPath, sha256, FolioOcr.EngineKey, NeedsOcr: false, Ok: true, Error: "",
+    /// <summary>The engine key the ITEM records for this extraction: engines whose
+    /// results self-identify (the helper JSON's engine field, e.g.
+    /// "apple-vision-2 (accurate, macOS 26.6)") are recorded by their stable prefix;
+    /// the wrapper key is only the fallback label.</summary>
+    private string ParserLabel(FolioOcr.OcrResult res)
+    {
+        if (!res.Ok || string.IsNullOrWhiteSpace(res.EngineIdentifier)) return ocr!.EngineKeyName;
+        var id = res.EngineIdentifier.Trim();
+        var paren = id.IndexOf(" (", StringComparison.Ordinal);
+        return paren > 0 ? id[..paren] : id;
+    }
+
+    private Extraction ToExtraction(FolioOcr.OcrResult r, string fullPath, string sha256) =>
+        new(fullPath, sha256, ParserLabel(r), NeedsOcr: false, Ok: true, Error: "",
             PageCount: r.PageCount, Pages: r.Pages.Select(p => new Page(p.Page, p.Text.Length, p.Text)).ToList());
 
     private Extraction OcrPdf(string fullPath, string sha256, CancellationToken ct)
@@ -124,10 +136,10 @@ public sealed class FolioExtractor(string cacheRoot, FolioOcr? ocr = null)
         var res = ocr!.Ocr(fullPath, null, 200, ct);
         return res.Ok
             ? (pageCount is { } count && count != res.PageCount
-                ? new Extraction(fullPath, sha256, FolioOcr.EngineKey, NeedsOcr: true, Ok: false,
+                ? new Extraction(fullPath, sha256, ParserLabel(res), NeedsOcr: true, Ok: false,
                     Error: $"OCR produced {res.PageCount} pages, PDF has {count}.", count, [])
                 : ToExtraction(res, fullPath, sha256))
-            : new Extraction(fullPath, sha256, FolioOcr.EngineKey, NeedsOcr: true, Ok: false,
+            : new Extraction(fullPath, sha256, ParserLabel(res), NeedsOcr: true, Ok: false,
                 Error: $"OCR: {res.Error}", PageCount: pageCount ?? 0, Pages: []);
     }
 

@@ -8,6 +8,7 @@ using QsppManager.Desktop.ViewModels;
 using QsppManager.Domain;
 using QsppManager.Domain.Services;
 using QsppManager.Infrastructure.Runtime;
+using QsppManager.Infrastructure.ProcessSort;
 
 namespace QsppManager.Desktop.Views;
 
@@ -127,7 +128,13 @@ public partial class SettingsView : UserControl
         var ocrMode = App.Folio.OcrMode;
         var stage2Line = App.Folio.Stage2Mode;
         intel.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
-            Text = $"Process and Sort runs entirely on this Mac. Text extraction: PdfPig for digital PDFs; image and scanned files go to the Apple Vision OCR tier ({ocrMode})." });
+            Text = $"Process and Sort runs entirely on this Mac. Text extraction: PdfPig for digital PDFs; image and scanned files go to the OCR tier ({ocrMode})." });
+        // Heavy tier (MinerU): opt-in, local-only, server started on demand by script.
+        var heavyInstalled = FolioHeavyOcr.LocateCli() is { };
+        intel.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
+            Text = heavyInstalled
+                ? "Heavy OCR tier available: MinerU 4 (standard, mineru-4-standard, 2.0 GB models, Apache-2.0) — opt-in in the Process and Sort dialog, works off the LOCAL loopback server, falls back to Apple Vision automatically when the server is off. Measured (24 GB Mac): slower (3–11 s/doc) but recovers TABLE STRUCTURE that flat OCR cannot. Start it with scripts/serve-mineru.sh when a batch needs it."
+                : "Heavy OCR tier (MinerU): not installed on this Mac. Run tools/ocr-heavy/setup-mineru.sh (setup) then models download (~2 GB, user-approved task). Optional; Apple Vision covers everything otherwise." });
         intel.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
             Text = $"Classification: deterministic matching against the live requirement text first (always authoritative); {stage2Line}" });
         intel.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap,

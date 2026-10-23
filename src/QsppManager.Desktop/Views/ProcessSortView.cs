@@ -24,6 +24,8 @@ public partial class ProcessSortDialog : Window
     private readonly ObservableCollection<Row> _rows = new();
     private readonly DataGrid _grid = new() { Height = 330, AutoGenerateColumns = false, IsReadOnly = true };
     private readonly ComboBox _batchPicker = new() { MinWidth = 560, PlaceholderText = "Batch history…" };
+    private readonly ComboBox _engineChoice = new() { MinWidth = 300 };
+    private string? _heavyCli;
     private readonly Button _bulkApprove = new();
     private readonly List<Guid> _batchIds = [];
     private CancellationTokenSource? _cts;
@@ -61,6 +63,21 @@ public partial class ProcessSortDialog : Window
             Ui.FormField("Output folder", _outputBox),
             chooseOutput));
 
+        // OCR engine per batch: the Apple Vision light tier is the default; the MinerU
+        // heavy tier appears only when its pinned CLI is installed (opt-in, local-only).
+        var engineChoices = new List<string> { "Apple Vision (default, on-device)" };
+        string? heavyCli = FolioHeavyOcr.LocateCli();
+        if (heavyCli is { }) engineChoices.Add("MinerU heavy (table structure; slower)");
+        _heavyCli = heavyCli;
+        _engineChoice.ItemsSource = engineChoices;
+        _engineChoice.SelectedIndex = 0;
+        _engineChoice.SelectionChanged += (_, _) =>
+        {
+            var heavy = _engineChoice.SelectedIndex == 1 && _heavyCli is { };
+            App.Folio.SetHeavyOcr(heavy, _heavyCli);
+        };
+        Ui.Ax(_engineChoice, "OCR engine", "Heavy tier needs the local server running: scripts/serve-mineru.sh. Everything stays on this Mac either way.");
+
         var approveBtn = Ui.PrimaryBtn("Approve selected…", axHelpText: "Correct or accept destinations for the selected file");
         _bulkApprove = Ui.PrimaryBtn("Approve proposed…", axHelpText: "Attach every clear proposal to its requirement — a human pressed the button once for the batch");
         var actionRow = Ui.Row(8,
@@ -84,7 +101,7 @@ public partial class ProcessSortDialog : Window
 
         var openReqs = Ui.PrimaryBtn("Open Requirements →", axHelpText: "See the attachments on their requirements");
         openReqs.Click += (_, _) => { Close(); _shell?.Navigate(ShellPage.Requirements); };
-        sp.Children.Add(Ui.Row(8, Ui.FormField("Batch history", _batchPicker), openReqs));
+        sp.Children.Add(Ui.Row(8, Ui.FormField("Batch history", _batchPicker), Ui.FormField("OCR engine", _engineChoice), openReqs));
         _batchPicker.SelectionChanged += async (_, _) => await LoadSelectedBatch();
 
         sp.Children.Add(_summary);

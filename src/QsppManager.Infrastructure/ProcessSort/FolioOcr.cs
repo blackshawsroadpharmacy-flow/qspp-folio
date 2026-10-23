@@ -9,11 +9,16 @@ namespace QsppManager.Infrastructure.ProcessSort;
 /// no request ever touches a network interface. Bounded per run: wall-clock timeout,
 /// no parallelism here (the batch processes one file at a time), and stdout JSON only.
 /// The helper path is located at App.Data("ocr") if bundled with the packaged app,
-/// else next to the running binary or the repo build/ directory — never downloaded.</summary>
-public sealed class FolioOcr(string helperPath)
+/// else next to the running binary or the repo build/ directory — never downloaded.
+/// This is the DEFAULT engine; the heavy tier (FolioHeavyOcr) is opt-in.</summary>
+public sealed class FolioOcr(string helperPath) : FolioOcrEngine
 {
     /// <summary>Stable engine/version key used in extraction-cache file names.</summary>
     public const string EngineKey = "apple-vision-2";
+
+    public override string EngineKeyName => EngineKey;
+    public override string UnavailableReason =>
+        "The Apple Vision OCR helper (qspp-ocr) is not available on this machine. Bundled with the packaged app.";
 
     public static string? LocateHelper()
     {
@@ -47,12 +52,9 @@ public sealed class FolioOcr(string helperPath)
         public string FullText => string.Join("\n", Pages.Select(p => p.Text).Where(t => t.Length > 0));
     }
 
-    public static OcrResult Unavailable =>
-        new(false, "The Apple Vision OCR helper (qspp-ocr) is not available on this machine. Bundled with the packaged app.", "", 0, []);
-
     /// <summary>OCR for one PDF page or a whole image. wall-clock timeout keeps a
     /// pathological page from stalling the batch; the item is then queued honestly.</summary>
-    public OcrResult Ocr(string fullPath, int? page, int dpi, CancellationToken ct = default)
+    public override FolioOcr.OcrResult Ocr(string fullPath, int? page, int dpi, CancellationToken ct = default)
     {
         if (!File.Exists(helperPath)) return Unavailable;
         var args = page is { } p ? $"--page {p} --dpi {dpi}" : $"--dpi {dpi}";

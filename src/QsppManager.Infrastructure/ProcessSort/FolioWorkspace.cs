@@ -24,20 +24,70 @@ public sealed class FolioWorkspace(
     AuditService audit,
     string folioCacheRoot)
 {
-    private FolioOcr? ocrEngine = FolioOcr.LocateHelper() is { } helper ? new FolioOcr(helper) : null;
+    private FolioOcrEngine? ocrEngine = FolioOcr.LocateHelper() is { } helper ? new FolioOcr(helper) : null;
     private FolioExtractor _extractor = null!;
     private FolioDecisionStage2? stage2;
 
-    public void SetOcrEngine(FolioOcr? engine) { ocrEngine = engine; _extractor = new FolioExtractor(folioCacheRoot, ocrEngine); }
+    public void SetOcrEngine(FolioOcr? engine) { ocrEngine = engine; heavyOcrEnabled = false; heavyCliPath = null; _extractor = new FolioExtractor(folioCacheRoot, ocrEngine); }
+
+    /// <summary>The heavy OCR tier (MinerU 4, standard tier, per-batch opt-in) is
+    /// enabled/disabled from Settings. When enabled AND the pinned CLI is installed,
+    /// scans route their OCR through the LOCAL MinerU doclib server; a server that
+    /// is off falls back to Apple Vision per file (never a failed file, never a
+    /// mis-file). When disabled, the engine stays Apple Vision. Any missing piece
+    /// degrades honestly — see OcrMode.</summary>
+    private sealed class HeavyWithVisionFallback(FolioHeavyOcr heavy, FolioOcr? vision) : FolioOcrEngine
+    {
+        public override string EngineKeyName => heavy.EngineKeyName;
+        public override string UnavailableReason => heavy.UnavailableReason;
+        public override FolioOcr.OcrResult Ocr(string fullPath, int? page, int dpi, CancellationToken ct = default)
+        {
+            var heavyRes = heavy.Ocr(fullPath, page, dpi, ct);
+            if (heavyRes.Ok) return heavyRes;
+            // ONLY "server not running" falls back: a real parse failure must stay
+            // honest (queued with its reason) rather than silently re-parsed.
+            if (heavyRes.Error.Contains(FolioHeavyOcr.ServerDownMarker, StringComparison.OrdinalIgnoreCase)
+                && vision is { } v)
+            {
+                var vres = v.Ocr(fullPath, page, dpi, ct);
+                return vres.Ok ? vres : heavyRes; // both failed → keep the heavy-tier reason visible
+            }
+            return heavyRes;
+        }
+    }
+    private bool heavyOcrEnabled;
+    private string? heavyCliPath;
+
+    /// <summary>Enable the opt-in heavy tier. Pass an explicit CLI path for tests;
+    /// null uses the standard discovery (env QSPP_MINERU_CLI → repo venv walk-up).</summary>
+    public void SetHeavyOcr(bool enabled, string? cliPath = null)
+    {
+        heavyOcrEnabled = enabled;
+        heavyCliPath = enabled ? (cliPath ?? FolioHeavyOcr.LocateCli()) : null;
+        // a CLI path that does not exist degrades quietly to the Vision engine —
+        // the heavy tier is opt-in, never load-bearing
+        if (heavyCliPath is { } p && !File.Exists(p)) heavyCliPath = null;
+        var vision = FolioOcr.LocateHelper() is { } helper ? new FolioOcr(helper) : null;
+        ocrEngine = heavyCliPath is { } path
+            ? new HeavyWithVisionFallback(new FolioHeavyOcr(path), vision)
+            : vision;
+        _extractor = new FolioExtractor(folioCacheRoot, ocrEngine);
+    }
+
+    public bool HeavyOcrReady => heavyOcrEnabled && heavyCliPath is not null;
 
     /// <summary>Stage-2 is opt-in wiring: only reachable when a LOCAL loopback
     /// decision server is up. A null or unreachable server leaves stage-1 exact.</summary>
     public void SetStage2(FolioDecisionStage2? client) => stage2 = client;
 
     /// <summary>What Settings shows the user about the active OCR tier.</summary>
-    public string OcrMode => ocrEngine == null
-        ? "queued honestly (the on-device helper is not installed)"
-        : "on-device, Apple Vision, no download";
+    public string OcrMode => ocrEngine switch
+    {
+        null => "queued honestly (no OCR engine is installed on this Mac)",
+        HeavyWithVisionFallback => "HEAVY tier (mineru-4-standard) opt-in; falls back to Apple Vision when the local server is off — nothing ever leaves this Mac",
+        FolioOcr => "on-device, Apple Vision, no download",
+        _ => $"on-device engine {ocrEngine.EngineKeyName}",
+    };
 
     /// <summary>What Settings shows about stage-2 (probe is loopback, 1 s).</summary>
     public string Stage2Mode
@@ -99,7 +149,12 @@ public sealed class FolioWorkspace(
                 SourceDirectory = sourceDirectory,
                 OutputDirectory = outputDirectory,
                 CreatedByUserId = session.UserId,
-                SettingsJson = JsonSerializer.Serialize(new { maxFileMb = 200, ocrMode = ocrEngine == null ? "queued (helper not installed)" : $"light ({FolioOcr.EngineKey}); heavy tier pending benchmark", model = FolioClassifier.Stage1Model }, FolioJson.Opts),
+                SettingsJson = JsonSerializer.Serialize(new
+                {
+                    maxFileMb = 200,
+                    ocrMode = OcrMode,
+                    model = FolioClassifier.Stage1Model,
+                }, FolioJson.Opts),
             };
             db.FolioBatches.Add(batch);
         }
@@ -131,7 +186,7 @@ public sealed class FolioWorkspace(
         batch.SkippedCount = scan.Skipped.Count;
         batch.ModeDescription = (ocrEngine == null
             ? "digital-pdf: pdfpig; docx: docx-openxml; ocr: queued (helper not installed)"
-            : $"digital-pdf: pdfpig; docx: docx-openxml; ocr: {FolioOcr.EngineKey} (on-device)")
+            : $"digital-pdf: pdfpig; docx: docx-openxml; ocr: {ocrEngine.EngineKeyName} (on-device)")
             + (stage2 != null && stage2.Available()
                 ? $"; stage-2: {FolioDecisionStage2.ModelName} (local, loopback)"
                 : "; decision model: deterministic-v1 (stage 1 only)");
