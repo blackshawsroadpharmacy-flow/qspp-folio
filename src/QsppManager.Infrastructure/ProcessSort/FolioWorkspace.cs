@@ -273,8 +273,15 @@ public sealed class FolioWorkspace(
                 return;
             }
 
-            // Sensitive gate BEFORE proposals: patient/staff/security content waits.
+            // Expiry detection on the document's own text (conservative, keyword-adjacent
+            // only; a failure to detect stores nothing and the human still sees the doc).
             var text = extraction.FullText;
+            FolioExpiryGuess? expiry = null;
+            try { expiry = FolioExpiry.Detect(text); }
+            catch { /* detection must never break the batch */ }
+            item.ExpiryJson = expiry?.ToJson() ?? "{}";
+
+            // Sensitive gate BEFORE proposals: patient/staff/security content waits.
             var sensitive = SensitiveDetector.Detect(text, Path.GetFileName(item.SourceRelativePath));
             item.SensitiveReasonsJson = JsonSerializer.Serialize(sensitive, FolioJson.Opts);
             var cleanText = text ?? "";
@@ -373,10 +380,15 @@ public sealed class FolioWorkspace(
         }
         else
         {
-            var (result, _) = work.ImportEvidence(fullPath, title, Enum.Parse<EvidenceKind>(kind, true),
-                null, null, containsPatientData, patientDataAttestation, session);
+            // Detection rides the approval (and was visible in the review dialog): the
+            // document's own expiry lands as the evidence's effective-to + hint, still
+            // editable in Documents. No detection → no dates invented.
+            var detected = FolioExpiryGuess.FromJson(item.ExpiryJson);
+            var (result, created) = work.ImportEvidence(fullPath, title, Enum.Parse<EvidenceKind>(kind, true),
+                null, detected?.ExpiresOn, containsPatientData, patientDataAttestation, session);
             if (!result.Ok) return (result, null);
-            var created = db.EvidenceItems.AsNoTracking().OrderByDescending(e => e.CreatedAtUtc).First(e => e.FileName == Path.GetFileName(fullPath) && e.Sha256 == item.SourceSha256);
+            if (created == null) return (ServiceResult.Fail("Evidence import returned no record."), null);
+            if (detected is { } guess) created.ExpiresHintText = guess.Hint;
             evidenceId = created.Id;
             item.EvidenceItemId = evidenceId;
         }

@@ -17,6 +17,34 @@ public static class FolioJson
     };
 }
 
+/// <summary>An expiry found IN a document's text during pipeline processing. The date plus
+/// the exact source line (hint) so the human can verify the detection before or after
+/// approval. Never a stored status — expired/due-soon is computed at display time.</summary>
+public sealed record FolioExpiryGuess(DateOnly ExpiresOn, string Hint)
+{
+    public static readonly FolioExpiryGuess None = new(default, "");
+    public static FolioExpiryGuess? FromJson(string json)
+    {
+        try
+        {
+            var g = JsonSerializer.Deserialize<FolioExpiryGuess>(json, FolioJson.Opts);
+            return g is { } guess && guess.ExpiresOn != default ? guess : null;
+        }
+        catch { return null; }
+    }
+    public string ToJson() => ExpiresOn == default ? "{}" : JsonSerializer.Serialize(this, FolioJson.Opts);
+
+    /// <summary>Display status computed LIVE from today's date (stored dates stay honest):
+    /// "expired", "due soon" (within 90 days), or "" (current).</summary>
+    public string Status(DateOnly today)
+    {
+        if (ExpiresOn == default) return "";
+        if (ExpiresOn < today) return "expired";
+        if (ExpiresOn <= today.AddDays(90)) return "due soon";   // inclusive 90-day window
+        return "";
+    }
+}
+
 /// <summary>One "Process and Sort" run: a source directory scanned, classified and staged
 /// into a QSPP evidence folio at an output location. The batch is resumable: items persist
 /// their state, so an interrupted run picks up where it stopped.</summary>
@@ -78,6 +106,13 @@ public class FolioItem
     public string DestinationClonesJson { get; set; } = "[]"; // published folio paths for this item
     public string ErrorText { get; set; } = "";
     public string SensitiveReasonsJson { get; set; } = "[]";
+
+    /// <summary>Expiry detected IN THE DOCUMENT TEXT during processing:
+    /// {"expiresOn":"2024-03-31","hint":"policy expiry 31 March 2024 (lapsed)"} or "{}".
+    /// A detection, never an assertion (the source line rides along so the human can
+    /// verify it); copied to EvidenceItem at approval, still editable there. Expired /
+    /// due-soon status is COMPUTED for display, never stored — a stored status rots.</summary>
+    public string ExpiryJson { get; set; } = "{}";
 
     public DateTime AddedAtUtc { get; set; } = DateTime.UtcNow;
     public DateTime? PublishedAtUtc { get; set; }

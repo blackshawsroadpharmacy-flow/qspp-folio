@@ -485,6 +485,10 @@ namespace QsppManager.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("EvidenceItemId")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("ExpiryJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<long>("FileBytes")
                         .HasColumnType("INTEGER");
 

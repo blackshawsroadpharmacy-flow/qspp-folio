@@ -311,12 +311,23 @@ public partial class ProcessSortDialog : Window
         if (!string.IsNullOrEmpty(i.ErrorText)) return i.ErrorText;
         try
         {
+            var expiry = ExpiryDetailOf(i);
             var props = JsonSerializer.Deserialize<List<FolioSuggestion>>(i.ProposalsJson) ?? [];
             if (props.Count > 0 && i.State is FolioItemState.Proposed or FolioItemState.MultipleCandidates)
-                return "→ " + string.Join(", ", props.Take(3).Select(p => $"{p.Ref} ({p.Score})"));
+                return "→ " + string.Join(", ", props.Take(3).Select(p => $"{p.Ref} ({p.Score})")) + expiry;
         }
         catch { /* detail is best-effort */ }
         return i.ParserUsed.Length > 0 && PageCountOf(i) > 0 ? $"parsed via {i.ParserUsed}, {i.PageCount} pages" : "";
+    }
+
+    /// <summary>The detection shown on the review row: date + live status, quiet by design
+    /// (the human verifies the document; the app only reports what the text says).</summary>
+    private static string ExpiryDetailOf(FolioItem i)
+    {
+        var guess = FolioExpiryGuess.FromJson(i.ExpiryJson);
+        if (guess == null) return "";
+        var status = guess.Status(DateOnly.FromDateTime(DateTime.Today));
+        return $"; expiry {guess.ExpiresOn:dd MMM yyyy}" + (status.Length > 0 ? $" ({status})" : "");
     }
 
     private static int PageCountOf(FolioItem i) => i.PageCount;
@@ -367,6 +378,7 @@ public partial class FolioApproveDialog : Window
 
         sp.Children.Add(Ui.FormField("Evidence title", _title));
         sp.Children.Add(Ui.FormField("Kind — PolicyOrSop, Certificate, Record, Register, TrainingRecord, PhotoOrScan, Other", _kind));
+        sp.Children.Add(_expiryLine);
         sp.Children.Add(_patient);
         sp.Children.Add(Ui.FormField("Redaction attestation", _attestation));
 
@@ -380,6 +392,22 @@ public partial class FolioApproveDialog : Window
         AttachedToVisualTree += (_, _) => LoadAll();
     }
 
+    private readonly TextBlock _expiryLine = new()
+    {
+        Classes = { "small" }, TextWrapping = TextWrapping.Wrap, Foreground = Ui.Br("Brush.Muted"), IsVisible = false,
+    };
+
+    private void ShowExpiryDetection(FolioItem item)
+    {
+        var guess = FolioExpiryGuess.FromJson(item.ExpiryJson);
+        if (guess == null) { _expiryLine.IsVisible = false; return; }
+        var status = guess.Status(DateOnly.FromDateTime(DateTime.Today));
+        _expiryLine.Text = $"Expiry detected in the document: {guess.ExpiresOn:dd MMM yyyy}"
+            + (status.Length > 0 ? $" ({status})" : "")
+            + $". It will be recorded on the attached evidence as its end date — correct it in Documents if the document says otherwise. From: {guess.Hint}";
+        _expiryLine.IsVisible = true;
+    }
+
     private void LoadAll()
     {
         try
@@ -388,6 +416,7 @@ public partial class FolioApproveDialog : Window
             var props = JsonSerializer.Deserialize<List<FolioSuggestion>>(item.ProposalsJson) ?? [];
             _all = App.Folio.CandidatesForDialog(props);
             _title.Text = DefaultTitleFrom(item.SourceRelativePath);
+            ShowExpiryDetection(item);
             Refilter("");
             // Preselect the top proposal when the classifier was confident.
             var top = props.FirstOrDefault();
