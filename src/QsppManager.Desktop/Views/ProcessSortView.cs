@@ -311,6 +311,12 @@ public partial class ProcessSortDialog : Window
         if (!string.IsNullOrEmpty(i.ErrorText)) return i.ErrorText;
         try
         {
+            // held rows say WHY: the detector's reasons, in the human words it recorded
+            if (i.State == FolioItemState.SensitiveHold)
+            {
+                var reasons = JsonSerializer.Deserialize<List<string>>(i.SensitiveReasonsJson) ?? [];
+                if (reasons.Count > 0) return string.Join("; ", reasons);
+            }
             var expiry = ExpiryDetailOf(i);
             var props = JsonSerializer.Deserialize<List<FolioSuggestion>>(i.ProposalsJson) ?? [];
             if (props.Count > 0 && i.State is FolioItemState.Proposed or FolioItemState.MultipleCandidates)
