@@ -281,5 +281,12 @@ requirements and the REM-01…19 surveillance asks. (Full plan: `docs/plans/2026
 | Wire format | `content.content` markdown with `<!-- page N of M -->` markers; sha256 + `short_id` per doc; parse cache by content hash (`--force` bypasses) |
 | Decision | DEFAULT STAYS APPLE VISION for this phase — 5–30× faster at equal text recall on this fixture set; MinerU's advantage is structure (tables) and it costs 3.7 GiB resident. Default change (if ever) decided by the REAL scanned pharmacy corpus, not synthetic fixtures. Helper must be start/stop per batch (laya-serve pattern), never resident |
 
-**Not yet (next stages per plan):** Settings "document intelligence" disclosure gains the MinerU numbers + opt-in heavy tier; wider corpus (tables/forms, expired/dates); packaged-app end-to-end demo + relaunch persistence. MinerU heavy-tier benchmark is DONE (24 Oct; default unchanged — see its table).
+**Wider corpus round (24 Oct):** the real requirement corpus run against harder shapes.
+| Measurement | Result |
+|---|---|
+| Real-corpus pipeline tests (`ProcessSortWiderCorpusTests`, 7 tests): the repo's actual 451-requirement + REM seed copied into a temp DB | ✔ | Table-layout PDFs, expired certificates ("policy expiry 31 March 2024 (lapsed)"), garbled non-word text, blank scans, two-topic documents, Medicare data INSIDE table cells, batch failure isolation |
+| Findings | ✔ | (1) A generic bookings TABLE hits a whole CLUSTER of corpus refs (bookings rules 4/6/7/8/10, business continuity, security register) — no single winner from generic wording; the pipeline honestly offers the cluster, which is exactly the human-choice it should be. (2) Expired certificates classify to REM-06 by wording AS DESIGNED — expiry detection is genuinely not built (not-yet; the human approval step carries the dates). (3) Garbled text and blank scans abstain — never invent a destination. (4) Sensitive detection sees Medicare numbers inside table layouts. (5) Raster-noise 60 dpi: Vision reads ~29 fragment tokens (1 real word); MinerU refuses to fabricate (one image block, no text) — destroyed scans land Needs Review on both engines |
+| Suite | ✔ | 116 + 7 = 123 tests green (93 Integration + 30 Domain) |
+
+**Not yet (next stages per plan):** Settings "document intelligence" disclosure gains the MinerU numbers + opt-in heavy tier UI; evidence expiry detection (dates carried by the human approval step for now); packaged-app end-to-end demo + relaunch persistence. MinerU heavy-tier benchmark DONE (24 Oct; default unchanged). Wider-corpus round DONE (24 Oct).
 Nothing here transmits document content or extracted text off-device — all parsing, caching and classification are on-disk, on-this-Mac operations.
