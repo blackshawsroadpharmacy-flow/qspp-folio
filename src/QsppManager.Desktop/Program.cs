@@ -1,5 +1,6 @@
 using Serilog;
 using Avalonia;
+using QsppManager.Desktop.ViewModels;
 
 namespace QsppManager.Desktop;
 
@@ -12,6 +13,13 @@ internal static class Program
     public static bool Hold { get; private set; }
     public static int RenderWidth { get; private set; } = 1280;
     public static int RenderHeight { get; private set; } = 940;
+    /// <summary>--page &lt;name&gt;: render a signed-in shell screen (Today, Requirements,
+    /// Documents, Tasks, Registers, People, Assessments, Library, PrintCentre, Settings)
+    /// instead of the bare Today composition. Absent → the original Today-only render.</summary>
+    public static ShellPage? RenderPage { get; private set; }
+    /// <summary>--theme light|dark: deterministic render theme (arg wins over the old env
+    /// knob; default light).</summary>
+    public static string? RenderTheme { get; private set; }
 
     [STAThread]
     public static int Main(string[] args)
@@ -27,6 +35,8 @@ internal static class Program
         {
             if (args[i] == "--width" && int.TryParse(args[i + 1], out var w)) RenderWidth = w;
             if (args[i] == "--height" && int.TryParse(args[i + 1], out var h)) RenderHeight = h;
+            if (args[i] == "--page" && Enum.TryParse<ShellPage>(args[i + 1], true, out var p)) RenderPage = p;
+            if (args[i] == "--theme" && args[i + 1] is "light" or "dark") RenderTheme = args[i + 1];
         }
 
         var bootstrap = new LoggerConfiguration()

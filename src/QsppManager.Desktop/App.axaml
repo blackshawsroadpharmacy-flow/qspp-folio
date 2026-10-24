@@ -143,6 +143,10 @@
 
   <Application.Styles>
     <FluentTheme />
+    <!-- DataGrid control themes: the split package ships its own Fluent theme; without
+         this include every DataGrid has no template and draws nothing (blank tables on
+         Evidence, Library, Tasks, People, Registers, Print centre — root-caused 24 Oct). -->
+    <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
 
     <!-- Base typography: inherits everywhere -->
     <Style Selector="Window, UserControl">

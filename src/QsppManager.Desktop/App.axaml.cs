@@ -1,7 +1,9 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
+using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
@@ -114,7 +116,12 @@ public partial class App : Avalonia.Application
             {
                 // Off-screen verification render: the window is the lifetime's main window so
                 // closing it ends the process; the capture tick sets the exit code first.
-                desktop.MainWindow = BuildOffscreenWindow(renderPath);
+                var page = Program.RenderPage;
+                // Deterministic render theme (arg wins; default light) BEFORE any brush resolves.
+                ApplyAppearance(Program.RenderTheme ?? "light");
+                desktop.MainWindow = page is { } p && p is not (ShellPage.Loading or ShellPage.Login or ShellPage.Onboarding)
+                    ? BuildShellWindow(p, renderPath)
+                    : BuildOffscreenWindow(renderPath);
                 base.OnFrameworkInitializationCompleted();
                 return;
             }
@@ -122,6 +129,134 @@ public partial class App : Avalonia.Application
             Main = desktop.MainWindow;
         }
         base.OnFrameworkInitializationCompleted();
+    }
+
+    /// <summary>Off-screen render of a signed-in shell screen (the 10 destinations): the
+    /// same chrome as MainWindow.axaml (sidebar, toolbar, page host, text-scale wrapper)
+    /// composed in code, without window behaviours. The page is built exactly as the app
+    /// builds it, against the scratch data dir; --hold keeps the window for the OS capture.</summary>
+    private static Window BuildShellWindow(ShellPage page, string path)
+    {
+        var window = new Window
+        {
+            Title = "Shell offscreen render",
+            Width = Program.RenderWidth,
+            Height = Program.RenderHeight,
+            ShowActivated = false,
+            ShowInTaskbar = false,
+            SystemDecorations = Avalonia.Controls.WindowDecorations.None,
+            Background = Helpers.Brush("Brush.Paper"),
+        };
+
+        try
+        {
+            App.Session = new UserSession(Guid.Empty, "owner", "Owner", UserRole.OwnerAdmin);
+            App.Config.SidebarCollapsed = false;   // renders show the expanded sidebar, deterministic
+            var shell = new ShellViewModel();
+            shell.SignIn(App.Session);             // lands on Today; recurring occurrences generated (scratch DB)
+            if (page != ShellPage.Today) shell.Navigate(page);
+
+            // ---- sidebar (mirrors MainWindow.axaml: 232pt list, hairline divider right)
+            var navList = new ListBox { Classes = { "nav" }, ItemsSource = shell.NavItems };
+            navList.SelectedItem = shell.SelectedNav;
+            navList.ItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<NavItem>((item, _) =>
+            {
+                var sp = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
+                sp.Children.Add(new LucideGlyph { Glyph = item?.Icon ?? "circle-dashed", GlyphSize = 17, GlyphBrush = Helpers.Brush("Brush.Ink") });
+                sp.Children.Add(new TextBlock { Text = item?.Label ?? "", VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis });
+                return sp;
+            });
+            var sidebar = new Border
+            {
+                Width = 232,
+                Background = Helpers.Brush("Brush.Sidebar"),
+                BorderBrush = Helpers.Brush("Brush.Divider"),
+                BorderThickness = new Thickness(0, 0, 1, 0),
+            };
+            var sidebarGrid = new Grid { RowDefinitions = new RowDefinitions("50,*") };
+            sidebar.Child = sidebarGrid;
+            Grid.SetRow(navList, 1);
+            sidebarGrid.Children.Add(navList);
+
+            // ---- toolbar (mirrors MainWindow.axaml exactly: toggle, title, spacer, search, palette, session)
+            var toolbarGrid = new Grid
+            {
+                ColumnDefinitions = new ColumnDefinitions("Auto,10,Auto,*,Auto,10,Auto,Auto,16"),
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(16, 8, 14, 0),
+            };
+            toolbarGrid.Children.Add(new Button
+            {
+                Classes = { "ghost" }, Height = 30, Width = 32, Padding = new Thickness(4, 0),
+                Content = new LucideGlyph { Glyph = "panel-left-close", GlyphSize = 15, GlyphBrush = Helpers.Brush("Brush.Ink") },
+            });
+            var heading = new TextBlock { Classes = { "h3" }, Text = shell.PageTitle, VerticalAlignment = VerticalAlignment.Center };
+            Grid.SetColumn(heading, 2);
+            toolbarGrid.Children.Add(heading);
+            var search = new TextBox { Width = 250, Height = 30, FontSize = 12.5, Watermark = "Filter current screen ⌘F" };
+            Grid.SetColumn(search, 4);
+            toolbarGrid.Children.Add(search);
+            var palette = new Button
+            {
+                Classes = { "ghost" }, Height = 30, Padding = new Thickness(6, 0),
+                Content = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal, Spacing = 6,
+                    Children =
+                    {
+                        new LucideGlyph { Glyph = "command", GlyphSize = 13, GlyphBrush = Helpers.Brush("Brush.Ink") },
+                        new TextBlock { Text = "Commands ⌘K", FontSize = 11.5, VerticalAlignment = VerticalAlignment.Center },
+                    },
+                },
+            };
+            Grid.SetColumn(palette, 6);
+            toolbarGrid.Children.Add(palette);
+            var sessionText = new TextBlock { Classes = { "small" }, Text = shell.SessionLabel, VerticalAlignment = VerticalAlignment.Center };
+            Grid.SetColumn(sessionText, 7);
+            toolbarGrid.Children.Add(sessionText);
+
+            var toolbar = new Border
+            {
+                Height = 52,
+                BorderBrush = Helpers.Brush("Brush.Divider"),
+                BorderThickness = new Thickness(0, 0, 0, 1),
+                Child = toolbarGrid,
+            };
+
+            // ---- page host with the app's text-scale wrapper
+            var host = new ContentControl
+            {
+                Background = Helpers.Brush("Brush.Paper"),
+                Content = new TextScaleContent { Child = shell.CurrentPage is Control p ? p : null },
+            };
+
+            var right = new Grid { RowDefinitions = new RowDefinitions("52,*") };
+            right.Children.Add(toolbar);
+            Grid.SetRow(host, 1);
+            right.Children.Add(host);
+
+            var root = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*") };
+            root.Children.Add(sidebar);
+            Grid.SetColumn(right, 1);
+            root.Children.Add(right);
+            window.Content = root;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Shell render setup failed for {Page}", page);
+            Console.Error.WriteLine($"render failed: {ex.Message}");
+            Environment.ExitCode = 1;
+        }
+
+        // Hold open for the external capture; the process is killed from outside.
+        var kick = new Avalonia.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        kick.Tick += (_, _) =>
+        {
+            kick.Stop();
+            Log.Information("Shell render hold: {Page} at {W}x{H}", page, window.Width, window.Height);
+        };
+        kick.Start();
+        return window;
     }
 
     /// <summary>Today redesign verification (24 Oct): build the Today screen against the real
@@ -143,9 +278,6 @@ public partial class App : Avalonia.Application
         TodayScreen? screen = null;
         try
         {
-            // Verification-only knob: QSPP_RENDER_THEME=dark renders the dark dictionary.
-            if (Environment.GetEnvironmentVariable("QSPP_RENDER_THEME") is { } t && t.Length > 0)
-                Current.RequestedThemeVariant = t == "dark" ? ThemeVariant.Dark : ThemeVariant.Light;
             App.Session = new UserSession(Guid.Empty, "owner", "Owner", UserRole.OwnerAdmin);
             var vm = new TodayViewModel(new ShellViewModel(), null!);
             screen = new TodayScreen(vm);
