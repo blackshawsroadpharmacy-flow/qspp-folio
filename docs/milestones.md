@@ -404,3 +404,8 @@ Branch `design/premium-polish`; brief `docs/plans/2026-10-24-hermes-premium-poli
 - After-kit renders (real scratch snapshot, 1440×900): `docs/screenshots/after-kit/01-today` …
   `10-settings`; dark Today + real-MainWindow chrome verified from source.
 - Suite: 198 green on the finished tree.
+## Phase 3 (2026-10-24): display titles (hermes-premium-polish)
+
+- `RequirementDisplay.Resolve` (Domain, pure): editorial wins; key-task wording verbatim capped 70 at word boundary, subject-fragment rejection; UAG section numbers + map suffixes stripped; standard subclause subjects used when unique inside the kind; rule headings used when unique; clause headings for T&C; QSPP/Policy trim for policies; short hit-list summaries verbatim. Area + DomainLabel + KindLabel with acronyms expanded; `AcronymMap` (UAG, STD, T&C, REM, Hit-List, P1-P4; 8CPA deliberately not mapped).
+- On the real corpus: 259/284 key tasks, 36/40 standards, 26/26 UAG sections, 23/23 T&C, 8/8 policies resolve without writing; 25 key-task fragments, 4 colliding clause subjects, 47 rules, 13 hit lists flagged NeedsHumanTitle.
+- 22 unit tests (52 Domain total green; 168 Integration unchanged = 220). Sample for approval: docs/review/display-titles-sample.md (20 key tasks, 6 standards, 6 rules, 8 hit lists).
