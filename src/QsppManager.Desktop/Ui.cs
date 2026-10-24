@@ -282,6 +282,9 @@ public static class Ui
     public static class FontFamilies
     {
         public const string Mono = "JetBrains Mono, SF Mono, Menlo, Consolas, monospace";
+        /// <summary>Editorial serif for the Today hero numeral and serif titles (pharmacopoeia look).</summary>
+        public const string Serif = "Georgia, Hoefler Text, Times New Roman";
+        public const string Ui = "SF Pro Text, SF Pro, Host Grotesk, Helvetica Neue, Helvetica, Arial";
     }
 
     /// <summary>Lucide icon rendered from the vendored SVG (ISC-licensed) as stroke

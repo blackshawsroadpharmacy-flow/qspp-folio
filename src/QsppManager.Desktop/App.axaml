@@ -31,6 +31,16 @@
           <Color x:Key="Color.HoverTint">#66163F35</Color>
           <Color x:Key="Color.DangerBg">#F3E4DB</Color>
           <Color x:Key="Color.OkBg">#E9F0DC</Color>
+          <!-- Today hero ground: designed values per theme. Light: ink ground, surface text.
+               Dark: a designed deep green below, never a naive inversion. -->
+          <Color x:Key="Color.HeroMuted">#C7D8CC</Color>
+          <Color x:Key="Color.HeroDiv">#3D5C51</Color>
+          <!-- Accent overrides: the toolkit default accent is BLUE; this app's identity is green. -->
+          <Color x:Key="SystemAccentColor">#23614D</Color>
+          <Color x:Key="SystemAccentColorDark1">#1E5542</Color>
+          <Color x:Key="SystemAccentColorDark2">#194737</Color>
+          <Color x:Key="SystemAccentColorLight1">#31725B</Color>
+          <Color x:Key="SystemAccentColorLight2">#3F8469</Color>
           <SolidColorBrush x:Key="Brush.Paper" Color="{StaticResource Color.Paper}" />
           <SolidColorBrush x:Key="Brush.White" Color="{StaticResource Color.White}" />
           <SolidColorBrush x:Key="Brush.Surface" Color="{StaticResource Color.White}" />
@@ -52,6 +62,10 @@
           <SolidColorBrush x:Key="Brush.HoverTint" Color="{StaticResource Color.HoverTint}" />
           <SolidColorBrush x:Key="Brush.DangerBg" Color="{StaticResource Color.DangerBg}" />
           <SolidColorBrush x:Key="Brush.OkBg" Color="{StaticResource Color.OkBg}" />
+          <SolidColorBrush x:Key="Brush.HeroBg" Color="{StaticResource Color.Ink}" />
+          <SolidColorBrush x:Key="Brush.HeroFg" Color="{StaticResource Color.White}" />
+          <SolidColorBrush x:Key="Brush.HeroMuted" Color="{StaticResource Color.HeroMuted}" />
+          <SolidColorBrush x:Key="Brush.HeroDiv" Color="{StaticResource Color.HeroDiv}" />
         </ResourceDictionary>
 
         <!-- ============ DARK — derived from the same green identity ============ -->
@@ -98,6 +112,16 @@
           <SolidColorBrush x:Key="Brush.HoverTint" Color="{StaticResource Color.HoverTint}" />
           <SolidColorBrush x:Key="Brush.DangerBg" Color="{StaticResource Color.DangerBg}" />
           <SolidColorBrush x:Key="Brush.OkBg" Color="{StaticResource Color.OkBg}" />
+          <Color x:Key="Color.HeroBg">#1D312A</Color>
+          <SolidColorBrush x:Key="Brush.HeroBg" Color="{StaticResource Color.HeroBg}" />
+          <SolidColorBrush x:Key="Brush.HeroFg" Color="{StaticResource Color.Ink}" />
+          <SolidColorBrush x:Key="Brush.HeroMuted" Color="{StaticResource Color.Muted}" />
+          <SolidColorBrush x:Key="Brush.HeroDiv" Color="{StaticResource Color.ControlBorder}" />
+          <Color x:Key="SystemAccentColor">#3F9A76</Color>
+          <Color x:Key="SystemAccentColorDark1">#358465</Color>
+          <Color x:Key="SystemAccentColorDark2">#2C6F54</Color>
+          <Color x:Key="SystemAccentColorLight1">#4CAC86</Color>
+          <Color x:Key="SystemAccentColorLight2">#5CBE96</Color>
         </ResourceDictionary>
 
       </ResourceDictionary.ThemeDictionaries>
@@ -107,6 +131,8 @@
       <FontFamily x:Key="Font.Mono">avares://QsppManager.Desktop/Assets/Fonts/JetBrainsMono-Regular.ttf#JetBrains Mono, SF Mono, Menlo, Consolas, monospace</FontFamily>
       <FontFamily x:Key="Font.MonoMedium">avares://QsppManager.Desktop/Assets/Fonts/JetBrainsMono-Medium.ttf#JetBrains Mono Medium, SF Mono, Menlo, monospace</FontFamily>
       <FontFamily x:Key="Font.Brand">avares://QsppManager.Desktop/Assets/Fonts/HostGrotesk.ttf#Host Grotesk, SF Pro Text, Helvetica Neue</FontFamily>
+      <!-- Editorial serif for the Today hero numeral and serif titles (pharmacopoeia set) -->
+      <FontFamily x:Key="Font.Serif">Georgia, Hoefler Text, Times New Roman</FontFamily>
 
       <!-- Fluent theme tab-header font: shrink from the 24px default (M7.2) -->
       <x:Double x:Key="TabItemHeaderFontSize">13.5</x:Double>
@@ -214,6 +240,28 @@
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderBrush" Value="Transparent" />
       <Setter Property="Foreground" Value="{DynamicResource Brush.Green}" />
+    </Style>
+
+    <!-- Today screen (24 Oct): eyebrow labels, editorial serif, hero panel text, ledger rows -->
+    <Style Selector="TextBlock.eyebrow"><Setter Property="FontSize" Value="10.5" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="LetterSpacing" Value="1.2" /><Setter Property="Foreground" Value="{DynamicResource Brush.Muted}" /></Style>
+    <Style Selector="TextBlock.heroNum"><Setter Property="FontFamily" Value="{StaticResource Font.Serif}" /><Setter Property="FontSize" Value="104" /><Setter Property="FontWeight" Value="Light" /><Setter Property="Foreground" Value="{DynamicResource Brush.HeroFg}" /></Style>
+    <Style Selector="TextBlock.heroDays"><Setter Property="FontSize" Value="17" /><Setter Property="Foreground" Value="{DynamicResource Brush.HeroFg}" /></Style>
+    <Style Selector="TextBlock.heroTitle"><Setter Property="FontSize" Value="16" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="Foreground" Value="{DynamicResource Brush.HeroFg}" /></Style>
+    <Style Selector="TextBlock.heroDate"><Setter Property="FontSize" Value="13" /><Setter Property="Opacity" Value="0.9" /><Setter Property="Foreground" Value="{DynamicResource Brush.HeroFg}" /></Style>
+    <Style Selector="TextBlock.heroMeta"><Setter Property="FontSize" Value="13" /><Setter Property="Foreground" Value="{DynamicResource Brush.HeroMuted}" /></Style>
+    <Style Selector="TextBlock.serifTitle"><Setter Property="FontFamily" Value="{StaticResource Font.Serif}" /><Setter Property="FontSize" Value="26" /></Style>
+    <Style Selector="TextBlock.serifCount"><Setter Property="FontFamily" Value="{StaticResource Font.Serif}" /><Setter Property="FontSize" Value="17" /></Style>
+    <Style Selector="TextBlock.monoDate"><Setter Property="FontFamily" Value="{StaticResource Font.Mono}" /><Setter Property="FontSize" Value="12.5" /><Setter Property="Foreground" Value="{DynamicResource Brush.Ink}" /></Style>
+    <Style Selector="Button.ledger">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="6,4" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="CornerRadius" Value="4" />
+    </Style>
+    <Style Selector="Button.ledger:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource Brush.RowHover}" />
     </Style>
 
     <!-- Inputs -->

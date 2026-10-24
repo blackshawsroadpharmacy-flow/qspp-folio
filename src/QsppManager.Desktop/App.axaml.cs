@@ -2,8 +2,11 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Media.Imaging;
 using Avalonia.Styling;
+using Avalonia.VisualTree;
 using Microsoft.EntityFrameworkCore;
+using QsppManager.Desktop.ViewModels;
 using QsppManager.Infrastructure.Persistence;
 using QsppManager.Infrastructure.Printing;
 using QsppManager.Infrastructure.ProcessSort;
@@ -12,6 +15,8 @@ using QsppManager.Infrastructure.Seed;
 using QsppManager.Infrastructure.Services;
 using QsppManager.Infrastructure.Storage;
 using Serilog;
+using QsppManager.Desktop.Views;
+using QsppManager.Domain;
 
 namespace QsppManager.Desktop;
 
@@ -105,10 +110,100 @@ public partial class App : Avalonia.Application
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
+            if (Program.RenderOffscreen is { } renderPath)
+            {
+                // Off-screen verification render: the window is the lifetime's main window so
+                // closing it ends the process; the capture tick sets the exit code first.
+                desktop.MainWindow = BuildOffscreenWindow(renderPath);
+                base.OnFrameworkInitializationCompleted();
+                return;
+            }
             desktop.MainWindow = new MainWindow();
             Main = desktop.MainWindow;
         }
         base.OnFrameworkInitializationCompleted();
+    }
+
+    /// <summary>Today redesign verification (24 Oct): build the Today screen against the real
+    /// workspace (read-only), render it through a never-activated composited window, save a
+    /// PNG at the requested path, then close the window (which ends the process). Nothing is
+    /// written to production tables.</summary>
+    private static Window BuildOffscreenWindow(string path)
+    {
+        var window = new Window
+        {
+            Title = "Today offscreen render",
+            Width = 1280,
+            Height = 940,
+            ShowActivated = false,
+            ShowInTaskbar = false,
+            SystemDecorations = Avalonia.Controls.WindowDecorations.None,
+        };
+
+        TodayScreen? screen = null;
+        try
+        {
+            // Verification-only knob: QSPP_RENDER_THEME=dark renders the dark dictionary.
+            if (Environment.GetEnvironmentVariable("QSPP_RENDER_THEME") is { } t && t.Length > 0)
+                Current.RequestedThemeVariant = t == "dark" ? ThemeVariant.Dark : ThemeVariant.Light;
+            App.Session = new UserSession(Guid.Empty, "owner", "Owner", UserRole.OwnerAdmin);
+            var vm = new TodayViewModel(new ShellViewModel(), null!);
+            screen = new TodayScreen(vm);
+            vm.Refresh();
+            screen.PostRefresh(vm);
+            window.Content = new Border
+            {
+                Background = Helpers.Brush("Brush.Paper") ?? Avalonia.Media.Brushes.White,
+                Child = screen.Root,
+            };
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Offscreen render setup failed");
+            Console.Error.WriteLine($"render failed: {ex.Message}");
+            Environment.ExitCode = 1;
+        }
+
+        var kick = new Avalonia.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(900) };
+        kick.Tick += (_, _) =>
+        {
+            kick.Stop();
+            if (screen is null) { window.Close(); return; }
+            if (Program.Hold)
+            {
+                // Hold open for an external OS capture (screencapture -l); the process is
+                // killed from outside. Log the window dimensions once for the record.
+                Log.Information("Offscreen hold: content {C} root {R}", window.Content is Border b2 ? b2.Bounds.Size : default, screen.Root.Bounds.Size);
+                return;
+            }
+            try
+            {
+                // Force a full layout pass before capture; render the CONTENT root (the
+                // window surface itself composites as transparent → black in PNG).
+                var content = (Border)window.Content!;
+                content.Background = Helpers.Brush("Brush.Paper");
+                window.UpdateLayout();
+                var root = screen.Root;
+                Log.Information("Offscreen bounds: window content {Content} root {Root}", content.Bounds.Size, root.Bounds.Size);
+                root.InvalidateVisual();
+                var scale = window.RenderScaling;
+                var size = new PixelSize((int)(1280 * scale), (int)(940 * scale));
+                using var bmp = new RenderTargetBitmap(size, new Vector(scale, scale));
+                bmp.Render(root);
+                using (var fs = File.Create(path))
+                    bmp.Save(fs);
+                Log.Information("Offscreen render written: {Path}", path);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Offscreen render failed");
+                Console.Error.WriteLine($"render failed: {ex.Message}");
+                if (Environment.ExitCode == 0) Environment.ExitCode = 1;
+            }
+            window.Close();
+        };
+        kick.Start();
+        return window;
     }
 
     public static void ApplyAppearance(string mode)
