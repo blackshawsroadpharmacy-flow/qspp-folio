@@ -146,7 +146,28 @@ public static class Ui
     public static Button DangerBtn(string text, System.Windows.Input.ICommand? command = null, int minWidth = 0, string? axName = null, string? axHelpText = null)
         => Btn(text, command, "destructive", minWidth, axName, axHelpText);
 
-    public static StackPanel BtnRow(params Button[] buttons) => Row(8, buttons);
+    /// <summary>Button rows WRAP instead of clipping: a horizontal StackPanel pushes its
+    /// fifth button past the window edge where it becomes invisible-until-resized (found
+    /// in the audit: the requirement evidence actions). WrapPanel keeps every action
+    /// visible at any window width; buttons land on a second line when needed. Avalonia's
+    /// pinned WrapPanel has no Spacing, so the gap is a per-button margin (right + bottom)
+    /// — edges keep the visual rhythm of a spaced row and the wrapped second line.</summary>
+    public static Control BtnRow(params Button[] buttons)
+    {
+        var wp = new WrapPanel { Orientation = Orientation.Horizontal };
+        foreach (var x in buttons)
+        {
+            x.Margin = new(0, 0, 8, 8);
+            wp.Children.Add(x);
+        }
+        return wp;
+    }
+
+    /// <summary>Apply the same wrap-gap rhythm to a hand-built WrapPanel of buttons.</summary>
+    public static void WrapGaps(WrapPanel row)
+    {
+        foreach (var c in row.Children) if (c is Control ct) ct.Margin = new(0, 0, 8, 8);
+    }
 
     // ---------- form ----------
     public static Control Labeled(string label, Control field)

@@ -87,7 +87,7 @@ public partial class PrintCentreView : UserControl
 
         sp.Children.Add(_resultBar);
 
-        var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        var row = new WrapPanel { Orientation = Orientation.Horizontal };
         row.Children.Add(Ui.PrimaryBtn("Render + preview").With(b => { b.Height = 32; b.Click += async (_, _) => await RenderAsync(); }));
         row.Children.Add(Ui.Btn("Send to printer").With(b => { b.Height = 32; b.Click += (_, _) => PrintLast(); }));
         row.Children.Add(Ui.GhostBtn("Open PDF externally").With(b => { b.Height = 32; b.Click += (_, _) =>
@@ -95,6 +95,7 @@ public partial class PrintCentreView : UserControl
             if (File.Exists(_lastRenderedPdf)) Helpers.OpenWithSystemViewer(_lastRenderedPdf);
             else _resultBar.Text = "Render the document first.";
         }; }));
+        Ui.WrapGaps(row);
         sp.Children.Add(row);
 
         // ---- recent print jobs ----

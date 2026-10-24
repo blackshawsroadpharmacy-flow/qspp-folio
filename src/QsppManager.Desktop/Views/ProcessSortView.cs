@@ -57,11 +57,13 @@ public partial class ProcessSortDialog : Window
         var chooseOutput = new Button { Content = "Choose…" };
         chooseSource.Click += async (_, _) => { var d = await PickFolder(); if (d != null) { _sourceDir = d; _sourceBox.Text = d; } };
         chooseOutput.Click += async (_, _) => { var d = await PickFolder(); if (d != null) { _outputDir = d; _outputBox.Text = d; } };
-        sp.Children.Add(Ui.Row(8,
-            Ui.FormField("Documents folder", _sourceBox),
-            chooseSource,
-            Ui.FormField("Output folder", _outputBox),
-            chooseOutput));
+        var folderRow = new WrapPanel { Orientation = Orientation.Horizontal };
+        folderRow.Children.Add(Ui.FormField("Documents folder", _sourceBox));
+        folderRow.Children.Add(chooseSource);
+        folderRow.Children.Add(Ui.FormField("Output folder", _outputBox));
+        folderRow.Children.Add(chooseOutput);
+        Ui.WrapGaps(folderRow);
+        sp.Children.Add(folderRow);
 
         // OCR engine per batch: the Apple Vision light tier is the default; the MinerU
         // heavy tier appears only when its pinned CLI is installed (opt-in, local-only).

@@ -103,7 +103,7 @@ public partial class SettingsView : UserControl
         // Data + integrity
         var data = new StackPanel { Spacing = 10 };
         data.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap, Text = $"Database, attachments, rendered PDFs and backups live under: {AppData.Root}\nManaged attachments are content-addressed (sha256). The audit trail is append-only and hash-chained — tamper-EVIDENCE, not tamper-proofing: a machine administrator can still touch files." });
-        var verify = new Button { Content = "Verify audit chain now" };
+        var verify = new Button { Content = "Verify audit chain now", Classes = { "verify" } };
         verify.Click += (_, _) =>
         {
             var (valid, broken) = App.Audit.VerifyChain();
@@ -111,9 +111,14 @@ public partial class SettingsView : UserControl
         };
         var backup = new Button { Content = "Back up database + attachments…" };
         backup.Click += (_, _) => { _ = Backup(); };
-        var restoreBtn = new Button { Content = "Restore from backup…" };
+        var restoreBtn = new Button { Content = "Restore from backup…", Classes = { "destructive" } };
         restoreBtn.Click += (_, _) => { _ = RestoreAsync(); };
-        data.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { verify, backup, restoreBtn } });
+        var dataActions = new WrapPanel { Orientation = Orientation.Horizontal };
+        dataActions.Children.Add(verify);
+        dataActions.Children.Add(backup);
+        dataActions.Children.Add(restoreBtn);
+        Ui.WrapGaps(dataActions);
+        data.Children.Add(dataActions);
         data.Children.Add(_message);
         sp.Children.Add(Ui.Section("Data location and integrity", data));
 

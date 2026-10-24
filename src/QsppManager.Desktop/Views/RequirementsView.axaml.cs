@@ -169,7 +169,7 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
 
     private Control StatusRow(RequirementDetail d)
     {
-        var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
+        var row = new WrapPanel { Orientation = Orientation.Horizontal };
         row.Children.Add(Ui.Chip(ReadinessLabel(d.State.Readiness), d.State.Readiness switch
         {
             RequirementReadiness.ManagerVerified or RequirementReadiness.AssessorAccepted => "ok",
@@ -214,6 +214,7 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
             };
             row.Children.Add(assign);
         }
+        Ui.WrapGaps(row);
         return row;
     }
 
@@ -264,11 +265,12 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
         st.Children.Add(savenext);
 
         st.Children.Add(new TextBlock { Text = "Move readiness", Classes = { "h3" } });
-        var rowB = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        var rowB = new WrapPanel();
         rowB.Children.Add(ReadinessBtn("Mark in progress", RequirementReadiness.InProgress, d));
         rowB.Children.Add(ReadinessBtn("Ready for manager review", RequirementReadiness.ReadyForReview, d));
-        rowB.Children.Add(ReadinessBtn("Manager verifies", RequirementReadiness.ManagerVerified, d));
-        rowB.Children.Add(ReadinessBtn("Record assessor outcome", RequirementReadiness.AssessorAccepted, d));
+        rowB.Children.Add(ReadinessBtn("Manager verifies", RequirementReadiness.ManagerVerified, d, "verify"));
+        rowB.Children.Add(ReadinessBtn("Record assessor outcome", RequirementReadiness.AssessorAccepted, d, "verify"));
+        Ui.WrapGaps(rowB);
         st.Children.Add(rowB);
         st.Children.Add(new TextBlock
         {
@@ -279,9 +281,10 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
         return st;
     }
 
-    private Button ReadinessBtn(string label, RequirementReadiness target, RequirementDetail d)
+    private Button ReadinessBtn(string label, RequirementReadiness target, RequirementDetail d, string classes = "")
     {
         var b = new Button { Content = label, Height = 32 };
+        foreach (var cls in classes.Split(' ', StringSplitOptions.RemoveEmptyEntries)) b.Classes.Add(cls);
         b.Click += async (_, _) =>
         {
             string? ext = "";
@@ -304,7 +307,11 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
 
         grid = new DataGrid
         {
-            AutoGenerateColumns = false, IsReadOnly = true, Height = 180,
+            AutoGenerateColumns = false, IsReadOnly = true,
+            // Proportion rule (M7.2): the grid grows with the actual number of links up to
+            // the page's working height — an empty or one-row grid no longer leaves a
+            // 180 px dead void between the heading and the actions.
+            Height = Math.Min(180, 46 + 32 * Math.Max(1, d.Links.Count)),
             ItemsSource = d.Links.Select(l => new
             {
                 l.State,
@@ -322,14 +329,26 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
         grid.Columns.Add(new DataGridTextColumn { Header = "File", Binding = new Avalonia.Data.Binding("FileName"), Width = new DataGridLength(180) });
         grid.Columns.Add(new DataGridTextColumn { Header = "Effective period", Binding = new Avalonia.Data.Binding("EffectiveLabel"), Width = new DataGridLength(170) });
         grid.Columns.Add(new DataGridTextColumn { Header = "Patient data", Binding = new Avalonia.Data.Binding("PatientDataLabel"), Width = new DataGridLength(100) });
-        st.Children.Add(grid);
+        if (d.Links.Count == 0)
+            st.Children.Add(new TextBlock
+            {
+                Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
+                Text = "No evidence linked yet — attach the first document with the green action below.",
+            });
+        else
+            st.Children.Add(grid);
 
-        var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        // Actions WRAP (never clip): this row overflowed the window edge — the fifth
+        // button ("Needs rework") was invisible until the window was widened, the audit's
+        // reported defect. Colour language: primary green = attach (the creating action);
+        // green outline = the positive verify claim; amber outline = corrective rework.
+        var row = new WrapPanel();
         row.Children.Add(PrimaryBtn("Attach and link a document", async (_, _) => await AttachAndLinkAsync(d)));
         row.Children.Add(new Button { Content = "Link existing evidence", Height = 32 }.With(_ => _.Click += async (_, _) => await LinkExistingAsync(d)));
         row.Children.Add(new Button { Content = "Submit selected for review", Height = 32 }.With(_ => _.Click += (_, _) => ReviewEvidenceSelected(EvidenceReviewState.ReadyForReview)));
-        row.Children.Add(new Button { Content = "Manager verifies selected", Height = 32 }.With(_ => _.Click += (_, _) => ReviewEvidenceSelected(EvidenceReviewState.ManagerVerified)));
-        row.Children.Add(new Button { Content = "Needs rework", Height = 32 }.With(_ => _.Click += (_, _) => ReviewEvidenceSelected(EvidenceReviewState.NeedsRework)));
+        row.Children.Add(new Button { Content = "Manager verifies selected", Height = 32, Classes = { "verify" } }.With(_ => _.Click += (_, _) => ReviewEvidenceSelected(EvidenceReviewState.ManagerVerified)));
+        row.Children.Add(new Button { Content = "Needs rework", Height = 32, Classes = { "caution" } }.With(_ => _.Click += (_, _) => ReviewEvidenceSelected(EvidenceReviewState.NeedsRework)));
+        Ui.WrapGaps(row);
         st.Children.Add(row);
         st.Children.Add(new TextBlock
         {

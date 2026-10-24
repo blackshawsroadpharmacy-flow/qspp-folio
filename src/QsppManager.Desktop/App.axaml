@@ -158,7 +158,7 @@
     </Style>
     <Style Selector="Button.primary">
       <Setter Property="Background" Value="{DynamicResource Brush.Green}" />
-      <Setter Property="Foreground" Value="#FFFEF8" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.White}" />
       <Setter Property="BorderBrush" Value="{DynamicResource Brush.Green}" />
     </Style>
     <Style Selector="Button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
@@ -179,8 +179,36 @@
     </Style>
     <Style Selector="Button.destructive">
       <Setter Property="Background" Value="{DynamicResource Brush.Alert}" />
-      <Setter Property="Foreground" Value="#FFFEF8" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.White}" />
       <Setter Property="BorderBrush" Value="{DynamicResource Brush.Alert}" />
+    </Style>
+    <!-- Colour language, so action buttons read at a glance:
+         primary  = filled green   — the one action that CREATES something here
+         verify   = green outline  — a POSITIVE compliance claim (verify/accept), lighter than primary
+         caution  = amber outline  — a CORRECTIVE action (send back, needs rework)
+         destructive = filled alert red — withdrawal/removal
+         everything else stays the quiet outlined default -->
+    <Style Selector="Button.verify">
+      <Setter Property="Background" Value="{DynamicResource Brush.Surface}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.Green}" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.Green}" />
+    </Style>
+    <Style Selector="Button.verify:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource Brush.OkBg}" />
+    </Style>
+    <Style Selector="Button.verify:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource Brush.OkBg}" />
+    </Style>
+    <Style Selector="Button.caution">
+      <Setter Property="Background" Value="{DynamicResource Brush.Surface}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.Caution}" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.Caution}" />
+    </Style>
+    <Style Selector="Button.caution:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource Brush.CautionBg}" />
+    </Style>
+    <Style Selector="Button.caution:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource Brush.CautionBg}" />
     </Style>
     <Style Selector="Button.ghost">
       <Setter Property="Background" Value="Transparent" />

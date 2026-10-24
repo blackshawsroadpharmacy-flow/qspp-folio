@@ -53,14 +53,18 @@ public partial class DocumentsView : UserControl
         _evidenceHost = Host(_grid, 260, "files", "No evidence records yet", "Attach the first evidence file — it is copied into managed storage with a checksum.");
         sp.Children.Add(_evidenceHost.Panel);
 
-        var row = Ui.Row(8,
+        // Seven actions on ONE row clipped the window edge in the audit; two filled-green
+        // primaries also diluted which action creates here. Colour language:
+        // ONE primary (attach), the verify claim green-outlined, rework amber-outlined,
+        // the rest quiet outlined defaults — and the row WRAPS at any window width.
+        var row = Ui.BtnRow(
             PrimaryBtn("Attach evidence file", "Choose a file — it is imported with signature and checksum verification",
                 async (_, _) => await AttachAsync()),
-            PrimaryBtn("Process and Sort…", "Turn a folder of documents into a sorted, reviewable evidence folio",
+            Btn("Process and Sort…", "Turn a folder of documents into a sorted, reviewable evidence folio",
                 async (_, _) => await OpenProcessSortAsync()),
             Btn("Submit selected for review", "Move the selected evidence to ready for review", (_, _) => ReviewSelected(EvidenceReviewState.ReadyForReview)),
-            Btn("Manager verifies", "Manager-verifies the selected evidence", (_, _) => ReviewSelected(EvidenceReviewState.ManagerVerified)),
-            Btn("Needs rework", "Send the selected evidence back for rework", (_, _) => ReviewSelected(EvidenceReviewState.NeedsRework)),
+            Btn("Manager verifies", "Manager-verifies the selected evidence", (_, _) => ReviewSelected(EvidenceReviewState.ManagerVerified), "verify"),
+            Btn("Needs rework", "Send the selected evidence back for rework", (_, _) => ReviewSelected(EvidenceReviewState.NeedsRework), "caution"),
             Btn("Open managed file", "Open the selected managed evidence file in the system viewer", (_, _) => OpenSelected()),
             Btn("Supersede with newer version", "Replace the selected approved evidence with a newer version", async (_, _) => await SupersedeAsync()));
         sp.Children.Add(row);

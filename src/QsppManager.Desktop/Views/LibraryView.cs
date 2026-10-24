@@ -57,12 +57,13 @@ public partial class LibraryView : UserControl, IPageSearchFocus
         Ui.Ax(_results, "Corpus search results", "Double-click a result to open the record");
         _results.ItemTemplate = SearchRowTemplate();
 
-        var searchRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        var searchRow = new WrapPanel();
         _searchBox.Width = 640;
         _searchBox.KeyDown += (_, e) => { if (e.Key == Avalonia.Input.Key.Enter) RunSearch(); };
         searchRow.Children.Add(_searchBox);
         searchRow.Children.Add(Ui.PrimaryBtn("Search", null, 110, null, "Run the corpus search")
             .With(b => { b.Height = 32; b.Click += (_, _) => RunSearch(); }));
+        Ui.WrapGaps(searchRow);
 
         _resultsHost.Children.Add(_results);
         _resultsHost.Children.Add(_resultsEmpty);
@@ -83,7 +84,7 @@ public partial class LibraryView : UserControl, IPageSearchFocus
         _sources.Columns.Add(Ui.Col("Full text", "Indexed", 80));
         _sources.Columns.Add(Ui.Col("Provenance", "Provenance", 230));
 
-        var docRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        var docRow = new WrapPanel();
         docRow.Children.Add(Ui.Btn("Open source PDF via system viewer").With(b =>
         {
             b.Height = 32;
@@ -120,6 +121,7 @@ public partial class LibraryView : UserControl, IPageSearchFocus
                 Load();
             }));
 
+        Ui.WrapGaps(docRow);
         return Ui.Section("Source documents (verified corpus)", Ui.Col(10, _sources, docRow));
     }
 
@@ -131,10 +133,11 @@ public partial class LibraryView : UserControl, IPageSearchFocus
         _issues.Columns.Add(Ui.Col("Status", "Status", 150));
         _issues.Columns.Add(Ui.Col("Conservative planning", "Planning", 280));
 
-        var issueRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        var issueRow = new WrapPanel();
         issueRow.Children.Add(Ui.Btn("Show competing sources").With(b => { b.Height = 32; b.Click += (_, _) => ShowIssueSources(); }));
         issueRow.Children.Add(Ui.Btn("Acknowledge").With(b => { b.Height = 32; b.Click += (_, _) => Acknowledge(); }));
         issueRow.Children.Add(Ui.Btn("Resolve…").With(b => { b.Height = 32; b.Click += async (_, _) => await ResolveAsync(); }));
+        Ui.WrapGaps(issueRow);
 
         return Ui.Section("Interpretation issues deliberately kept open", Ui.Col(10,
             Ui.Small("Where the program sources disagree (or wording needs confirmation), the app refuses to pick a side silently. The conservative reading is used for planning dates and is labelled PLANNING ONLY everywhere it appears. Acknowledging records that the pharmacy has seen it; resolving requires a note recording who settled it and which source is authoritative."),
@@ -159,7 +162,7 @@ public partial class LibraryView : UserControl, IPageSearchFocus
     private Control CompareSection()
     {
         _diffLines.ItemTemplate = DiffRowTemplate();
-        var cmpRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        var cmpRow = new WrapPanel();
         cmpRow.Children.Add(Ui.Btn("Compare full text of two documents…").With(b => { b.Height = 32; b.Click += async (_, _) =>
         {
             var docs = App.Workspace.AllSourceDocuments().Where(d => d.Sha256Hex.Length > 0).ToList();
@@ -174,6 +177,7 @@ public partial class LibraryView : UserControl, IPageSearchFocus
             _diffLines.ItemsSource = lines.Take(150).Select(l => new DiffRow(l)).ToList();
         }; }));
 
+        Ui.WrapGaps(cmpRow);
         return Ui.Section("Compare source versions", Ui.Col(10, cmpRow,
             Ui.Small("Diff runs on the cached full-text extractions (both documents get extracted on demand). '+ ' lines exist only in the newer document; '- ' lines only in the older."),
             _diffLines));
