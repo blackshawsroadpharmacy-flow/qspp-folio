@@ -48,6 +48,7 @@ public partial class App : Avalonia.Application
         AppData.EnsureAll();
         RestoreStagedBackupIfAny();
         RepoRoot = FindRepoRoot();
+        DisplayTitleSources.RepoRootHint = RepoRoot;   // display titles load from the same seed location
         DemoMode = Environment.GetEnvironmentVariable("QSPP_DEMO") == "1";
 
         Log.Logger = new LoggerConfiguration()

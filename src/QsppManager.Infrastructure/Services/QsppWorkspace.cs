@@ -5,6 +5,7 @@ using QsppManager.Domain;
 using QsppManager.Domain.Entities;
 using QsppManager.Domain.Services;
 using QsppManager.Infrastructure.Persistence;
+using QsppManager.Infrastructure.Seed;
 using QsppManager.Infrastructure.Storage;
 
 namespace QsppManager.Infrastructure.Services;
@@ -39,14 +40,16 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
                     OpenTasks = (from t in db.Tasks where t.RequirementId == r.Id && t.State == TaskState.Open select t).Count(),
                 };
         var users = db.Users.AsNoTracking().ToDictionary(u => u.Id, u => u.DisplayName);
+        var titles = DisplayTitles().ToDictionary(t => t.Id, t => t);
         var rows = new List<RequirementRow>();
         foreach (var x in q)
         {
-            if (x.state == null) rows.Add(new RequirementRow(x.r.Id, x.r.RefKind, x.r.Ref, x.r.Title, x.r.Domain, Applicability.Unknown, RequirementReadiness.NotStarted, "", true, "", x.EvidenceCount, x.OpenTasks));
+            var t = titles[x.r.Id.ToString()];
+            if (x.state == null) rows.Add(new RequirementRow(x.r.Id, x.r.RefKind, x.r.Ref, x.r.Title, x.r.Domain, Applicability.Unknown, RequirementReadiness.NotStarted, "", true, "", x.EvidenceCount, x.OpenTasks, t.Title, t.Area, t.KindLabel, t.DomainLabel));
             else rows.Add(new RequirementRow(x.r.Id, x.r.RefKind, x.r.Ref, x.r.Title, x.r.Domain,
                 x.state.Applicability, x.state.Readiness,
                 x.state.OwnerUnassigned ? "" : users.GetValueOrDefault(x.state.OwnerUserId, "(unknown)"),
-                x.state.OwnerUnassigned, x.state.NextAction, x.EvidenceCount, x.OpenTasks));
+                x.state.OwnerUnassigned, x.state.NextAction, x.EvidenceCount, x.OpenTasks, t.Title, t.Area, t.KindLabel, t.DomainLabel));
         }
         _ = session; // reviewer read-only still sees the tree; restricted content filters arrive in M4
         return rows;
@@ -70,7 +73,20 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
         var tasks = db.Tasks.AsNoTracking().Where(t => t.RequirementId == requirementId).OrderBy(t => t.DueDate).ToList();
         var issues = UnresolvedIssuesFor(r);
         _ = session;
-        return new RequirementDetail(r, state, owner, src, links, tasks, DeadlinesFor(r, state), issues);
+        return new RequirementDetail(r, state, owner, src, links, tasks, DeadlinesFor(r, state), issues,
+            DisplayTitles().First(t => t.Id == r.Id.ToString()));
+    }
+
+    private List<DisplayTitle>? _displayTitlesCache;
+
+    /// <summary>Display titles for the whole corpus, memoized per workspace. The full set is
+    /// required every time: heading-derived titles are unique only within their whole kind,
+    /// so a single-requirement resolve would silently show an ambiguous shared heading.</summary>
+    public List<DisplayTitle> DisplayTitles()
+    {
+        if (_displayTitlesCache == null)
+            _displayTitlesCache = Seed.DisplayTitleSources.ResolveAll(db.Requirements.IgnoreQueryFilters().AsNoTracking().ToList());
+        return _displayTitlesCache;
     }
 
     private List<InterpretationIssue> UnresolvedIssuesFor(Requirement r)

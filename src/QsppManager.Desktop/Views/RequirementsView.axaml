@@ -1,31 +1,50 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:v="using:QsppManager.Desktop.Views"
              x:Class="QsppManager.Desktop.Views.RequirementsView">
-  <Grid ColumnDefinitions="392,*">
+  <Grid ColumnDefinitions="408,Auto,*">
     <Border Grid.Column="0" BorderBrush="{DynamicResource Brush.Divider}" BorderThickness="0,0,1,0" Background="{DynamicResource Brush.Surface}">
-      <DockPanel Margin="12,10,8,8">
-        <TextBox x:Name="FilterBox" DockPanel.Dock="Top" Watermark="Filter by reference or title" />
-        <TextBlock x:Name="CountLabel" DockPanel.Dock="Top" Classes="monoSm" Margin="2,8,0,0" />
+      <DockPanel Margin="14,12,10,8">
+        <!-- Segmented view switcher (master plan §4): the corpus reads four different ways. -->
+        <WrapPanel x:Name="Segments" DockPanel.Dock="Top" Margin="0,0,0,8">
+          <Button x:Name="SegArea" Classes="seg" Content="By area" />
+          <Button x:Name="SegRemote" Classes="seg" Content="Remote round" />
+          <Button x:Name="SegHitlist" Classes="seg" Content="Readiness list" />
+          <Button x:Name="SegRules" Classes="seg" Content="Rules and terms" />
+        </WrapPanel>
+        <TextBox x:Name="FilterBox" DockPanel.Dock="Top" Watermark="Filter by title or reference" />
         <Button x:Name="BulkAssign" DockPanel.Dock="Top" Margin="2,8,0,0"
                 Content="Assign unassigned to me" Height="28" HorizontalContentAlignment="Center"
                 HorizontalAlignment="Left" Background="{DynamicResource Brush.Sage}"
                 Foreground="{DynamicResource Brush.Green}" BorderThickness="0" />
         <ListBox x:Name="ReqList" Classes="list" Margin="4,8,4,0" Background="Transparent">
-          <ListBox.ItemTemplate>
-            <DataTemplate>
-              <StackPanel Spacing="2" Margin="0">
-                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis" />
-                <StackPanel Orientation="Horizontal" Spacing="7">
-                  <TextBlock Text="{Binding Ref}" Classes="monoSm" Foreground="{DynamicResource Brush.Green}" />
-                  <TextBlock Text="{Binding ReadinessLabel}" Classes="small" />
+          <ListBox.DataTemplates>
+            <DataTemplate DataType="v:ListHeaderEntry">
+              <Grid ColumnDefinitions="*,Auto" Margin="10,7,0,2">
+                <TextBlock Text="{Binding Label}" Classes="eyebrow" TextTrimming="CharacterEllipsis" Margin="0,0,4,0" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                  <TextBlock Text="{Binding Count}" Classes="small" Foreground="{DynamicResource Brush.Muted}" />
+                  <TextBlock Text="{Binding Chevron}" Classes="small" Foreground="{DynamicResource Brush.Muted}" />
                 </StackPanel>
-                <TextBlock Text="{Binding OwnerNote}" Classes="small" TextTrimming="CharacterEllipsis" />
-              </StackPanel>
+              </Grid>
             </DataTemplate>
-          </ListBox.ItemTemplate>
+            <DataTemplate DataType="v:ListLeafEntry">
+              <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" Margin="3,3,0,3">
+                <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding Headline}"
+                           FontWeight="SemiBold" FontSize="13" TextWrapping="Wrap" MaxLines="2" />
+                <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" Spacing="6" Margin="0,2,0,0">
+                  <Ellipse Width="6" Height="6" Fill="{Binding DotBrush}" VerticalAlignment="Center" />
+                  <TextBlock Text="{Binding StatusWord}" Classes="small" Foreground="{DynamicResource Brush.Muted}" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding RefCode}" Classes="monoSm"
+                           Foreground="{DynamicResource Brush.Muted}" VerticalAlignment="Center" />
+              </Grid>
+            </DataTemplate>
+          </ListBox.DataTemplates>
         </ListBox>
       </DockPanel>
     </Border>
-    <ContentControl x:Name="Detail" Grid.Column="1" />
+    <GridSplitter Grid.Column="1" Width="6" Background="Transparent" />
+    <ContentControl x:Name="Detail" Grid.Column="2" />
   </Grid>
 </UserControl>

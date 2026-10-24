@@ -384,7 +384,8 @@ public class TodayViewModel(ShellViewModel shell, TodayView view) : ViewModelBas
         return sb.ToString().ToLowerInvariant();
     }
     private Dictionary<Guid, string> RequirementTitleCache() =>
-        App.Workspace.RequirementRows(App.Session).ToDictionary(r => r.Id, r => r.Ref);
+        // Ledger labels read as jobs: code, then the display title (never source wording).
+        App.Workspace.RequirementRows(App.Session).ToDictionary(r => r.Id, r => $"{r.Ref} · {r.DisplayTitleText}");
 
     private static string ReqLabel(Dictionary<Guid, string> titles, Guid? reqId)
         => reqId.HasValue && titles.TryGetValue(reqId.Value, out var t) ? t : "no linked requirement";

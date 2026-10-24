@@ -14,7 +14,9 @@ public record ServiceResult
     public static ServiceResult Fail(string error) => new() { Ok = false, Error = error };
 }
 
-/// <summary>Row for the requirement tree/browser.</summary>
+/// <summary>Row for the requirement tree/browser. The display-title fields come from the
+/// read-only RequirementDisplay layer (editorial overrides included); Title stays the raw
+/// source title for search-by-code paths and anywhere the source wording must render.</summary>
 public record RequirementRow(
     Guid Id,
     RefKind RefKind,
@@ -27,7 +29,11 @@ public record RequirementRow(
     bool OwnerUnassigned,
     string NextAction,
     int EvidenceCount,
-    int OpenTaskCount);
+    int OpenTaskCount,
+    string DisplayTitleText,
+    string Area,
+    string KindLabel,
+    string DomainLabel);
 
 public record RequirementDetail(
     Requirement Requirement,
@@ -37,7 +43,8 @@ public record RequirementDetail(
     List<EvidenceLinkRow> Links,
     List<TaskItem> Tasks,
     List<DeadlineInfo> Deadlines,
-    List<InterpretationIssue> RelatedIssues);
+    List<InterpretationIssue> RelatedIssues,
+    DisplayTitle Display);
 
 public record EvidenceLinkRow(
     Guid LinkId,

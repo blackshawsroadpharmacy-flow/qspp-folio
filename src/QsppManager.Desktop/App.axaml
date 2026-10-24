@@ -375,6 +375,37 @@
       <Setter Property="Padding" Value="0" />
     </Style>
 
+    <!-- Phase 4 §4: segmented view switcher (Requirements, then Tasks/Registers in phase 5).
+    Pill buttons, 4px apart; the active one sits on SelBg with Ink text (class .on). -->
+    <Style Selector="Button.seg">
+      <Setter Property="Height" Value="26" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="FontWeight" Value="Medium" />
+      <Setter Property="Padding" Value="10,0" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Margin" Value="0,0,4,0" />
+      <Setter Property="Background" Value="{DynamicResource Brush.Surface}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.ControlBorder}" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.Muted}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.seg:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource Brush.Sage}" />
+    </Style>
+    <Style Selector="Button.seg.on">
+      <Setter Property="Background" Value="{DynamicResource Brush.SelBg}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.SelBg}" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.Ink}" />
+    </Style>
+    <Style Selector="Button.seg.on:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource Brush.SelBg}" />
+    </Style>
+    <Style Selector="Button.seg.on:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource Brush.SelBg}" />
+    </Style>
+
     <!-- 3F: the toolbar filter field (Mac search look: sage fill, no border, radius 7) -->
     <Style Selector="TextBox.searchMac">
       <Setter Property="Background" Value="{DynamicResource Brush.Sage}" />

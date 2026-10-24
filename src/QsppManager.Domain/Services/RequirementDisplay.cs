@@ -64,11 +64,38 @@ public static class RequirementDisplay
         return result;
     }
 
-    /// <summary>Build an id-keyed editorial set from a JSON map of requirement id → human title.</summary>
+    /// <summary>Build an id-keyed editorial set from a JSON map of requirement id → human
+    /// title. Entries may be plain id → title strings, or the reviewed schema objects
+    /// written to seed/display-titles.json: { "title": …, "basis": "editorial", "reviewed": … }.</summary>
     public static Dictionary<string, string> ParseEditorialJson(string json)
     {
-        var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
-        return dict is null ? new Dictionary<string, string>() : new Dictionary<string, string>(dict);
+        var parsed = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json);
+        var dict = new Dictionary<string, string>();
+        if (parsed is null) return dict;
+        foreach (var (id, el) in parsed)
+            dict[id] = el.ValueKind == JsonValueKind.String
+                ? el.GetString() ?? ""
+                : el.ValueKind == JsonValueKind.Object
+                    && el.TryGetProperty("title", out var t)
+                    && t.ValueKind == JsonValueKind.String
+                    ? t.GetString() ?? "" : "";
+        return dict.Where(kv => kv.Value != "").ToDictionary(kv => kv.Key, kv => kv.Value);
+    }
+
+    /// <summary>Ids that carry an unreviewed flag in the reviewed-schema file. Read for
+    /// honesty trails (owner hasn't signed off individual titles yet); titles are taken
+    /// regardless — the flag is a review-lane marker, not a display filter.</summary>
+    public static HashSet<string> ParseEditorialUnreviewed(string json)
+    {
+        var parsed = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json);
+        var set = new HashSet<string>();
+        if (parsed is null) return set;
+        foreach (var (id, el) in parsed)
+            if (el.ValueKind == JsonValueKind.Object
+                && el.TryGetProperty("reviewed", out var r)
+                && r.ValueKind == JsonValueKind.False)
+                set.Add(id);
+        return set;
     }
 
     private static (string title, DisplayTitleBasis basis) Derive(
@@ -229,6 +256,11 @@ public static class RequirementDisplay
         }
         return counts;
     }
+
+    /// <summary>The import key every seed row is identified by (kind|sourceDoc|ref, compared
+    /// case-insensitively). Editorial overrides are stored under the human seed id and
+    /// translated through this tuple, so no database table ever changes.</summary>
+    public static string TupleKey(Requirement r) => $"{r.RefKind}|{r.SourceDocFile}|{r.Ref}";
 
     /// <summary>Area: the section or clause the requirement belongs to. UAG key tasks sit
     /// in their UAG section; standard subclauses sit in the clause's subject; rules,

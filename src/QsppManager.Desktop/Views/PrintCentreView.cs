@@ -130,7 +130,8 @@ public partial class PrintCentreView : UserControl
     private void LoadRows()
     {
         _rows = App.Workspace.RequirementRows(App.Session);
-        _req.ItemsSource = _rows.Select(r => $"{r.Ref} — {r.Title}").ToList();
+        // Display titles lead the picker (human-readable jobs); the ref stays for precision.
+        _req.ItemsSource = _rows.Select(r => $"{r.Ref} · {r.DisplayTitleText}").ToList();
         _req.SelectedIndex = _rows.Count > 0 ? 0 : -1;
     }
 

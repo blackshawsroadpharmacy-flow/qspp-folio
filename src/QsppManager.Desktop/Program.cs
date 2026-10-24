@@ -28,6 +28,8 @@ internal static class Program
     public static bool AssertTodayLayout { get; private set; }
     /// <summary>--text-scale &lt;1.0|1.3|1.5&gt;: render / assert at a text scale.</summary>
     public static double? TextScale { get; private set; }
+    /// <summary>--seg &lt;0..3&gt;: which Requirements segment to render (phase-4 verification).</summary>
+    public static int? RenderSegment { get; private set; }
 
     [STAThread]
     public static int Main(string[] args)
@@ -50,6 +52,7 @@ internal static class Program
             if (args[i] == "--height" && int.TryParse(args[i + 1], out var h)) RenderHeight = h;
             if (args[i] == "--page" && Enum.TryParse<ShellPage>(args[i + 1], true, out var p)) RenderPage = p;
             if (args[i] == "--theme" && args[i + 1] is "light" or "dark") RenderTheme = args[i + 1];
+            if (args[i] == "--seg" && int.TryParse(args[i + 1], out var seg)) RenderSegment = seg;
         }
 
         var bootstrap = new LoggerConfiguration()

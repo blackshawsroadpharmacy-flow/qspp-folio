@@ -175,6 +175,38 @@ public static class Ui
         return row;
     }
 
+    // ---------- quiet ⓘ popover (PageHeader pattern, extracted) ----------
+    /// <summary>The ⓘ that opens one explainer popover: hover shows a tooltip, click shows
+    /// a bounded card. Reused by page headers, the "Plain title" footnote and detail rows.</summary>
+    public static Control InfoDot(string text, string toolTip = "About this")
+    {
+        var button = new Button
+        {
+            Classes = { "ghost" }, Width = 20, Height = 20, Padding = new(0),
+            VerticalAlignment = VerticalAlignment.Center, Margin = new(0, 2, 0, 0),
+        };
+        Ax(button, toolTip, text);
+        var popup = new Popup
+        {
+            Placement = PlacementMode.Bottom,
+            PlacementTarget = button,
+            Child = new Border
+            {
+                Background = Br("Brush.Surface"), BorderBrush = Br("Brush.ControlBorder"),
+                BorderThickness = new(1), CornerRadius = new(9), Padding = new(14, 12),
+                MaxWidth = 440,
+                Child = new ScrollViewer
+                {
+                    MaxHeight = 340,
+                    Content = new TextBlock { Classes = { "callout" }, Text = text, TextWrapping = TextWrapping.Wrap, MaxWidth = 400 },
+                },
+            },
+        };
+        button.Content = new Panel { Children = { Lucide("info", 14, Br("Brush.Muted"), center: true), popup } };
+        button.Click += (_, _) => popup.IsOpen = !popup.IsOpen;
+        return button;
+    }
+
     // ---------- verbatim quote (premium-polish 3.7) ----------
     /// <summary>Read-only source wording: selectable serif text, 2px green rule on the
     /// left, 14px left padding, no box. Replaces read-only TextBoxes that looked editable.
@@ -183,6 +215,10 @@ public static class Ui
     public static Control QuoteBlock(string text, double? maxHeight = null)
     {
         var quote = new SelectableTextBlock { Classes = { "quote" }, Text = text };
+        // SelectableTextBlock measures unbounded inside a ScrollViewer (never wraps); an
+        // explicit wrap + width cap restores the wrap behaviour everywhere.
+        quote.TextWrapping = TextWrapping.Wrap;
+        quote.MaxWidth = 860;
         if (maxHeight is { } cap)
         {
             var scroll = new ScrollViewer
@@ -514,6 +550,10 @@ public static class Ui
         "info" => "Brush.Stone",
         _ => "Brush.Stone",
     };
+
+    /// <summary>The hue brush key a status tone renders as — public so quiet list rows
+    /// (bare 6pt status dots, no chip tint) share the same hue language as chips.</summary>
+    public static string ToneBrushKey(string tone) => Tone(tone);
 
     private static string HueTint(string hueBrush) => hueBrush switch
     {

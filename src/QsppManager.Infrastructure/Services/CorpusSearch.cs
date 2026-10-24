@@ -120,16 +120,20 @@ public class CorpusSearch(QsppDbContext db) : ICorpusIndexer
         text = text.Trim();
         if (text.Length < 2) return [];
         var fts = BuildFtsQuery(text);
+        // Display titles load once per query: requirement result labels prefer them and
+        // the LIKE fallback matches them too. Codes and official wording keep matching.
+        var requirementRows = db.Requirements.AsNoTracking().ToList();
+        var titles = DisplayTitles(requirementRows);
         List<SearchResultRow> rows = [];
         try
         {
-            rows = QueryFts(fts, cap);
+            rows = QueryFts(fts, cap, titles, requirementRows);
         }
         catch (Microsoft.Data.Sqlite.SqliteException)
         {
             rows = []; // malformed FTS syntax — fall through to LIKE
         }
-        if (rows.Count == 0) rows = QueryLike(text, cap);
+        if (rows.Count == 0) rows = QueryLike(text, cap, titles, requirementRows);
         if (hidePatientDataEvidence)
             rows = rows
                 .Where(r => r.Kind != "Evidence" || !db.EvidenceItems.AsNoTracking()
@@ -137,6 +141,24 @@ public class CorpusSearch(QsppDbContext db) : ICorpusIndexer
                 .ToList();
         return rows;
     }
+
+    /// <summary>Requirement id → display title (fallback list carries the official
+    /// heading already). No-DB rows never reach here: Query loads them first.</summary>
+    private static Dictionary<Guid, string> DisplayTitles(IReadOnlyList<Requirement> requirements) =>
+        Seed.DisplayTitleSources.ResolveAll(requirements)
+            .ToDictionary(t => Guid.Parse(t.Id), t => t.Title);
+
+    /// <summary>Human-readable requirement label: the code, then the display title when one
+    /// exists (official heading otherwise). Search still MATCHES on wording and codes.</summary>
+    private static string RequirementLabel(Requirement r, string refTxt, IReadOnlyDictionary<Guid, string> titles) =>
+        (string.IsNullOrEmpty(refTxt) ? "" : refTxt + " · ")
+        + (titles.TryGetValue(r.Id, out var t) ? t : r.Title);
+
+    private static bool IsRequirementKind(string kind) => kind is
+        "Std" or "Uag" or "UagKeyTask" or "Rule" or "Tc" or "Policy" or "Obligation" or "Hitlist" or "Surveillance";
+
+    private static bool ContainsIgnoreCase(string? haystack, string needle) =>
+        (haystack ?? "").Contains(needle, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>"potency test" → '"potency" AND "test"*' — every token required, last-token
     /// prefix enabled. The star goes OUTSIDE the quotes: inside them it's a literal token.</summary>
@@ -149,7 +171,8 @@ public class CorpusSearch(QsppDbContext db) : ICorpusIndexer
         return string.Join(" AND ", tokens);
     }
 
-    private List<SearchResultRow> QueryFts(string match, int cap)
+    private List<SearchResultRow> QueryFts(string match, int cap,
+        IReadOnlyDictionary<Guid, string> titles, IReadOnlyList<Requirement> requirements)
     {
         var rows = new List<SearchResultRow>();
         using var cmd = db.Database.GetDbConnection().CreateCommand();
@@ -175,23 +198,34 @@ public class CorpusSearch(QsppDbContext db) : ICorpusIndexer
             rows.Add(new SearchResultRow(kind, string.IsNullOrEmpty(refTxt) ? title : $"{refTxt} — {title}",
                 excerpt, id, meta));
         }
+
+        // Display titles enrich requirement labels only (the FTS body keeps official
+        // wording so search continues to match the source text).
+        var byId = requirements.ToDictionary(r => r.Id);
+        rows = rows.Select(r => IsRequirementKind(r.Kind) && byId.TryGetValue(r.Id, out var req)
+            ? r with { Title = RequirementLabel(req, req.Ref, titles) }
+            : r).ToList();
         return rows;
     }
 
     /// <summary>LIKE fallback (also used when FTS finds nothing — substring beats token match).</summary>
-    private List<SearchResultRow> QueryLike(string text, int cap)
+    private List<SearchResultRow> QueryLike(string text, int cap,
+        IReadOnlyDictionary<Guid, string> titles, IReadOnlyList<Requirement> requirements)
     {
         var like = $"%{text.Replace("%", "").Replace("_", "")}%";
         List<SearchResultRow> rows = [];
 
-        rows.AddRange(db.Requirements.AsNoTracking()
-            .Where(r => EF.Functions.Like(r.Title, like) || EF.Functions.Like(r.Ref, like)
-                        || EF.Functions.Like(r.PlainSummary, like) || EF.Functions.Like(r.WordingExcerpt, like))
+        rows.AddRange(requirements
+            .Where(r => ContainsIgnoreCase(r.Title, text)
+                        || ContainsIgnoreCase(r.Ref, text)
+                        || ContainsIgnoreCase(r.PlainSummary, text)
+                        || ContainsIgnoreCase(r.WordingExcerpt, text)
+                        || (titles.TryGetValue(r.Id, out var displayTitle) && ContainsIgnoreCase(displayTitle, text)))
             .OrderBy(r => r.RefKind).ThenBy(r => r.Ref)
             .Take(cap)
             .AsEnumerable()
             .Select(r => new SearchResultRow(
-                EnumTitle(r.RefKind), $"{r.Ref} — {r.Title}",
+                EnumTitle(r.RefKind), RequirementLabel(r, r.Ref, titles),
                 Snippet(r.PlainSummary, r.WordingExcerpt, text), r.Id, MetaRequirement(r))));
 
         rows.AddRange(db.EvidenceItems.AsNoTracking()
