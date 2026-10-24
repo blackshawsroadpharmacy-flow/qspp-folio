@@ -1,5 +1,11 @@
 # Hugh's QSPP Manager
 
+> QSPP Folio. This folder (`~/AI/qspp-folio`) is the working repo of the program:
+> the Avalonia macOS app "Hugh's QSPP Manager" for Burke Road Compounding
+> Pharmacy, at the Today-redesign milestone (`58102c2`). The built app in
+> `~/Applications/Hugh's QSPP Manager.app` was produced from this source tree;
+> `dist/` holds a copy of the latest build (185 MB, rebuildable, untracked).
+
 Desktop companion for Australian community pharmacies working through the
 Quality & Safety Pharmacy Program (QSPP) — understand the requirements, prepare
 evidence, run the operational registers, and walk into the assessment organised.
