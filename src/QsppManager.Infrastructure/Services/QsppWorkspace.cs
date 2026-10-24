@@ -826,6 +826,118 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
         return list.OrderBy(d => d.Date).ToList();
     }
 
+    // ---------- Today redesign (24 Oct): featured deadline + 12-month obligations ----------
+
+    public record TodayObligation(
+        Guid RecordId, string Category, string CategoryKey, string Item, string Caption,
+        string Action, DateOnly? Due, string Owner, string EvidenceState);
+
+    public record TodayScreenBrief(
+        DeadlineInfo? Featured, TodayPlanning.FeaturedState? FeaturedTone, DeadlineInfo? NextAfter,
+        DateOnly? RunStart, List<(DateOnly Date, string Label, bool PlanningOnly)> Milestones,
+        List<TodayObligation> Obligations, List<(int Year, int Month)> YearAhead);
+
+    /// <summary>Deadline candidates the featured picker may choose from: the workspace's
+    /// PharmacyDeadlines() minus internal task rows. The picker itself is pure (TodayPlanning)
+    /// and testable; plan markers never win unless nothing eligible exists.</summary>
+    public List<DeadlineInfo> TodayDeadlineCandidates(DateOnly today) =>
+        PharmacyDeadlines(true).Where(d => d.Kind != DeadlineKind.InternalTask).ToList();
+
+    /// <summary>Read-only 12-month obligations ledger for Today: real rows only, every row
+    /// carries its record id so the UI can open it. Overdue items appear with dates in the
+    /// past; the buckets are the pure TodayPlanning.Bucket(). Reference texts are pending the
+    /// approved schema addendum (stop condition 2), so no rows exist for them yet.</summary>
+    public List<TodayObligation> TodayObligations(DateOnly today)
+    {
+        var ph = EnsurePharmacy();
+        var horizon = today.AddYears(1);
+        var lower = today.AddDays(-90);
+        var list = new List<TodayObligation>();
+
+        // Equipment: calibration due (recurring maintenance/test of safety systems, AS85000 2.1.1.4b-c).
+        foreach (var e in db.Equipment.AsNoTracking().Where(x => x.State != "Retired").ToList())
+        {
+            if (e.CalibrationDue is { } d && d >= lower && d <= horizon)
+                list.Add(new(e.Id, "Equipment", "equipment", e.Name, e.Model, "Recalibrate", d, "", EvidenceForTaskDef(e.CalibrationTaskDefId)));
+            else if (e.CalibrationDue is null)
+                list.Add(new(e.Id, "Equipment", "equipment", e.Name, e.Model, "Recalibrate", null, "", ""));
+        }
+
+        // People: S2/S3 refresher on the anniversary of the last completed training
+        // (rows only where some S2/S3 training is actually recorded — no invented dates).
+        foreach (var s in db.StaffMembers.AsNoTracking().Where(x => x.Active).ToList())
+        {
+            if (s.S2S3InitialCompleted is null && s.S2S3RefresherCompleted is null) continue;
+            var (due, _) = TrainingRules.RefresherStatus(s, today);
+            list.Add(new(s.Id, "People", "people", $"{s.Name} — S2/S3 refresher", s.Role, "Recertify", due, s.Name, ""));
+        }
+
+        // Evidence: items that expire (EffectiveTo), excluding retired ones.
+        foreach (var e in db.EvidenceItems.AsNoTracking()
+                     .Where(x => x.EffectiveTo != null && x.ReviewState != EvidenceReviewState.Retired).ToList())
+        {
+            var effTo = e.EffectiveTo!.Value;
+            if (effTo >= lower && effTo <= horizon)
+                list.Add(new(e.Id, "Evidence", "documents", e.Title, e.Kind.ToString(), "Expires", effTo, "", e.ReviewState.ToString()));
+        }
+
+        // Program and premises: accreditation expiry, booked assessments, annual attestation.
+        if (ph.AccreditationExpiryDate is { } exp && exp >= lower && exp <= horizon)
+            list.Add(new(ph.Id, "Program", "program", "Accreditation expiry", "Program Rules Rule 5", "Re-accredit", exp, "", ""));
+        foreach (var ev in db.AssessmentEvents.AsNoTracking()
+                     .Where(x => x.State == "Planned" || x.State == "InProgress").ToList())
+        {
+            if (ev.ScheduledDate >= today.AddDays(-30) && ev.ScheduledDate <= horizon)
+                list.Add(new(ev.Id, "Program", "program", $"Assessment — {ev.Kind}", ev.State, "Attend", ev.ScheduledDate, "", ""));
+        }
+        foreach (var d in PharmacyDeadlines(true).Where(d => d.Source.StartsWith("T&C Clause 5c")).ToList())
+        {
+            if (d.Date >= today && d.Date <= horizon)
+                list.Add(new(Guid.NewGuid(), "Program", "program", "Annual attestation statement", "T&C Clause 5c", "Lodge", d.Date, "", ""));
+        }
+
+        return list.OrderBy(o => o.Due ?? DateOnly.MaxValue).ToList();
+    }
+
+    /// <summary>Latest evidence attached through the calibration recurring task of a piece of
+    /// equipment, if any (empty string when none — the UI renders the empty chip).</summary>
+    private string EvidenceForTaskDef(Guid? taskDefId)
+    {
+        if (taskDefId is null) return "";
+        var evId = db.Tasks.AsNoTracking()
+            .Where(t => t.RecurrenceDefId == taskDefId && t.EvidenceItemId != null)
+            .OrderByDescending(t => t.CompletedAtUtc).Select(t => t.EvidenceItemId).FirstOrDefault();
+        if (evId is null) return "";
+        var state = db.EvidenceItems.AsNoTracking().Where(e => e.Id == evId).Select(e => e.ReviewState).FirstOrDefault();
+        return state.ToString();
+    }
+
+    /// <summary>Everything the redesigned Today screen renders, assembled once per refresh:
+    /// featured deadline (pure pick), its tone, "after this", run-line anchors, milestone
+    /// ticks, and the 12-month obligations ledger. Read-only.</summary>
+    public TodayScreenBrief TodayBrief(DateOnly today)
+    {
+        var ph = EnsurePharmacy();
+        var candidates = TodayDeadlineCandidates(today);
+        var featured = TodayPlanning.PickFeatured(candidates, today);
+        var next = featured is { } f ? TodayPlanning.NextAfterFeatured(candidates, f) : null;
+        var tone = featured is { } ff ? TodayPlanning.FeaturedTone(ff.Date, today) : null;
+
+        var runStart = ph.CycleStartDate is { } cs && cs <= today ? cs : (DateOnly?)null;
+        var milestones = new List<(DateOnly Date, string Label, bool PlanningOnly)>();
+        if (runStart is { } anchor && featured is { } fd)
+        {
+            foreach (var ev in db.AssessmentEvents.AsNoTracking().Where(x => x.State == "Planned" || x.State == "InProgress").ToList())
+                if (ev.ScheduledDate >= anchor && ev.ScheduledDate <= fd.Date)
+                    milestones.Add((ev.ScheduledDate, $"Planned {ev.Kind}", false));
+            var (wStart, wEnd) = DeadlineCalculator.ConservativeMidCycleWindow(anchor);
+            if (wStart <= fd.Date) milestones.Add((wStart, "Mid-cycle window opens (conservative reading)", true));
+        }
+
+        return new TodayScreenBrief(featured, tone, next, runStart, milestones,
+            TodayObligations(today), TodayPlanning.YearAheadMonths(today));
+    }
+
     // ---------- summaries (Today screen + Documents) ----------
     public (int verified, int total) ReadinessSummary()
     {
