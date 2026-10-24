@@ -33,7 +33,7 @@ public void SetFilter(string text) => SearchBox.Text = text;   // TextChanged ha
 
 ```bash
 export PATH="$HOME/.dotnet:$PATH" DOTNET_ROOT="$HOME/.dotnet"
-cd /Users/hughn/AI/qspp-manager-omarch/qspp-manager && dotnet build src/QsppManager.Desktop/QsppManager.Desktop.csproj --nologo 2>&1 | grep -E "error|Build succeeded|Build FAILED"
+cd /Users/hughn/AI/qspp-folio && dotnet build src/QsppManager.Desktop/QsppManager.Desktop.csproj --nologo 2>&1 | grep -E "error|Build succeeded|Build FAILED"
 ```
 
 If the build reports file-in-use lock errors, a sibling agent is building — wait 30 s and retry (max 3 tries). Never delete bin/obj.

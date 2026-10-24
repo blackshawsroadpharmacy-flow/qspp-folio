@@ -1,8 +1,11 @@
 # Hugh's QSPP Manager
 
-> QSPP Folio. This folder (`~/AI/qspp-folio`) is the working repo of the program:
-> the Avalonia macOS app "Hugh's QSPP Manager" for Burke Road Compounding
-> Pharmacy, at the Today-redesign milestone (`58102c2`). The built app in
+> QSPP Folio. This folder (`~/AI/qspp-folio`) is the CANONICAL working repo of the
+> program (so agreed by the owner, 24 Oct 2026): the Avalonia macOS app "Hugh's
+> QSPP Manager" for Burke Road Compounding Pharmacy, at the Today-redesign
+> milestone (`58102c2`). The pre-canonicalisation clone lives retired at
+> `~/AI/qspp-manager-omarch-RETIRED-20261024` (its tool venvs rebuild themselves:
+> `scripts/serve-decision.sh`, `tools/ocr-heavy/setup-mineru.sh`). The built app in
 > `~/Applications/Hugh's QSPP Manager.app` was produced from this source tree;
 > `dist/` holds a copy of the latest build (185 MB, rebuildable, untracked).
 
