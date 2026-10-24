@@ -133,8 +133,8 @@ public partial class App : Avalonia.Application
         var window = new Window
         {
             Title = "Today offscreen render",
-            Width = 1280,
-            Height = 940,
+            Width = Program.RenderWidth,
+            Height = Program.RenderHeight,
             ShowActivated = false,
             ShowInTaskbar = false,
             SystemDecorations = Avalonia.Controls.WindowDecorations.None,
@@ -187,7 +187,7 @@ public partial class App : Avalonia.Application
                 Log.Information("Offscreen bounds: window content {Content} root {Root}", content.Bounds.Size, root.Bounds.Size);
                 root.InvalidateVisual();
                 var scale = window.RenderScaling;
-                var size = new PixelSize((int)(1280 * scale), (int)(940 * scale));
+                var size = new PixelSize((int)(content.Bounds.Width * scale), (int)(content.Bounds.Height * scale));
                 using var bmp = new RenderTargetBitmap(size, new Vector(scale, scale));
                 bmp.Render(root);
                 using (var fs = File.Create(path))

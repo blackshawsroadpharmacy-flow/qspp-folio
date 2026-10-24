@@ -36,6 +36,7 @@ public class TodayScreen
     private TextBlock _afterLine = null!;
     private RunLine _run = null!;
     private StackPanel _positionPanel = null!;
+    private StackPanel _positionBlock = null!;
     private Panel _roundBarHost = null!;
     private TextBlock _roundLead = null!;
     private TextBlock _roundNext = null!;
@@ -58,6 +59,9 @@ public class TodayScreen
     {
         _vm = vm;
         Root = Build(vm);
+        // Self-contained responsive rule: works in the TodayView host AND in
+        // off-screen renders (which bypass TodayView entirely).
+        Root.SizeChanged += (_, e) => OnWidthChanged(e.NewSize.Width);
     }
 
     public Control Root { get; }
@@ -91,6 +95,7 @@ public class TodayScreen
         _heroEmpty = BuildHeroEmpty(vm);
         Grid.SetColumn(_heroEmpty, 0);
         var positionBlock = BuildPosition(vm);
+        _positionBlock = positionBlock;
         Grid.SetColumn(positionBlock, 2);
         _heroGrid.Children.Add(_heroFull);
         _heroGrid.Children.Add(_heroEmpty);
@@ -593,21 +598,25 @@ public class TodayScreen
     public void OnWidthChanged(double contentWidth)
     {
         var single = contentWidth < 980;
-        var heroCols = single ? ColumnDefinitions.Parse("*") : ColumnDefinitions.Parse("7*,24,5*");
-        _heroGrid.ColumnDefinitions = heroCols;
-        foreach (var child in _heroGrid.Children)
-        {
-            Grid.SetRow(child, 0);
-            if (single) { Grid.SetColumn(child, 0); child.Margin = child == _heroFull ? new(0) : new(0, 24, 0, 0); }
-            else child.Margin = new(0);
-        }
+        _heroGrid.ColumnDefinitions = single ? ColumnDefinitions.Parse("*") : ColumnDefinitions.Parse("7*,24,5*");
+        _heroGrid.RowDefinitions = single ? new RowDefinitions("*,Auto") : new RowDefinitions("*");
+        // Hero panels share row 0 in both modes; the position block drops to row 1 when single.
+        Grid.SetRow(_heroFull, 0);
+        Grid.SetRow(_heroEmpty, 0);
+        Grid.SetColumn(_positionBlock, 0);
+        Grid.SetRow(_positionBlock, single ? 1 : 0);
+        if (single) Grid.SetColumn(_positionBlock, 0);
+        else Grid.SetColumn(_positionBlock, 2);
+        _positionBlock.Margin = single ? new(0, 24, 0, 0) : new(0);
         _twoCol.ColumnDefinitions = single ? new ColumnDefinitions("*") : new ColumnDefinitions("*,24,*");
+        _twoCol.RowDefinitions = single ? new RowDefinitions("*,Auto") : new RowDefinitions("*");
         for (var i = 0; i < _twoCol.Children.Count; i++)
         {
             var child = _twoCol.Children[i];
             Grid.SetRow(child, single ? i : 0);
-            if (single) { Grid.SetColumn(child, 0); if (i > 0) child.Margin = new(0, 24, 0, 0); }
-            else child.Margin = new(0);
+            Grid.SetColumn(child, 0);
+            child.Margin = single && i > 0 ? new(0, 24, 0, 0) : new(0);
+            if (!single) Grid.SetColumn(child, i == 0 ? 0 : 2);
         }
     }
 }

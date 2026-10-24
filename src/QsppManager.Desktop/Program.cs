@@ -10,6 +10,8 @@ internal static class Program
     /// window stays open so the OS compositor can be captured externally.</summary>
     public static string? RenderOffscreen { get; private set; }
     public static bool Hold { get; private set; }
+    public static int RenderWidth { get; private set; } = 1280;
+    public static int RenderHeight { get; private set; } = 940;
 
     [STAThread]
     public static int Main(string[] args)
@@ -20,6 +22,12 @@ internal static class Program
         for (var i = 0; i < args.Length - 1; i++)
             if (args[i] == "--render-offscreen") RenderOffscreen = args[i + 1];
         Hold = args.Contains("--hold");
+        // Optional window size for off-screen renders (phase-4 verification matrix).
+        for (var i = 0; i < args.Length - 1; i++)
+        {
+            if (args[i] == "--width" && int.TryParse(args[i + 1], out var w)) RenderWidth = w;
+            if (args[i] == "--height" && int.TryParse(args[i + 1], out var h)) RenderHeight = h;
+        }
 
         var bootstrap = new LoggerConfiguration()
             .MinimumLevel.Information()

@@ -38,3 +38,16 @@ cd /Users/hughn/AI/qspp-manager-omarch/qspp-manager && dotnet build src/QsppMana
 
 If the build reports file-in-use lock errors, a sibling agent is building — wait 30 s and retry (max 3 tries). Never delete bin/obj.
 14. Report: files changed, the real build line, and any item you reported instead of guessing.
+
+## The Today screen (24 Oct 2026)
+
+Code-built page: `Views/TodayScreen.cs` (+ `Views/Today/TodayControls.cs`), hosted by `Views/TodayView.axaml(.cs)`; data assembled read-only in `ViewModels/TodayViewModel.cs` from `QsppWorkspace.TodayBrief`. Decision record: DD-40.
+
+1. Hero is the only filled panel on the page: light = `Brush.HeroBg` (the ink green), dark = the deep-green `Color.HeroBg` designed for dark (never a naive inversion). Hero text = `Brush.HeroFg`; secondary lines `Brush.HeroMuted`; the thin run-line rules `Brush.HeroDiv`. All token-driven; WCAG AA verified on both grounds (min 6.03:1).
+2. The only acid accent on Today is the run line's today-dot / elapsed segment (`Brush.Acid` on the hero). It appears nowhere else on the screen.
+3. The big numeral is `TextBlock.heroNum` — `Font.Serif` (Georgia first, bundled Host Grotesk for the rest) at 104pt Light. `Font.Serif` is Today-only: titles elsewhere stay in the shipped families. Serif numerals + hairline rules are the "pharmacopoeia look"; no shadows, no card borders, radius 12 on the hero only.
+4. The run line (`Today/TodayControls.cs` → `RunLine`) draws with `DrawingControl`: a 1px track from the start anchor (or from today when none is recorded — never a guessed start), a filled segment to today, a 7pt today dot, and small diamond/square/circle/bar ticks for recorded milestones. Start falls back to today; nothing is extrapolated.
+5. Responsive: below 980 px the hero/position grid stacks (position block drops to row 1) and the week/inbox columns stack — the rule lives inside `TodayScreen` (its own `Root.SizeChanged`), so it also holds in off-screen renders and any future host that bypasses TodayView.
+6. The renewals ledger hides an empty bucket group while any other group has rows; when the whole ledger is quiet it is a single line (never an empty three-section wall). Rows beyond a peek of 8 collapse behind a "Show all N" toggle.
+7. Empty states speak with the ledger's voice: "No reference texts (AMH, APF, eMIMS, eTG) recorded. Add one →" — one line, deep-link where one exists.
+8. Greeting is by hour with the Melbourne calendar date in the eyebrow; the greeting is personal (first name) but the pharmacy line comes from the workspace record, not a constant.

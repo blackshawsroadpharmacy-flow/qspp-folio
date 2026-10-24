@@ -24,7 +24,6 @@ public partial class TodayView : UserControl
         _vm.Refresh();
         _screen.PostRefresh(_vm);
 
-        SizeChanged += (_, e) => _screen?.OnWidthChanged(e.NewSize.Width);
         AttachedToLogicalTree += (_, _) => StartTimer();
         DetachedFromLogicalTree += (_, _) => StopTimer();
     }
