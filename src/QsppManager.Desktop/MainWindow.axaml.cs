@@ -153,11 +153,14 @@ public partial class MainWindow : Window
 
     private void OnWindowClosing(object? sender, WindowClosingEventArgs e)
     {
-        // macOS: closing the window hides it (app stays alive, dock click reopens).
-        // Quit is the app menu / ⌘Q. Other platforms keep normal close semantics.
-        if (!OperatingSystem.IsMacOS()) return;
-        e.Cancel = true;
-        Hide();
+        // QUIT semantics after the quit-defect fix (24 Oct): closing the window ENDS the
+        // app. The old macOS behaviour cancelled the close and HID the window ("app stays
+        // alive, dock click reopens") — that produced exactly the state the owner hit:
+        // window hidden, its ⌘Q handler unreachable (no focused window), the dock-Quit
+        // AppleEvent refused by the toolkit ("user cancelled", exit -128 — verified
+        // live), and no visible way out. A single-window utility must quit when its
+        // window closes; default ShutdownMode=OnLastWindowClose then ends the process.
+        // Reopen-after-quit is LaunchServices' normal relaunch; WireReopen stays harmless.
     }
 
     private void WireReopen()
