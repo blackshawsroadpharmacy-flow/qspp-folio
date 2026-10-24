@@ -23,6 +23,18 @@ public class NavItem(string label, ShellPage page) : ViewModelBase
     /// repaint on navigate.</summary>
     public bool IsActive { get => _isActive; set => SetProperty(ref _isActive, value); }
 
+    /// <summary>Destination hue class (3D): one of hueOchre/hueForest/hueTeal/hueClay/
+    /// hueUmber/hueBerry/hueViolet/hueStone, or none for Library (Ink). The sidebar
+    /// styles key on these class flags so brushes stay DynamicResource (theme-safe).</summary>
+    public bool IsHueOchre => Page == ShellPage.Today;
+    public bool IsHueForest => Page == ShellPage.Requirements;
+    public bool IsHueTeal => Page == ShellPage.Documents;
+    public bool IsHueClay => Page == ShellPage.Tasks;
+    public bool IsHueUmber => Page == ShellPage.Registers;
+    public bool IsHueBerry => Page == ShellPage.People;
+    public bool IsHueViolet => Page == ShellPage.Assessments;
+    public bool IsHueStone => Page is ShellPage.PrintCentre or ShellPage.Settings;
+
     private string? _badge;
     /// <summary>Optional count badge (premium-polish 3.3): Today only, for overdue
     /// items, and only when the count is above 0.</summary>

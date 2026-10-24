@@ -31,9 +31,9 @@ public partial class RegistersView : UserControl
 
     /// <summary>Table with an in-place empty state; the visible child tracks the row count
     /// (premium-polish 3.8 — no zero-row gridded voids on this screen).</summary>
-    private static TableHost Host(Control table, double minHeight, string icon, string title, string hint)
+    private static TableHost Host(Control table, double minHeight, string icon, string title, string hint, string hue = "Brush.Stone")
     {
-        var empty = Ui.EmptyState(icon, title, hint);
+        var empty = Ui.EmptyState(icon, title, hint, null, hue);
         empty.IsVisible = false;
         var panel = new Panel { MinHeight = minHeight };
         panel.Children.Add(table);
@@ -59,9 +59,7 @@ public partial class RegistersView : UserControl
     private Control Build()
     {
         var sp = new StackPanel { Margin = new(32, 28), Spacing = 12, MaxWidth = 1040, HorizontalAlignment = HorizontalAlignment.Left };
-        sp.Children.Add(Ui.H1("Registers"));
-        sp.Children.Add(new TextBlock { Classes = { "lead" }, TextWrapping = TextWrapping.Wrap,
-            Text = "Recurring obligations, the equipment register and the incident register. Schedules materialise as ordinary tasks with due dates — missed occurrences stay visible until someone does them, and generation never duplicates. Equipment calibration dates automatically get a monthly check schedule." });
+        sp.Children.Add(Ui.PageTitle(ViewModels.ShellPage.Registers, "Recurring obligations, the equipment register and the incident register.", "Schedules materialise as ordinary tasks with due dates — missed occurrences stay visible until someone does them, and generation never duplicates. Equipment calibration dates automatically get a monthly check schedule."));
         sp.Children.Add(_resultBar);
 
         sp.Children.Add(RecurringSection());
@@ -92,7 +90,7 @@ public partial class RegistersView : UserControl
                                 _resultBar.Show(n > 0 ? NoticeTone.Ok : NoticeTone.Info, n > 0 ? $"{n} occurrence(s) generated (idempotent — reopening never duplicates)." : "Nothing new to generate.");
                 Load();
             }));
-        _defsHost = Host(_defs, 170, "repeat", "No recurring schedules yet", "Create the first recurring obligation — occurrences appear as ordinary tasks with due dates.");
+        _defsHost = Host(_defs, 170, "repeat", "No recurring schedules yet", "Create the first recurring obligation — occurrences appear as ordinary tasks with due dates.", "Brush.Umber");
         return Ui.Section("Recurring schedules", Ui.Col(10, _defsHost.Panel, row));
     }
 
@@ -105,20 +103,37 @@ public partial class RegistersView : UserControl
         _equipment.Columns.Add(Ui.Col("State", "State", 110));
         _equipment.Columns.Add(Ui.Col("Calibration due", "Calibration", 130));
         Ui.Ax(_equipment, "Equipment register", "Calibration dates and service state for each instrument");
+        // 3F #4: actions read only when a row is selected; Retire lives in a … menu
+        // (the confirm sheet stays) — never a permanent filled red button.
         var row = Ui.BtnRow(
             Ui.PrimaryBtn("Add equipment…").With(b => b.Click += async (_, _) => await AddEquipmentAsync()),
             Ui.Btn("Set calibration due…").With(b => b.Click += async (_, _) => await CalibrationAsync()),
             Ui.Btn("Send to maintenance").With(b => b.Click += (_, _) => SetState("Maintenance")),
             Ui.Btn("Back in service").With(b => b.Click += (_, _) => SetState("InService")),
-            Ui.DangerBtn("Retire").With(b => b.Click += async (_, _) =>
+            RowMenu());
+        row.IsVisible = _equipment.SelectedItem is not null;
+        _equipment.SelectionChanged += (_, _) => row.IsVisible = _equipment.SelectedItem is not null;
+        _equipmentHost = Host(_equipment, 200, "wrench", "No equipment recorded", "Add the instruments and powered devices — calibration dates create their monthly check schedules.", "Brush.Umber");
+        return Ui.Section("Equipment register", Ui.Col(10, _equipmentHost.Panel, row));
+
+        Avalonia.Controls.Button RowMenu()
+        {
+            var more = new Avalonia.Controls.Button
+            {
+                Classes = { "ghost" }, MinWidth = 32, Content = "…"
+            };
+            Avalonia.Automation.AutomationProperties.SetAutomationId(more, "EquipmentMoreMenu");
+            var retire = new Avalonia.Controls.MenuItem { Header = "Retire…" };
+            retire.Click += async (_, _) =>
             {
                 // Premium-polish 3.5: destructive actions confirm first — never a silent one-click retire.
                 if (!await Dialogs.Confirm(this, "Retire", "Retire this equipment? Retired instruments stop contributing to readiness until brought back into service."))
                     return;
                 SetState("Retired");
-            }));
-        _equipmentHost = Host(_equipment, 200, "wrench", "No equipment recorded", "Add the instruments and powered devices — calibration dates create their monthly check schedules.");
-        return Ui.Section("Equipment register", Ui.Col(10, _equipmentHost.Panel, row));
+            };
+            more.Flyout = new Avalonia.Controls.Flyout { Content = new Avalonia.Controls.StackPanel { Children = { retire } } };
+            return more;
+        }
     }
 
     private Control IncidentSection()
@@ -133,7 +148,7 @@ public partial class RegistersView : UserControl
         var row = Ui.BtnRow(
             Ui.PrimaryBtn("Report incident…").With(b => b.Click += async (_, _) => await ReportIncidentAsync()),
             Ui.Btn("Close with corrective action…").With(b => b.Click += async (_, _) => await CloseIncidentAsync()));
-        _incidentsHost = Host(_incidents, 200, "flag", "No incidents recorded", "Report incidents here; each links to requirement 1.1.2.4 and closes only with a corrective action.");
+        _incidentsHost = Host(_incidents, 200, "flag", "No incidents recorded", "Report incidents here; each links to requirement 1.1.2.4 and closes only with a corrective action.", "Brush.Umber");
         return Ui.Section("Incident register", Ui.Col(10,
             _incidentsHost.Panel, row,
             new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
@@ -165,7 +180,7 @@ public partial class RegistersView : UserControl
                                 _resultBar.Show(res.Ok, "Supplier review date recorded.", res.Error);
                 Load();
             }));
-        _suppliersHost = Host(_suppliers, 140, "truck", "No suppliers recorded", "Add the compounding suppliers you buy from, with the registration detail you verified.");
+        _suppliersHost = Host(_suppliers, 140, "truck", "No suppliers recorded", "Add the compounding suppliers you buy from, with the registration detail you verified.", "Brush.Umber");
         return Ui.Section("Compounding — registered suppliers", Ui.Col(10, _suppliersHost.Panel, row));
     }
 
@@ -197,7 +212,7 @@ public partial class RegistersView : UserControl
                                 _resultBar.Show(res.Ok, "Recall closed with the stock action recorded.", res.Error);
                 Load();
             }));
-        _recallsHost = Host(_recalls, 140, "package-x", "No recalls recorded", "Record supplier recalls as they arrive; the stock action closes each one.");
+        _recallsHost = Host(_recalls, 140, "package-x", "No recalls recorded", "Record supplier recalls as they arrive; the stock action closes each one.", "Brush.Umber");
         return Ui.Section("Compounding — product recalls", Ui.Col(10, _recallsHost.Panel, row));
     }
 
@@ -217,7 +232,7 @@ public partial class RegistersView : UserControl
                                 _resultBar.Show(res.Ok, "Potency record added to the per-person matrix.", res.Error);
                 Load();
             }));
-        _potencyHost = Host(_potency, 150, "flask-conical", "No potency records", "Add a potency testing record per person to build the coverage matrix.");
+        _potencyHost = Host(_potency, 150, "flask-conical", "No potency records", "Add a potency testing record per person to build the coverage matrix.", "Brush.Umber");
         return Ui.Section("Compounding — potency testing coverage (per person)", Ui.Col(10, _potencyHost.Panel, row, _potencyNote));
     }
 

@@ -28,12 +28,7 @@ public partial class PeopleView : UserControl
     private Control Build()
     {
         var sp = new StackPanel { Margin = new(28, 24), Spacing = 12, MaxWidth = 1040, HorizontalAlignment = HorizontalAlignment.Left };
-        sp.Children.Add(new TextBlock { Classes = { "h1" }, Text = "People & training" });
-        sp.Children.Add(new TextBlock
-        {
-            Classes = { "lead" }, TextWrapping = TextWrapping.Wrap,
-            Text = "The staff register and each person's Schedule 2/3 training position. Initial training is due within six months of first supply; refresher runs on the anniversary of the last completed training (initial or refresher). Acknowledgements are recorded per policy VERSION.",
-        });
+        sp.Children.Add(Ui.PageTitle(ViewModels.ShellPage.People, "The staff register and each person's Schedule 2/3 training position.", "Initial training is due within six months of first supply; refresher runs on the anniversary of the last completed training (initial or refresher). Acknowledgements are recorded per policy VERSION."));
 
         sp.Children.Add(new TextBlock { Text = "Staff & S2/S3 training", Classes = { "h3" }, Margin = new(0, 8, 0, 0) });
         _staff.Columns.Add(new DataGridTextColumn { Header = "Name", Binding = new Avalonia.Data.Binding("Name"), Width = new DataGridLength(200) });
@@ -42,7 +37,7 @@ public partial class PeopleView : UserControl
         _staff.Columns.Add(new DataGridTextColumn { Header = "Initial status", Binding = new Avalonia.Data.Binding("InitialStatus"), Width = new DataGridLength(280) });
         _staff.Columns.Add(new DataGridTextColumn { Header = "Refresher status", Binding = new Avalonia.Data.Binding("RefresherStatus"), Width = new DataGridLength(300) });
         Ui.Ax(_staff, "Staff members", "Select a staff member to record training or acknowledgements");
-        _staffHost = Host(_staff, 220, "users", "No staff recorded", "Add the pharmacy team so each person's Schedule 2/3 training position can be tracked.");
+        _staffHost = Host(_staff, 220, "users", "No staff recorded", "Add the pharmacy team so each person's Schedule 2/3 training position can be tracked.", "Brush.Berry");
         sp.Children.Add(_staffHost.Panel);
         var row = Ui.Row(8,
             PrimaryBtn("Add staff member…", "Add a staff member to the register (app users are managed elsewhere)",
@@ -57,7 +52,7 @@ public partial class PeopleView : UserControl
         _acks.Columns.Add(new DataGridTextColumn { Header = "Version", Binding = new Avalonia.Data.Binding("Version"), Width = new DataGridLength(120) });
         _acks.Columns.Add(new DataGridTextColumn { Header = "Acknowledged", Binding = new Avalonia.Data.Binding("On"), Width = new DataGridLength(140) });
         Ui.Ax(_acks, "Policy acknowledgements", "Version-tied acknowledgements of pharmacy policies");
-        _acksHost = Host(_acks, 180, "shield-check", "No acknowledgements recorded", "Record the policy and its version as each document is read and agreed.");
+        _acksHost = Host(_acks, 180, "shield-check", "No acknowledgements recorded", "Record the policy and its version as each document is read and agreed.", "Brush.Berry");
         sp.Children.Add(_acksHost.Panel);
         var row2 = Ui.Row(8,
             PrimaryBtn("Record acknowledgement…", "Record a version-tied policy acknowledgement for the selected staff member",
@@ -135,9 +130,9 @@ public partial class PeopleView : UserControl
     private static Button PrimaryBtn(string label, string axHelp, EventHandler<RoutedEventArgs> onClick) => Btn(label, axHelp, onClick, "primary");
 
     /// <summary>Table with an in-place empty state; the visible child tracks the row count.</summary>
-    private static TableHost Host(Control table, double minHeight, string icon, string title, string hint)
+    private static TableHost Host(Control table, double minHeight, string icon, string title, string hint, string hue = "Brush.Stone")
     {
-        var empty = Ui.EmptyState(icon, title, hint);
+        var empty = Ui.EmptyState(icon, title, hint, null, hue);
         empty.IsVisible = false;
         var panel = new Panel { MinHeight = minHeight };
         panel.Children.Add(table);

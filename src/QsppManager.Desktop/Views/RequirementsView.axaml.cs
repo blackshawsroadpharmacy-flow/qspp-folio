@@ -173,14 +173,15 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
         row.Children.Add(Ui.Chip(ReadinessLabel(d.State.Readiness), d.State.Readiness switch
         {
             RequirementReadiness.ManagerVerified or RequirementReadiness.AssessorAccepted => "ok",
-            RequirementReadiness.NotStarted => "info",
+            RequirementReadiness.ReadyForReview => "review",
+            RequirementReadiness.NotStarted => "neutral",   // stone, hollow dot (3D)
+            RequirementReadiness.InProgress => "warn",
             _ => "warn",
         }));
         row.Children.Add(Ui.Chip(ApplicabilityLabel(d.State.Applicability), d.State.Applicability switch
         {
-            Applicability.Applicable => "ok",
-            Applicability.NotApplicable => "info",
-            _ => "warn",
+            Applicability.NotApplicable => "neutral",
+            _ => "info",   // applicable = quiet stone, not a success hue (3D)
         }));
         if (d.State.OwnerUnassigned)
         {
@@ -233,8 +234,14 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
                 Margin = new(2, 6, 0, 2),
             }
             : Ui.QuoteBlock(d.Requirement.WordingExcerpt, maxHeight: 480));
-        if (!string.IsNullOrWhiteSpace(d.Requirement.PlainSummary))
-            st.Children.Add(new TextBlock { Text = "Plain English: " + d.Requirement.PlainSummary, TextWrapping = TextWrapping.Wrap });
+        // 3F #7: hide "Plain English" when it merely repeats the verbatim quote.
+        var excerpt = d.Requirement.WordingExcerpt ?? "";
+        var plain = d.Requirement.PlainSummary ?? "";
+        var dup = plain.Trim().Length > 0 &&
+                  (excerpt.Trim().Contains(plain.Trim(), StringComparison.OrdinalIgnoreCase) ||
+                   Similar(excerpt, plain));
+        if (!string.IsNullOrWhiteSpace(plain) && !dup)
+            st.Children.Add(new TextBlock { Text = "Plain English: " + plain, TextWrapping = TextWrapping.Wrap });
 
         if (d.Requirement.EvidenceExamples.Count > 0)
         {
@@ -244,7 +251,7 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
         }
 
         st.Children.Add(new TextBlock { Text = "Applicability", Classes = { "h3" } });
-        var reason = AutoGrow(new TextBox { Text = d.State.ApplicabilityReason, Watermark = "Reason for the decision — assessors and future staff need it", TextWrapping = TextWrapping.Wrap, AcceptsReturn = true, MinHeight = 44, MaxHeight = 280 });
+        var reason = AutoGrow(new TextBox { Text = d.State.ApplicabilityReason, Watermark = "Reason for the decision (assessors and future staff need it)", TextWrapping = TextWrapping.Wrap, AcceptsReturn = true, MinHeight = 44, MaxHeight = 280 });
         var combo = new ComboBox { Width = 190, ItemsSource = new[] { "— choose —", "Applicable", "Not applicable", "Unknown" }, SelectedIndex = (int)d.State.Applicability + 1 };
         var apply = new Button { Content = "Record decision", Height = 32 };
         apply.Click += (_, _) =>
@@ -256,11 +263,12 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
             Reload();
         };
         st.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { combo, apply } });
-        st.Children.Add(Ui.FormField("REASON FOR THE DECISION", reason));
+        st.Children.Add(Ui.FormField("Reason for the decision", reason));
 
+        // 3F #7: one caption only ("Next action"); the label repeats it otherwise.
         st.Children.Add(new TextBlock { Text = "Next action", Classes = { "h3" } });
         var next = AutoGrow(new TextBox { Text = d.State.NextAction, Watermark = "What must happen next, and why it matters", TextWrapping = TextWrapping.Wrap, AcceptsReturn = true, MinHeight = 44, MaxHeight = 280 });
-        st.Children.Add(Ui.FormField("NEXT ACTION", next));
+        st.Children.Add(next);
         var savenext = new Button { Content = "Save next action", Height = 32 };
         savenext.Click += (_, _) => { var r = App.Workspace.SetNextAction(d.Requirement.Id, next.Text ?? "", App.Session!); ShowResult(r.Ok ? "Next action saved." : r.Error); Reload(); };
         st.Children.Add(savenext);
@@ -280,6 +288,16 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
         });
 
         return st;
+    }
+
+    /// <summary>Loose containment test for the Plain-English duplicate check: true when
+    /// the plain summary also appears inside the verbatim excerpt (>=80% shared words).</summary>
+    private static bool Similar(string excerpt, string plain)
+    {
+        var words = plain.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (words.Length < 5) return false;
+        var shared = words.Count(w => excerpt.Contains(w, StringComparison.OrdinalIgnoreCase));
+        return shared >= words.Length * 0.8;
     }
 
     private Button ReadinessBtn(string label, RequirementReadiness target, RequirementDetail d, string classes = "")

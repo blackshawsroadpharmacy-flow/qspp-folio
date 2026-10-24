@@ -37,9 +37,26 @@ public class RunLine : Control
         var toDeadline = deadline.DayNumber - Today.DayNumber;
         var todayX = (total - toDeadline) / (double)total;
 
-        var y = Bounds.Height / 2;
+        var y = Bounds.Height / 2 - 4;   // leaves room for the end labels under the line
         var track = new Pen(TodayInk.Br("Brush.HeroDiv").ToImmutable(), 1);
         ctx.DrawLine(track, new(0, y), new(Bounds.Width, y));
+
+        // 3F #8: label the ends of the run line — start (or "today" when no anchor was
+        // recorded) at the left, the deadline at the right.
+        var heroMuted = TodayInk.Br("Brush.HeroMuted").ToImmutable();
+        var au = new System.Globalization.CultureInfo("en-AU");
+        var labelFace = new Typeface(new FontFamily(Ui.FontFamilies.Ui));
+        FormattedText Ft(string t)
+        {
+            var ft = new FormattedText(t, System.Globalization.CultureInfo.InvariantCulture,
+                FlowDirection.LeftToRight, labelFace, 9, heroMuted);
+            return ft;
+        }
+        var leftLabel = Ft(Start is { } s0 ? s0.ToString("d MMM", au) : "today");
+        var rightLabel = Ft(deadline.ToString("d MMM yyyy", au));
+        var labelY = y + 10;
+        ctx.DrawText(leftLabel, new(0, labelY));
+        ctx.DrawText(rightLabel, new(Bounds.Width - rightLabel.Width, labelY));
 
         var acid = TodayInk.Br("Brush.Acid").ToImmutable();
         var fillEnd = todayX * Bounds.Width;
@@ -147,8 +164,18 @@ public class YearAheadStrip : Control
         }
 
         // Marks: shape encodes category, colour secondary; the featured deadline is a tall bar.
+        // 3F #8: a LONE mark gets a text label so it never floats unexplained.
+        var loneMark = Marks.Count == 1 ? Marks[0] : null;
         foreach (var mark in Marks)
         {
+            if (loneMark == mark)
+            {
+                var loneFt = new FormattedText(mark.Tooltip, au, FlowDirection.LeftToRight,
+                    new Typeface(new FontFamily(Ui.FontFamilies.Ui)), 10, muted);
+                var (lx, ly) = MarkPoint(mark);
+                var lxClamped = lx + 8 + loneFt.Width <= Bounds.Width ? lx + 8 : Math.Max(2, lx - 8 - loneFt.Width);
+                ctx.DrawText(loneFt, new(lxClamped, ly + 14));
+            }
             var (x, y) = MarkPoint(mark);
             var b = mark.Tall ? 34 : 12;
             if (mark.Shape == "bar")

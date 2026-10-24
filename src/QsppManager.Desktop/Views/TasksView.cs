@@ -27,12 +27,7 @@ public partial class TasksView : UserControl, IPageSearchFocus
     private Control Build(ShellViewModel shell)
     {
         var sp = new StackPanel { Margin = new(28, 24), Spacing = 14, MaxWidth = 1040, HorizontalAlignment = HorizontalAlignment.Left };
-        sp.Children.Add(new TextBlock { Classes = { "h1" }, Text = "Tasks & calendar" });
-        sp.Children.Add(new TextBlock
-        {
-            Classes = { "lead" }, TextWrapping = TextWrapping.Wrap,
-            Text = "One-off work and recurring schedule occurrences, with owners and due dates. Missed occurrences stay open (overdue) until done; completing one records who and when. Schedules live in Registers.",
-        });
+        sp.Children.Add(Ui.PageTitle(ViewModels.ShellPage.Tasks, "One-off work and recurring occurrences, with owners and due dates.", "Missed occurrences stay open (overdue) until done; completing one records who and when. Schedules live in Registers."));
 
         Ui.Ax(_filter, "Task filter", "Choose which open tasks are listed");
         var row = Ui.Row(10, _filter,
@@ -47,15 +42,16 @@ public partial class TasksView : UserControl, IPageSearchFocus
             }));
         sp.Children.Add(row);
 
-        _grid.Columns.Add(new DataGridTextColumn { Header = "Title", Binding = new Avalonia.Data.Binding("Title"), Width = new DataGridLength(320) });
+        _grid.Columns.Add(new DataGridTextColumn { Header = "Title", Binding = new Avalonia.Data.Binding("Title"), Width = new DataGridLength(3, DataGridLengthUnitType.Star) });
         _grid.Columns.Add(new DataGridTextColumn { Header = "Priority", Binding = new Avalonia.Data.Binding("Priority"), Width = new DataGridLength(90) });
-        _grid.Columns.Add(new DataGridTextColumn { Header = "Due", Binding = new Avalonia.Data.Binding("DueLabel"), Width = new DataGridLength(110) });
-        _grid.Columns.Add(new DataGridTextColumn { Header = "Owner", Binding = new Avalonia.Data.Binding("Owner"), Width = new DataGridLength(140) });
-        _grid.Columns.Add(Ui.MonoCol("Requirement", "ReqRef", 140));
-        _grid.Columns.Add(new DataGridTextColumn { Header = "Details", Binding = new Avalonia.Data.Binding("Details"), Width = new DataGridLength(240) });
+        _grid.Columns.Add(new DataGridTextColumn { Header = "Due", Binding = new Avalonia.Data.Binding("DueLabel"), Width = new DataGridLength(130) });
+        _grid.Columns.Add(new DataGridTextColumn { Header = "Owner", Binding = new Avalonia.Data.Binding("Owner"), Width = new DataGridLength(1, DataGridLengthUnitType.Star) });
+        _grid.Columns.Add(Ui.MonoCol("Requirement", "ReqRef", 120));
+        _grid.Columns.Add(new DataGridTextColumn { Header = "Details", Binding = new Avalonia.Data.Binding("Details"), Width = new DataGridLength(2, DataGridLengthUnitType.Star) });
         Ui.Ax(_grid, "Open tasks", "Select a task to complete it");
-        _tasksHost = Host(_grid, 420, "list-checks", "No open tasks in this view", "Try All open, or create a task with the New task button.");
+        _tasksHost = Host(_grid, 420, "list-checks", "No open tasks in this view", "Try All open, or create a task with the New task button.", "Brush.Clay");
         sp.Children.Add(_tasksHost.Panel);
+        sp.Children.Add(_standingLine);   // 3E #3: standing info inline, never a banner
 
         sp.Children.Add(_resultBar);
         return new ScrollViewer { Content = sp };
@@ -87,8 +83,15 @@ public partial class TasksView : UserControl, IPageSearchFocus
             t.Id,
         }).ToList();
         _tasksHost.Refresh(tasks.Count);
-                _resultBar.Show(NoticeTone.Info, $"{tasks.Count} task(s) shown. Completing a task records who completed it and when — that record is the evidence of the action.");
+        // 3E #3: standing information is an inline callout, not a permanent banner.
+        _standingLine.Text = $"{tasks.Count} shown. Completing a task records who completed it and when — that record is the evidence of the action.";
     }
+
+    private readonly TextBlock _standingLine = new()
+    {
+        Classes = { "callout" }, TextWrapping = TextWrapping.Wrap,
+        Text = "All open tasks shown. Completing a task records who completed it and when — that record is the evidence of the action.",
+    };
 
     /// <summary>⌘F hook: the page's filter is a preset ComboBox, so toolbar text maps
     /// onto the existing presets rather than introducing free-text filtering.</summary>
@@ -118,9 +121,9 @@ public partial class TasksView : UserControl, IPageSearchFocus
     private static Button PrimaryBtn(string label, string axHelp, EventHandler<RoutedEventArgs> onClick) => Btn(label, axHelp, onClick, "primary");
 
     /// <summary>Table with an in-place empty state; the visible child tracks the row count.</summary>
-    private static TableHost Host(Control table, double minHeight, string icon, string title, string hint)
+    private static TableHost Host(Control table, double minHeight, string icon, string title, string hint, string hue = "Brush.Stone")
     {
-        var empty = Ui.EmptyState(icon, title, hint);
+        var empty = Ui.EmptyState(icon, title, hint, null, hue);
         empty.IsVisible = false;
         var panel = new Panel { MinHeight = minHeight };
         panel.Children.Add(table);

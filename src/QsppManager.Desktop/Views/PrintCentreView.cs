@@ -50,8 +50,7 @@ public partial class PrintCentreView : UserControl
         Ui.Ax(_jobs, "Recent print jobs", "Select a job row to print it again with the same PDF");
 
         var sp = new StackPanel { Margin = new(32, 28), Spacing = 14, MaxWidth = 1040, HorizontalAlignment = HorizontalAlignment.Left };
-        sp.Children.Add(Ui.H1("Print centre"));
-        sp.Children.Add(Ui.Lead("Print the current requirement checklist as a working paper document: blank, pre-filled with expected evidence, or completed with the current evidence register. Rendering is A4, greyscale-safe; paper output depends on the printer — a spooler acceptance does not guarantee the pages printed."));
+        sp.Children.Add(Ui.PageTitle(ViewModels.ShellPage.PrintCentre, "Print the current requirement checklist as a working paper document.", "Variants: blank, pre-filled with expected evidence, or completed with the current evidence register. Rendering is A4, greyscale-safe; paper output depends on the printer — a spooler acceptance does not guarantee the pages printed."));
 
         // ---- document ----
         var variantRow = new StackPanel
@@ -70,8 +69,8 @@ public partial class PrintCentreView : UserControl
                         b.Click += (_, _) => { LoadPrinters(); _resultBar.Clear(); };
         }));
         printerRow.Children.Add(_duplex);
-        printerRow.Children.Add(Ui.FormField("COPIES", _copies));
-        sp.Children.Add(Ui.Section("Printer", printerRow));
+        printerRow.Children.Add(Ui.FormField("Copies", _copies));
+        sp.Children.Add(Ui.Section("Printer", Ui.Col(8, printerRow, _printerLine)));
 
         // ---- remote assessment round pack (M7) ----
         // One button renders the whole surveillance round as a response pack: every REM
@@ -141,10 +140,17 @@ public partial class PrintCentreView : UserControl
         var names = printers.Select(p => p.Name).ToList();
         _printer.ItemsSource = names;
         _printer.SelectedIndex = names.Count > 0 ? 0 : -1;
-                _resultBar.Show(NoticeTone.Info, printers.Count == 0
+        // 3E #3: standing information is an inline callout line, not a permanent banner.
+        _printerLine.Text = printers.Count == 0
             ? "No printers visible to CUPS (lpstat). You can still render and preview the PDF, or save it and print from another device."
-            : $"{printers.Count} printer(s) found via CUPS." + (printers.FirstOrDefault(p => p.IsDefault) is { } def ? $" Default: {def.Name}." : ""));
+            : $"{printers.Count} found via CUPS." + (printers.FirstOrDefault(p => p.IsDefault) is { } def ? $" Default: {def.Name}." : "");
     }
+
+    private readonly TextBlock _printerLine = new()
+    {
+        Classes = { "callout" }, TextWrapping = TextWrapping.Wrap,
+        Text = "Looking for CUPS printers…",
+    };
 
     private async Task RenderAsync()
     {
@@ -316,9 +322,9 @@ public partial class PrintCentreView : UserControl
     }
     /// <summary>Table with an in-place empty state; the visible child tracks the row count
     /// (premium-polish 3.8 — Print centre recent jobs).</summary>
-    private static TableHost Host(Control table, double minHeight, string icon, string title, string hint)
+    private static TableHost Host(Control table, double minHeight, string icon, string title, string hint, string hue = "Brush.Stone")
     {
-        var empty = Ui.EmptyState(icon, title, hint);
+        var empty = Ui.EmptyState(icon, title, hint, null, hue);
         empty.IsVisible = false;
         var panel = new Panel { MinHeight = minHeight };
         panel.Children.Add(table);

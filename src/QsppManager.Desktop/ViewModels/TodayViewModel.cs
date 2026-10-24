@@ -290,7 +290,7 @@ public class TodayViewModel(ShellViewModel shell, TodayView view) : ViewModelBas
         static string ChipToneFor(string state) => state switch
         {
             "ManagerVerified" => "ok",
-            "ReadyForReview" => "warn",
+            "ReadyForReview" => "review",   // violet for ready-for-review (3D)
             "NeedsRework" => "bad",
             "Planned" => "info",
             "InProgress" => "warn",

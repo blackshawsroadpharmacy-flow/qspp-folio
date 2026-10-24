@@ -112,7 +112,7 @@ public sealed class IncidentDialog : RegisterDialogBase
     public string ImmediateAction = "";
 
     private readonly DatePicker _date = new() { SelectedDate = DateTimeOffset.Now };
-    private readonly TextBox _severity = new() { Watermark = "Severity (free text — the register doesn't invent a taxonomy)" };
+    private readonly TextBox _severity = new() { Watermark = "Severity, free text. The register does not invent a taxonomy." };
     private readonly TextBox _desc = new() { Watermark = "Describe what happened as it occurred", AcceptsReturn = true, MinHeight = 90, TextWrapping = TextWrapping.Wrap };
     private readonly TextBox _action = new() { Watermark = "Optional now (required to close)", AcceptsReturn = true, MinHeight = 60, TextWrapping = TextWrapping.Wrap };
 

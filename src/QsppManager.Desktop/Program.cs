@@ -20,6 +20,14 @@ internal static class Program
     /// <summary>--theme light|dark: deterministic render theme (arg wins over the old env
     /// knob; default light).</summary>
     public static string? RenderTheme { get; private set; }
+    /// <summary>--fonts: print which family each type token actually resolved to, with a
+    /// tabular/lining figure probe for the digits, and exit (phase 3 v2, 3B).</summary>
+    public static bool FontsDiagnostic { get; private set; }
+    /// <summary>--assert-today: run the Today hero layout assertions at 100/130/150% text
+    /// scale and exit non-zero on any failure (phase 3 v2, 3A).</summary>
+    public static bool AssertTodayLayout { get; private set; }
+    /// <summary>--text-scale &lt;1.0|1.3|1.5&gt;: render / assert at a text scale.</summary>
+    public static double? TextScale { get; private set; }
 
     [STAThread]
     public static int Main(string[] args)
@@ -27,8 +35,13 @@ internal static class Program
         if (args.Contains("--selftest"))
             return QsppManager.Infrastructure.Services.TodaySelftest.Run(Console.Out);
 
+        FontsDiagnostic = args.Contains("--fonts");
+        AssertTodayLayout = args.Contains("--assert-today");
         for (var i = 0; i < args.Length - 1; i++)
-            if (args[i] == "--render-offscreen") RenderOffscreen = args[i + 1];
+            if (args[i] == "--text-scale" && double.TryParse(args[i + 1], System.Globalization.CultureInfo.InvariantCulture, out var s))
+                TextScale = s;
+        for (var i = 0; i < args.Length; i++)
+            if (args[i] == "--render-offscreen" && i + 1 < args.Length) RenderOffscreen = args[i + 1];
         Hold = args.Contains("--hold");
         // Optional window size for off-screen renders (phase-4 verification matrix).
         for (var i = 0; i < args.Length - 1; i++)

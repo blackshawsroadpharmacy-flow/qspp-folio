@@ -112,6 +112,24 @@ public partial class App : Avalonia.Application
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
+            if (Program.FontsDiagnostic)
+            {
+                // --fonts: report what actually resolves, then exit (3B).
+                ApplyAppearance(Program.RenderTheme ?? "light");
+                FontsDiagnostic.Run();
+                base.OnFrameworkInitializationCompleted();
+                desktop.Shutdown();
+                return;
+            }
+            if (Program.AssertTodayLayout)
+            {
+                // --assert-today: hero layout assertions at 100/130/150% text scale (3A).
+                ApplyAppearance(Program.RenderTheme ?? "light");
+                var scale = Program.TextScale;
+                TodayLayoutAssert.Run(desktop, scale);
+                base.OnFrameworkInitializationCompleted();
+                return;
+            }
             if (Program.RenderOffscreen is { } renderPath)
             {
                 // Off-screen verification render: the window is the lifetime's main window so
@@ -135,7 +153,7 @@ public partial class App : Avalonia.Application
     /// same chrome as MainWindow.axaml (sidebar, toolbar, page host, text-scale wrapper)
     /// composed in code, without window behaviours. The page is built exactly as the app
     /// builds it, against the scratch data dir; --hold keeps the window for the OS capture.</summary>
-    private static Window BuildShellWindow(ShellPage page, string path)
+    internal static Window BuildShellWindow(ShellPage page, string path)
     {
         var window = new Window
         {
@@ -150,7 +168,7 @@ public partial class App : Avalonia.Application
 
         try
         {
-            App.Session = new UserSession(Guid.Empty, "owner", "Owner", UserRole.OwnerAdmin);
+            App.Session = new UserSession(Guid.Empty, "owner", "Hugh Nguyen", UserRole.OwnerAdmin);  // matches production Users.DisplayName → chip initials "HN"
             App.Config.SidebarCollapsed = false;   // renders show the expanded sidebar, deterministic
             var shell = new ShellViewModel();
             shell.SignIn(App.Session);             // lands on Today; recurring occurrences generated (scratch DB)
@@ -159,11 +177,24 @@ public partial class App : Avalonia.Application
             // ---- sidebar (mirrors MainWindow.axaml: header, three groups, pinned Settings)
             Button NavRow(ShellViewModel s, NavItem item, bool isSettings)
             {
+                static string HueClass(ShellPage p) => p switch
+                {
+                    ShellPage.Today => "hueOchre",
+                    ShellPage.Requirements => "hueForest",
+                    ShellPage.Documents => "hueTeal",
+                    ShellPage.Tasks => "hueClay",
+                    ShellPage.Registers => "hueUmber",
+                    ShellPage.People => "hueBerry",
+                    ShellPage.Assessments => "hueViolet",
+                    ShellPage.PrintCentre or ShellPage.Settings => "hueStone",
+                    _ => "",
+                };
                 var b = new Button
                 {
                     Classes = { "navRow" }, Height = 30, HorizontalContentAlignment = HorizontalAlignment.Stretch,
                     Command = s.NavigateCommand, CommandParameter = item.Page,
                 };
+                if (HueClass(item.Page) is { } hc && hc != "") b.Classes.Add(hc);  // sidebar icon hue (3D)
                 var g = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), ColumnSpacing = 10 };
                 g.Children.Add(new LucideGlyph { Glyph = item.Icon, GlyphSize = 16, GlyphBrush = Helpers.Brush("Brush.Ink"), StrokeThickness = 1.5 });
                 g.Children.Add(new TextBlock { Text = item.Label });
@@ -183,8 +214,15 @@ public partial class App : Avalonia.Application
                 return b;
             }
 
-            var sidebarHeader = new StackPanel { Margin = new(18, 40, 16, 4) };
-            sidebarHeader.Children.Add(new TextBlock { Classes = { "headline" }, Text = shell.PharmacyName });
+            // 3F #2: identical header block on the code-built window — two lines, untrimmed
+            // (Avalonia renders trimming as one line), then 'QSPP Folio' beneath, fixed height.
+            var sidebarHeader = new StackPanel { Margin = new(18, 40, 16, 4), Height = 54 };
+            sidebarHeader.Children.Add(new TextBlock
+            {
+                Classes = { "headline" }, Text = shell.PharmacyName,
+                TextWrapping = TextWrapping.Wrap, MaxLines = 2,
+                VerticalAlignment = VerticalAlignment.Top,
+            });
             sidebarHeader.Children.Add(new TextBlock { Classes = { "footnote" }, Text = "QSPP Folio" });
 
             var groupPanel = new StackPanel { Margin = new(8, 6, 8, 8) };
@@ -233,7 +271,13 @@ public partial class App : Avalonia.Application
                 Classes = { "ghost" }, Height = 28, Width = 30, Padding = new Thickness(4, 0),
                 Content = new LucideGlyph { Glyph = "panel-left-close", GlyphSize = 17, GlyphBrush = Helpers.Brush("Brush.Ink"), StrokeThickness = 1.5 },
             });
-            var search = new TextBox { Width = 220, Height = 26, FontSize = 12.5, Watermark = "Filter current screen ⌘F" };
+            var search = new TextBox
+            {
+                Width = 220, Height = 28, FontSize = 12.5,
+                PlaceholderText = "Filter",
+            };
+            ToolTip.SetTip(search, "Filter the current screen (⌘F)");
+            search.Classes.Add("searchfield");   // sage fill, no border (3F #3)
             Grid.SetColumn(search, 2);
             toolbarGrid.Children.Add(search);
             var palette = new Button
@@ -241,11 +285,15 @@ public partial class App : Avalonia.Application
                 Classes = { "ghost" }, Height = 26, Padding = new Thickness(6, 0),
                 Content = new StackPanel
                 {
-                    Orientation = Orientation.Horizontal, Spacing = 6,
+                    Orientation = Orientation.Horizontal, Spacing = 4,
                     Children =
                     {
-                        new LucideGlyph { Glyph = "command", GlyphSize = 13, GlyphBrush = Helpers.Brush("Brush.Ink"), StrokeThickness = 1.5 },
-                        new TextBlock { Text = "Commands ⌘K", FontSize = 11.5, VerticalAlignment = VerticalAlignment.Center },
+                        new TextBlock { Text = "Commands", FontSize = 11.5, VerticalAlignment = VerticalAlignment.Center },
+                        new Border
+                        {
+                            Classes = { "keycap" }, VerticalAlignment = VerticalAlignment.Center,
+                            Child = new TextBlock { Text = "⌘K" },
+                        },
                     },
                 },
             };
@@ -338,7 +386,7 @@ public partial class App : Avalonia.Application
         TodayScreen? screen = null;
         try
         {
-            App.Session = new UserSession(Guid.Empty, "owner", "Owner", UserRole.OwnerAdmin);
+            App.Session = new UserSession(Guid.Empty, "owner", "Hugh Nguyen", UserRole.OwnerAdmin);  // matches production Users.DisplayName → chip initials "HN"
             var vm = new TodayViewModel(new ShellViewModel(), null!);
             screen = new TodayScreen(vm);
             vm.Refresh();

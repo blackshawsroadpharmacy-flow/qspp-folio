@@ -37,12 +37,14 @@
             IsVisible="{Binding SignedIn}">
       <!-- One window, one surface: opaque sidebar paper; no acrylic (3.1). -->
       <Grid RowDefinitions="Auto,*,Auto">
-        <StackPanel x:Name="SidebarHeader" Margin="18,40,16,4" IsVisible="{Binding SidebarExpanded}">
-          <TextBlock Classes="headline" Text="{Binding PharmacyName}"/>
+        <StackPanel x:Name="SidebarHeader" Margin="18,40,16,4" Height="54" IsVisible="{Binding SidebarExpanded}">
+          <!-- 3F #2: identical block everywhere — up to two lines, then 'QSPP Folio' underneath. -->
+          <TextBlock Classes="headline" Text="{Binding PharmacyName}" TextWrapping="Wrap" MaxLines="2"
+                     VerticalAlignment="Top"/>
           <TextBlock Classes="footnote" Text="QSPP Folio"/>
         </StackPanel>
 
-        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Hidden">
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">   <!-- 3F #2: Disabled, not Hidden — Hidden grants infinite width, so the header name never wraps -->
           <ItemsControl x:Name="NavGroupsHost" ItemsSource="{Binding NavGroups}">
             <ItemsControl.ItemTemplate>
               <DataTemplate>
@@ -57,6 +59,10 @@
                                 Command="{Binding $parent[Window].DataContext.NavigateCommand}"
                                 CommandParameter="{Binding Page}"
                                 Classes.sel="{Binding IsActive}"
+                                Classes.hueOchre="{Binding IsHueOchre}" Classes.hueForest="{Binding IsHueForest}"
+                                Classes.hueTeal="{Binding IsHueTeal}" Classes.hueClay="{Binding IsHueClay}"
+                                Classes.hueUmber="{Binding IsHueUmber}" Classes.hueBerry="{Binding IsHueBerry}"
+                                Classes.hueViolet="{Binding IsHueViolet}" Classes.hueStone="{Binding IsHueStone}"
                                 ToolTip.Tip="{Binding Label}"
                                 AutomationProperties.AutomationId="NavItem">
                           <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
@@ -93,7 +99,7 @@
                 Margin="8,4,8,10" Padding="0,6,0,0">
           <Button Classes="navRow" Height="30" HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch"
                   Command="{Binding NavigateCommand}" CommandParameter="{Binding SettingsItem.Page}"
-                  Classes.sel="{Binding IsSettingsActive}"
+                  Classes.sel="{Binding IsSettingsActive}" Classes.hueStone="True"
                   ToolTip.Tip="Settings"
                   AutomationProperties.AutomationId="NavSettings">
             <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
@@ -127,16 +133,17 @@
               <local:LucideGlyph Glyph="panel-left-open"  GlyphBrush="{DynamicResource Brush.Ink}" StrokeThickness="1.5" IsVisible="{Binding SidebarCollapsed}" />
             </Grid>
           </Button>
-          <TextBox x:Name="ToolbarSearch" Grid.Column="2" Width="220" Height="26" FontSize="12.5"
-                   Watermark="Filter current screen ⌘F"
+          <TextBox x:Name="ToolbarSearch" Grid.Column="2" Classes="searchfield" Width="220" Height="28" FontSize="12.5"
+                   PlaceholderText="Filter"
+                   ToolTip.Tip="Filter the current screen (⌘F)"
                    AutomationProperties.AutomationId="ToolbarSearch"/>
           <Button x:Name="PaletteButton" Grid.Column="4" Classes="ghost" Height="26" Padding="6,0"
                   Command="{Binding TogglePaletteCommand}"
                   AutomationProperties.AutomationId="PaletteButton"
                   ToolTip.Tip="Command palette (⌘K)">
-            <StackPanel Orientation="Horizontal" Spacing="6">
-              <local:LucideGlyph Glyph="command" GlyphSize="13" GlyphBrush="{DynamicResource Brush.Ink}" StrokeThickness="1.5" />
-              <TextBlock Text="Commands ⌘K" FontSize="11.5" VerticalAlignment="Center"/>
+            <StackPanel Orientation="Horizontal" Spacing="4">
+              <TextBlock Text="Commands" FontSize="11.5" VerticalAlignment="Center"/>
+              <Border Classes="keycap" VerticalAlignment="Center"><TextBlock Text="⌘K" /></Border>
             </StackPanel>
           </Button>
           <!-- empty stretch: dragging here moves the window (handled in code-behind) -->
@@ -176,7 +183,7 @@
               BoxShadow="{StaticResource Shadow.Overlay}">
         <StackPanel Spacing="6">
           <TextBox x:Name="PaletteSearch" Height="36" FontSize="14"
-                   Watermark="Search requirements, evidence, issues, sources — Return opens"
+                   Watermark="Search requirements, evidence, issues, sources. Return opens."
                    Text="{Binding SearchText, Mode=TwoWay}"
                    AutomationProperties.AutomationId="PaletteSearch"/>
           <ListBox x:Name="PaletteResults"

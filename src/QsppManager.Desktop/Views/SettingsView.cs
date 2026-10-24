@@ -52,31 +52,32 @@ public partial class SettingsView : UserControl
     private Control Build()
     {
         var sp = new StackPanel { Margin = new(32, 28), Spacing = 18, MaxWidth = 1100, HorizontalAlignment = HorizontalAlignment.Left };
-        sp.Children.Add(new TextBlock { Classes = { "h1" }, Text = "Settings" });
+        sp.Children.Add(Ui.PageTitle(ViewModels.ShellPage.Settings, "", "Appearance, text size, the pharmacy profile, backups, data location and the provenance ledger live here."));
 
-        // Pharmacy profile
-        var profile = new StackPanel { Spacing = 14 };
-        profile.Children.Add(Ui.FormField("PHARMACY NAME", _name));
-        profile.Children.Add(Ui.FormField("JURISDICTION · TIME ZONE", _jur));
-        var flags = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 16 };
-        flags.Children.Add(_complex); flags.Children.Add(_sterile); flags.Children.Add(_prescribing); flags.Children.Add(_indirect);
-        profile.Children.Add(flags);
-        var dates = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 16,
-            Children =
+        // Pharmacy profile — grouped settings rows (3E #1), sentence-case labels (3C),
+        // 180pt date fields (3F #5).
+        sp.Children.Add(Ui.Section("Pharmacy profile", new StackPanel { Spacing = 10, Children =
+        {
+            Ui.GroupedRows(new[]
             {
-                Ui.FormField("CYCLE START (OPTIONAL)", _cycleStart),
-                Ui.FormField("ACCREDITATION EXPIRY (OPTIONAL)", _expiry),
-                Ui.FormField("ONSITE ASSESSMENT DATE (OPTIONAL)", _onsite),
-            } };
-        profile.Children.Add(dates);
-        var save = new Button { Content = "Save profile", Classes = { "primary" }, Height = 36 };
-        save.Click += (_, _) => SaveProfile();
-        profile.Children.Add(save);
-        profile.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap, Text = "Leave dates blank if unknown — Hugh's QSPP Manager will not invent a deadline; it lists obligations that do not depend on the missing date." });
-        sp.Children.Add(Ui.Section("Pharmacy profile", profile));
+                (Ui.OptionalLabel("Pharmacy name", optional: false), _name as Control),
+                (Ui.OptionalLabel("Jurisdiction and time zone", false), _jur as Control),
+                (Ui.OptionalLabel("Cycle start", true), _cycleStart as Control),
+                (Ui.OptionalLabel("Accreditation expiry", true), _expiry as Control),
+                (Ui.OptionalLabel("Onsite assessment date", true), _onsite as Control),
+            },
+            footnote: "Leave dates blank if unknown — the manager will not invent a deadline; it lists obligations that do not depend on the missing date."),
+            new WrapPanel { Orientation = Orientation.Horizontal, Children = { _complex, _sterile, _prescribing, _indirect } },
+            Ui.BtnRow(SaveProfileButton()),
+        } }));
 
-        // Deadlines
-        sp.Children.Add(Ui.Section("Resulting known deadlines from the program sources", _deadlineBox));
+        // Deadlines — compact two-column list (3F #5): date in code, label in body,
+        // provenance as a footnote line. No more 250pt of empty box.
+        sp.Children.Add(Ui.Section("Resulting known deadlines from the program sources", Ui.GroupedList(new ScrollViewer
+        {
+            MaxHeight = 260,
+            Content = _deadlineBox,
+        })));
 
         // Users
         _users.Columns.Add(new DataGridTextColumn { Header = "Name", Binding = new Avalonia.Data.Binding("Name"), Width = new DataGridLength(200) });
@@ -96,7 +97,7 @@ public partial class SettingsView : UserControl
         // Accessibility
         var a11y = new StackPanel { Spacing = 10 };
         a11y.Children.Add(_scale);
-        a11y.Children.Add(new StackPanel { Spacing = 6, Children = { new TextBlock { Classes = { "label" }, Text = "APPEARANCE" }, _appearance } });
+        a11y.Children.Add(new StackPanel { Spacing = 6, Children = { new TextBlock { Classes = { "label" }, Text = "Appearance" }, _appearance } });
         a11y.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap, Text = "Applies immediately across every screen; the choice is remembered." });
         sp.Children.Add(Ui.Section("Text size", a11y));
 
@@ -176,11 +177,36 @@ public partial class SettingsView : UserControl
     private void LoadDeadlines()
     {
         _deadlineBox.ItemsSource = App.Workspace.PharmacyDeadlines()
-            .Select(d => new TextBlock
+            .Select(d =>
             {
-                Text = $"{d.Date:dd MMM yyyy} · {d.Source} · {(d.PlanningOnly ? "PLANNING ONLY (sources disagree)" : d.Kind switch { DeadlineKind.ProviderConfirmed => "confirmed by provider/program", _ => "calculated from recorded dates" })}\n   {d.Explanation}",
-                TextWrapping = Avalonia.Media.TextWrapping.Wrap, Margin = new(8, 6),
+                var g = new Grid { ColumnDefinitions = new Avalonia.Controls.ColumnDefinitions("108,*"), Margin = new(0, 5) };
+                var date = new TextBlock { Classes = { "code" }, Text = d.Date.ToString("d MMM yyyy"), VerticalAlignment = VerticalAlignment.Top };
+                var label = new TextBlock { Classes = { "body" }, TextWrapping = Avalonia.Media.TextWrapping.Wrap, Text = d.Explanation };
+                var provenance = new TextBlock
+                {
+                    Classes = { "footnote" }, TextWrapping = Avalonia.Media.TextWrapping.Wrap,
+                    Text = (d.PlanningOnly ? "Planning only (sources disagree)" : d.Kind switch
+                    {
+                        DeadlineKind.ProviderConfirmed => "Confirmed by provider/program",
+                        _ => "Calculated from recorded dates",
+                    }) + " · source " + d.Source,
+                };
+                var right = new StackPanel { Spacing = 2 };
+                right.Children.Add(label);
+                right.Children.Add(provenance);
+                g.Children.Add(date);
+                g.Children.Add(right);
+                Grid.SetColumn(date, 0);
+                Grid.SetColumn(right, 1);
+                return g;
             }).ToList();
+    }
+
+    private Button SaveProfileButton()
+    {
+        var save = new Button { Content = "Save profile", Classes = { "primary" }, Height = 36 };
+        save.Click += (_, _) => SaveProfile();
+        return save;
     }
 
     private void SaveProfile()

@@ -31,22 +31,16 @@ public partial class DocumentsView : UserControl
     private Control Build(ShellViewModel shell)
     {
         var sp = new StackPanel { Margin = new(28, 24), Spacing = 14, MaxWidth = 1040, HorizontalAlignment = HorizontalAlignment.Left };
-        sp.Children.Add(new TextBlock { Classes = { "h1" }, Text = "Evidence & documents" });
-        sp.Children.Add(new TextBlock
-        {
-            Classes = { "lead" }, TextWrapping = TextWrapping.Wrap,
-            Text = "Attach pharmacy evidence (reviewed separately from readiness) and browse the imported source corpus. Files are copied into managed storage with checksums — deleting the original file never breaks a record.",
-        });
+        sp.Children.Add(Ui.PageTitle(ViewModels.ShellPage.Documents, "Pharmacy evidence and the imported source corpus, checksummed on import.", "Attach pharmacy evidence (reviewed separately from readiness) and browse the imported source corpus. Files are copied into managed storage with checksums — deleting the original file never breaks a record."));
 
-        _grid.Columns.Add(new DataGridTextColumn { Header = "Evidence", Binding = new Avalonia.Data.Binding("Title"), Width = new DataGridLength(300) });
-        _grid.Columns.Add(new DataGridTextColumn { Header = "Kind", Binding = new Avalonia.Data.Binding("Kind"), Width = new DataGridLength(110) });
-        _grid.Columns.Add(new DataGridTextColumn { Header = "Review", Binding = new Avalonia.Data.Binding("ReviewState"), Width = new DataGridLength(130) });
-        _grid.Columns.Add(new DataGridTextColumn { Header = "File", Binding = new Avalonia.Data.Binding("FileName"), Width = new DataGridLength(180) });
-        _grid.Columns.Add(Ui.MonoCol("sha256", "ShaShort", 120));
+        _grid.Columns.Add(new DataGridTextColumn { Header = "Evidence", Binding = new Avalonia.Data.Binding("Title"), Width = new DataGridLength(3, DataGridLengthUnitType.Star) });
+        _grid.Columns.Add(new DataGridTextColumn { Header = "Kind", Binding = new Avalonia.Data.Binding("KindDisplay"), Width = new DataGridLength(120) });
+        _grid.Columns.Add(new DataGridTextColumn { Header = "Review", Binding = new Avalonia.Data.Binding("ReviewDisplay"), Width = new DataGridLength(150) });
+        _grid.Columns.Add(new DataGridTextColumn { Header = "File", Binding = new Avalonia.Data.Binding("FileDisplay"), Width = new DataGridLength(2, DataGridLengthUnitType.Star) });
         _grid.Columns.Add(new DataGridTextColumn { Header = "Effective", Binding = new Avalonia.Data.Binding("Effective"), Width = new DataGridLength(160) });
         _grid.Columns.Add(new DataGridTextColumn { Header = "Patient data", Binding = new Avalonia.Data.Binding("PatientLabel"), Width = new DataGridLength(90) });
         Ui.Ax(_grid, "Evidence records", "Select a row to review, open or supersede it");
-        _evidenceHost = Host(_grid, 260, "files", "No evidence records yet", "Attach the first evidence file — it is copied into managed storage with a checksum.");
+        _evidenceHost = Host(_grid, 260, "files", "No evidence records yet", "Attach the first evidence file — it is copied into managed storage with a checksum.", "Brush.Teal");
         sp.Children.Add(_evidenceHost.Panel);
 
         // Seven actions on ONE row clipped the window edge in the audit; two filled-green
@@ -67,13 +61,12 @@ public partial class DocumentsView : UserControl
         sp.Children.Add(_resultBar);
 
         sp.Children.Add(new TextBlock { Text = "Source documents (verified corpus, read-only)", Classes = { "h3" }, Margin = new(0, 8, 0, 0) });
-        _sources.Columns.Add(new DataGridTextColumn { Header = "Document", Binding = new Avalonia.Data.Binding("DisplayName"), Width = new DataGridLength(420) });
-        _sources.Columns.Add(new DataGridTextColumn { Header = "Role", Binding = new Avalonia.Data.Binding("Role"), Width = new DataGridLength(90) });
-        _sources.Columns.Add(new DataGridTextColumn { Header = "Version", Binding = new Avalonia.Data.Binding("SourceVersion"), Width = new DataGridLength(150) });
-        _sources.Columns.Add(Ui.MonoCol("sha256", "ShaShort", 110));
-        _sources.Columns.Add(new DataGridTextColumn { Header = "Provenance", Binding = new Avalonia.Data.Binding("ProvenanceNote"), Width = new DataGridLength(300) });
+        _sources.Columns.Add(new DataGridTextColumn { Header = "Document", Binding = new Avalonia.Data.Binding("DisplayName"), Width = new DataGridLength(4, DataGridLengthUnitType.Star) });
+        _sources.Columns.Add(new DataGridTextColumn { Header = "Role", Binding = new Avalonia.Data.Binding("RoleDisplay"), Width = new DataGridLength(110) });
+        _sources.Columns.Add(new DataGridTextColumn { Header = "Version", Binding = new Avalonia.Data.Binding("SourceVersion"), Width = new DataGridLength(1, DataGridLengthUnitType.Star) });
+        _sources.Columns.Add(new DataGridTextColumn { Header = "Provenance", Binding = new Avalonia.Data.Binding("ProvenanceNote"), Width = new DataGridLength(2, DataGridLengthUnitType.Star) });
         Ui.Ax(_sources, "Source documents", "The verified, read-only source corpus with checksums and provenance");
-        _sourcesHost = Host(_sources, 240, "file-text", "No source documents imported", "The verified corpus appears here once documents are imported during setup.");
+        _sourcesHost = Host(_sources, 240, "file-text", "No source documents imported", "The verified corpus appears here once documents are imported during setup.", "Brush.Teal");
         sp.Children.Add(_sourcesHost.Panel);
         var row2 = Ui.Row(8, Btn("Open source PDF via system viewer", "Open the selected source document PDF", (_, _) =>
         {
@@ -88,14 +81,14 @@ public partial class DocumentsView : UserControl
     private void Load()
     {
         var evidence = App.Workspace.AllEvidence().Select(e => new EvidenceRow(
-            e.Title, e.Kind.ToString(), e.ReviewState.ToString(), e.FileName, e.Sha256[..12] + "…",
-            (e.EffectiveFrom?.ToString("dd MMM yyyy") ?? "—") + (e.EffectiveTo is null ? "" : " → " + e.EffectiveTo?.ToString("dd MMM yyyy")),
-            e.ContainsPatientData ? "flagged" : "", e.Id, e.StoredRelativePath)).ToList();
+            e.Title, HumanKind(e.Kind), HumanReview(e.ReviewState), FileNameDisplay(e.FileName),
+            e.EffectiveFrom is null ? "" : e.EffectiveFrom.Value.ToString("dd MMM yyyy") + (e.EffectiveTo is null ? "" : " → " + e.EffectiveTo.Value.ToString("dd MMM yyyy")),
+            e.ContainsPatientData ? "flagged" : "", e.Id, e.StoredRelativePath, e.ReviewState.ToString())).ToList();
         _grid.ItemsSource = evidence;
         _evidenceHost.Refresh(evidence.Count);
 
         var sources = App.Workspace.AllSourceDocuments()
-            .Select(d => new SourceDocRow(d.DisplayName, d.Role, d.SourceVersion, d.Sha256Hex[..12] + "…", d.ProvenanceNote, d.StoredRelativePath)).ToList();
+            .Select(d => new SourceDocRow(FileNameDisplay(d.DisplayName), HumanRole(d.Role), d.SourceVersion, d.Sha256Hex[..12] + "…", LoneDash(d.ProvenanceNote), d.StoredRelativePath)).ToList();
         _sources.ItemsSource = sources;
         _sourcesHost.Refresh(sources.Count);
     }
@@ -157,8 +150,49 @@ public partial class DocumentsView : UserControl
         Load();
     }
 
-    public record EvidenceRow(string Title, string Kind, string ReviewState, string FileName, string ShaShort, string Effective, string PatientLabel, Guid Id, string StoredRelativePath);
-    public record SourceDocRow(string DisplayName, string Role, string SourceVersion, string ShaShort, string ProvenanceNote, string StoredRelativePath);
+    // Display fields (KindDisplay/ReviewDisplay/FileDisplay) carry the human forms (3E #2);
+    // the raw ReviewState stays for logic (supersede guard).
+    // ---- 3E #2 display formatting (labels only; the data itself never changes) ----
+    /// <summary>Raw enum names become the words the program uses ("PolicyOrSop" → "Policy or SOP").</summary>
+    internal static string HumanKind(object kind) => CamelToWords(kind?.ToString() ?? "");
+
+    private static string HumanReview(object state) => state?.ToString() switch
+    {
+        "NotApplicable" => "Not applicable",
+        "ReadyForReview" => "Ready for review",
+        "ManagerVerified" => "Manager verified",
+        "NeedsRework" => "Needs rework",
+        var raw => CamelToWords(raw ?? ""),
+    };
+
+    private static string HumanRole(string role) => CamelToWords(role);
+
+    /// <summary>"Position-Description-PA-Lvl-3-Dispensary" → "Position description: PA level 3, dispensary".
+    /// Unknown shapes pass through unchanged. The real file name stays in the detail.</summary>
+    internal static string FileNameDisplay(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "";
+        var known = new System.Collections.Generic.Dictionary<string, string>
+        {
+            ["Position-Description-PA-Lvl-3-Dispensary"] = "Position description: PA level 3, dispensary",
+            ["Position-Description-PA-Lvl-3"] = "Position description: PA level 3",
+        };
+        if (known.TryGetValue(name, out var nice)) return nice;
+        return name.Replace('-', ' ').Replace('_', ' ') switch { var t => t };
+    }
+
+    /// <summary>A lone "—" in a cell becomes empty (the "Not set" wording rides the label).</summary>
+    internal static string LoneDash(string? text) =>
+        text is null || text.Trim() is "-" or "—" or "–" ? "" : text;
+
+    private static string CamelToWords(string raw)
+    {
+        if (raw.Length == 0) return "";
+        return System.Text.RegularExpressions.Regex.Replace(raw, @"(\B[A-Z])", " $1");
+    }
+
+    public record EvidenceRow(string Title, string KindDisplay, string ReviewDisplay, string FileDisplay, string Effective, string PatientLabel, Guid Id, string StoredRelativePath, string ReviewState);
+    public record SourceDocRow(string DisplayName, string RoleDisplay, string SourceVersion, string ShaShort, string ProvenanceNote, string StoredRelativePath);
 
     public void OpenEvidence(Guid id)
     {
@@ -180,9 +214,9 @@ public partial class DocumentsView : UserControl
     private static Button PrimaryBtn(string label, string axHelp, EventHandler<RoutedEventArgs> onClick) => Btn(label, axHelp, onClick, "primary");
 
     /// <summary>Table with an in-place empty state; the visible child tracks the row count.</summary>
-    private static TableHost Host(Control table, double minHeight, string icon, string title, string hint)
+    private static TableHost Host(Control table, double minHeight, string icon, string title, string hint, string hue = "Brush.Stone")
     {
-        var empty = Ui.EmptyState(icon, title, hint);
+        var empty = Ui.EmptyState(icon, title, hint, null, hue);
         empty.IsVisible = false;
         var panel = new Panel { MinHeight = minHeight };
         panel.Children.Add(table);

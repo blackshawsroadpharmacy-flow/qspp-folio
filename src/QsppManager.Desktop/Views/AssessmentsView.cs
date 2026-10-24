@@ -19,9 +19,7 @@ public partial class AssessmentsView : UserControl
     public AssessmentsView(ShellViewModel shell)
     {
         var sp = new StackPanel { Margin = new(32, 28), Spacing = 14, MaxWidth = 1040, HorizontalAlignment = HorizontalAlignment.Left };
-        sp.Children.Add(Ui.H1("Assessments"));
-        sp.Children.Add(new TextBlock { Classes = { "lead" },
-            Text = "The preparation journey from first reading to the cycle's end. QSPP accreditation is awarded by the Guild's assessment process — this screen helps you arrive ready and keep the records that show it. Counts are live database values; what to do next is stated plainly." });
+        sp.Children.Add(Ui.PageTitle(ViewModels.ShellPage.Assessments, "The preparation journey from first reading to the cycle's end.", "QSPP accreditation is awarded by the Guild's assessment process — this screen helps you arrive ready and keep the records that show it. Counts are live database values; what to do next is stated plainly."));
         sp.Children.Add(_resultBar);
 
         Refresh(sp, shell);
@@ -146,64 +144,60 @@ public partial class AssessmentsView : UserControl
         var j = App.Workspace.Journey();
         var noOnsite = j.OnsiteAssessmentDate is null;
         var noExpiry = j.AccreditationExpiryDate is null;
+        _currentAssigned = false;   // current-phase marker resets per refresh
 
-        // Diagnostic strip: the four numbers that get pharmacies caught out.
-        sp.Children.Add(new Border
-        {
-            Padding = new(14, 10), Background = Ui.Br("Brush.Sage"),
-            BorderBrush = Ui.Br("Brush.Divider"), BorderThickness = new(1),
-            Child = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 26, Children =
-            {
-                Mini("Overdue tasks", j.OverdueTasks.ToString()),
-                Mini("Evidence awaiting review", j.EvidenceAwaitingReview.ToString()),
-                Mini("Open interpretation issues", j.UnresolvedIssues.ToString()),
-                Mini("Accreditation verified", $"{j.ManagerVerified} req."),
-            } },
-        });
+        // 3F #6: the numbers that get pharmacies caught out — stat counts in meaning hues
+        // only when they need attention; zeros stay muted (3D #7).
+        var metrics = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 34, Margin = new(0, 2, 0, 4) };
+        metrics.Children.Add(StatCount("Overdue tasks", j.OverdueTasks, j.OverdueTasks > 0 ? "Brush.Red" : "Brush.Muted", j.OverdueTasks > 0 ? "" : "none"));
+        metrics.Children.Add(StatCount("Awaiting review", j.EvidenceAwaitingReview, j.EvidenceAwaitingReview > 0 ? "Brush.Violet" : "Brush.Muted", j.EvidenceAwaitingReview > 0 ? "" : "none"));
+        metrics.Children.Add(StatCount("Open interpretations", j.UnresolvedIssues, j.UnresolvedIssues > 0 ? "Brush.Ochre" : "Brush.Muted", j.UnresolvedIssues > 0 ? "" : "none"));
+        metrics.Children.Add(StatCount("Accreditation verified", j.ManagerVerified, j.ManagerVerified > 0 ? "Brush.Green" : "Brush.Muted", j.ManagerVerified > 0 ? "" : "none"));
+        sp.Children.Add(metrics);
 
-        Phase(sp, shell, "1 — Understand the program",
+        Phase(sp, shell, 1, "Understand the program", j.RequirementsTotal > 0,
             $"The corpus holds {j.RequirementsTotal} verified records from the Standard, UAG, Program Rules, T&Cs, policies and the readiness hitlist. {j.TotalIssues} interpretation questions are tracked; {j.UnresolvedIssues} remain open and {j.AcknowledgedIssues} are acknowledged.",
             "Read the Knowledge Hub and the UAG. Where sources disagree, the app uses the conservative reading for planning — settle them in the Library with a recorded resolution.",
             ("Open Library", ShellPage.Library));
 
-        Phase(sp, shell, "2 — Decide applicability",
+        Phase(sp, shell, 2, "Decide applicability", j.ApplicabilityDecided >= j.RequirementsTotal,
             $"{j.ApplicabilityDecided} of {j.RequirementsTotal} requirements have a recorded applicability decision (with the reason you gave).",
             "Work through Requirements and set Applicable / Not applicable with a reason for each — future staff and assessors will rely on it.",
             ("Open Requirements", ShellPage.Requirements));
 
-        Phase(sp, shell, "3 — Assign owners",
+        Phase(sp, shell, 3, "Assign owners", j.OwnedCount >= j.ApplicabilityDecided && j.ApplicabilityDecided > 0,
             $"{j.OwnedCount} requirements have a named owner. Blank owners are how responsibilities silently vanish.",
             "Assign a person to every applicable requirement, and give each one a live 'next action'.",
             ("Open Requirements", ShellPage.Requirements));
 
-        Phase(sp, shell, "4 — Gather evidence",
+        Phase(sp, shell, 4, "Gather evidence", j.ManagerVerified > 0 && j.EvidenceAwaitingReview == 0,
             $"{j.RequirementsWithEvidence} requirements currently have at least one active or proposed evidence link. {j.EvidenceAwaitingReview} evidence items are waiting for review — manager verification is what activates links.",
             "Attach documents in Evidence & documents, link each to the requirement it supports, and let the manager verify them.",
             ("Open Evidence & documents", ShellPage.Documents));
 
-        Phase(sp, shell, "5 — Internal readiness",
+        Phase(sp, shell, 5, "Internal readiness", false,
             $"{j.ManagerVerified} requirements are manager-verified, {j.InProgress} in progress, {j.NotStarted} started but not advanced. The readiness report (M4) will print the full picture; the print centre already produces per-requirement evidence checklists.",
             "Run your own internal review before the Guild sees it: print checklists in the Print centre and walk the pharmacy.",
             ("Open Print centre", ShellPage.PrintCentre));
 
         if (noOnsite)
-            Phase(sp, shell, "6 — Book the onsite assessment",
+            Phase(sp, shell, 6, "Book the onsite assessment", false,
                 "No assessment date recorded yet. Book with the assessment services provider (EY), then record the date under Settings — the app derives the conservative cancellation cutoff (10 business days, planning-only while the sources disagree).",
                 "After booking, enter the date in Settings; deadlines appears on Today immediately.",
                 ("Open Settings", ShellPage.Settings));
         else
-            Phase(sp, shell, "6 — Onsite assessment booked",
+            Phase(sp, shell, 6, "Onsite assessment booked", true,
                 $"Assessment recorded for {j.OnsiteAssessmentDate:dd MMM yyyy}. The conservative cancellation cutoff and the planning-only mid-cycle window are on Today. Changes or cancellations are made with the provider; the 10-day fee window applies under their rules.",
                 "Keep evidence current until the assessor arrives; the audit trail is your activity log.",
                 ("Open Today", ShellPage.Today));
 
         if (noExpiry)
-            Phase(sp, shell, "7 — After the assessment",
+            Phase(sp, shell, 7, "After the assessment", false,
                 "No accreditation expiry recorded. When the outcome arrives, record assessor-accepted status per requirement (with the report reference) under Requirements, and set the expiry + cycle start dates in Settings.",
                 "The three-year cycle, mid-cycle review window and annual attestation dates follow from the dates you record.",
                 ("Open Settings", ShellPage.Settings));
         else
-            Phase(sp, shell, "7 — Cycle in progress",
+            Phase(sp, shell, 7, "Cycle in progress", true,
                 $"Accreditation expires {j.AccreditationExpiryDate:dd MMM yyyy}. Rule 5 requires re-accreditation assessment to occur within the 3 calendar months BEFORE expiry; Today shows the derived preparation date.",
                 "Keep the cycle clocks honest: update Settings if dates change.",
                 ("Open Today", ShellPage.Today));
@@ -212,40 +206,131 @@ public partial class AssessmentsView : UserControl
             Text = "Counts are live database queries — they never claim more than recorded, and the app never claims to award accreditation." });
     }
 
-    private static Control Mini(string label, string value) => new StackPanel { Spacing = 2, Children =
-    {
-        new TextBlock { Classes = { "h2" }, Text = value },
-        new TextBlock { Classes = { "small" }, Text = label },
-    } };
+    /// <summary>Stat count for the metrics row (3C stat + 3D #7 meaning hue; "none" mutes).</summary>
+    private static Control StatCount(string label, int value, string hueBrush, string none) =>
+        new StackPanel { Spacing = 2, Children =
+        {
+            new TextBlock { Classes = { "stat" }, Text = value.ToString(), Foreground = Ui.Br(none == "none" ? "Brush.Muted" : hueBrush) },
+            new TextBlock { Classes = { "callout" }, Text = label },
+        } };
 
-    private static void Phase(StackPanel sp, ShellViewModel shell, string title, string status, string advice, (string label, ShellPage page) button)
+    private static bool _currentAssigned;
+
+    /// <summary>One journey phase (3F #6): a 24pt step badge (done = forest fill with a
+    /// check, current = violet ring with the number, later = stone hairline), a plain
+    /// title without the "1 —" prefix, its fact line, the advice behind "More", and a
+    /// chevron text link instead of a boxed button.</summary>
+    private static void Phase(StackPanel sp, ShellViewModel shell, int num, string title, bool done,
+        string status, string advice, (string label, ShellPage page) button)
     {
+        string badgeState;
+        if (!_currentAssigned)
+        {
+            badgeState = done ? "done" : "current";
+            if (!done) _currentAssigned = true;
+        }
+        else
+        {
+            badgeState = "later";
+        }
+
+        var badge = new Border
+        {
+            Width = 24, Height = 24, CornerRadius = new(12),
+            VerticalAlignment = VerticalAlignment.Top, Margin = new(0, 2, 0, 0),
+        };
+        if (badgeState == "done")
+        {
+            badge.Background = Ui.Br("Brush.Green");
+            badge.Child = new Avalonia.Controls.Shapes.Path
+            {
+                Stroke = Ui.Br("Brush.Paper"), StrokeThickness = 2,
+                Data = Avalonia.Media.Geometry.Parse("M 7,12.5 L 10.5,16 L 17,9.5"),
+            };
+        }
+        else if (badgeState == "current")
+        {
+            badge.Background = Brushes.Transparent;
+            badge.BorderBrush = Ui.Br("Brush.Violet");
+            badge.BorderThickness = new(1.6);
+            badge.Child = new TextBlock
+            {
+                Text = num.ToString(), FontSize = 11, FontWeight = FontWeight.Medium,
+                Foreground = Ui.Br("Brush.Violet"),
+                HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
+            };
+        }
+        else
+        {
+            badge.Background = Brushes.Transparent;
+            badge.BorderBrush = Ui.Br("Brush.Divider");
+            badge.BorderThickness = new(1);
+            badge.Child = new TextBlock
+            {
+                Text = num.ToString(), FontSize = 11,
+                Foreground = Ui.Br("Brush.Muted"),
+                HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
+            };
+        }
+
+        var fact = new TextBlock { Text = status, TextWrapping = TextWrapping.Wrap, Classes = { "body" } };
+        var adviceText = new TextBlock { Text = advice, TextWrapping = TextWrapping.Wrap, Classes = { "callout" }, IsVisible = false };
+        var more = new Avalonia.Controls.Button
+        {
+            Classes = { "ghost" }, Padding = new(0), Height = 20,
+            Content = new TextBlock { Text = "More", Classes = { "callout" }, Foreground = Ui.Br("Brush.Green") },
+        };
+        more.Click += (_, _) => adviceText.IsVisible = !adviceText.IsVisible;
+        var link = new Avalonia.Controls.Button
+        {
+            Classes = { "ghost" }, Padding = new(0), Height = 24,
+            Content = new StackPanel
+            {
+                Orientation = Orientation.Horizontal, Spacing = 2,
+                Children =
+                {
+                    new TextBlock { Text = button.label, Classes = { "body" }, Foreground = Ui.Br("Brush.Green") },
+                    new Avalonia.Controls.Shapes.Path
+                    {
+                        Stroke = Ui.Br("Brush.Green"), StrokeThickness = 1.6,
+                        Data = Avalonia.Media.Geometry.Parse("M 7,4 L 11,8 L 7,12"),
+                        Width = 14, Height = 16, VerticalAlignment = VerticalAlignment.Center,
+                    },
+                },
+            },
+        };
+        link.Command = new SimpleNav(shell, button.page);
+
+        var textCol = new StackPanel { Spacing = 4 };
+        textCol.Children.Add(new TextBlock
+        {
+            Text = title,
+            Classes = { "h3" },
+            Foreground = badgeState == "current" ? Ui.Br("Brush.Violet") : Ui.Br("Brush.Ink"),
+        });
+        textCol.Children.Add(fact);
+        textCol.Children.Add(more);
+        textCol.Children.Add(adviceText);
+
+        var grid = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("Auto,*,220"),
+            ColumnSpacing = 12,
+        };
+        grid.Children.Add(badge);
+        grid.Children.Add(textCol);
+        grid.Children.Add(link);
+        Grid.SetColumn(badge, 0);
+        Grid.SetColumn(textCol, 1);
+        Grid.SetColumn(link, 2);
+        link.VerticalAlignment = VerticalAlignment.Top;
+
         sp.Children.Add(new Border
         {
             BorderBrush = Ui.Br("Brush.Divider"), BorderThickness = new(0, 0, 0, 1),
             Padding = new(0, 10),
-            Child = new Grid
-            {
-                ColumnDefinitions = new ColumnDefinitions("*,Auto"),
-                Children =
-                {
-                    new StackPanel { Spacing = 4, Children =
-                    {
-                        new TextBlock { Text = title, Classes = { "h3" } },
-                        new TextBlock { Text = status, TextWrapping = TextWrapping.Wrap, Classes = { "small" }, MaxWidth = 780, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left },
-                        new TextBlock { Text = advice, TextWrapping = TextWrapping.Wrap, Classes = { "small" }, MaxWidth = 780, Opacity = 0.85, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left },
-                    } },
-                    WithColumn(Ui.Btn(button.label, new SimpleNav(shell, button.page), minWidth: 150)),
-                },
-            },
+            Child = grid,
         });
-    }
-
-    private static Avalonia.Controls.Button WithColumn(Avalonia.Controls.Button button)
-    {
-        Avalonia.Controls.Grid.SetColumn(button, 1);
-        button.VerticalAlignment = VerticalAlignment.Top;
-        return button;
     }
 
     private sealed class SimpleNav(ShellViewModel shell, ShellPage page) : System.Windows.Input.ICommand

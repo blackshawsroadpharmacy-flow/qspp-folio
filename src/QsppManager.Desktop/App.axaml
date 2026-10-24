@@ -1,5 +1,6 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:QsppManager.Desktop"
              x:Class="QsppManager.Desktop.App"
              xmlns:dg="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls.DataGrid">
 
@@ -15,6 +16,7 @@
           <Color x:Key="Color.Sage">#E4EADC</Color>
           <Color x:Key="Color.Ink">#163F35</Color>
           <Color x:Key="Color.Green">#23614D</Color>
+          <Color x:Key="Color.GreenSoft">#23614D</Color>
           <Color x:Key="Color.GreenHover">#2E7A61</Color>
           <Color x:Key="Color.Muted">#52685C</Color>
           <Color x:Key="Color.Divider">#DCE2D4</Color>
@@ -56,6 +58,7 @@
           <SolidColorBrush x:Key="Brush.Sage" Color="{StaticResource Color.Sage}" />
           <SolidColorBrush x:Key="Brush.Ink" Color="{StaticResource Color.Ink}" />
           <SolidColorBrush x:Key="Brush.Green" Color="{StaticResource Color.Green}" />
+          <SolidColorBrush x:Key="Brush.GreenSoft" Color="{StaticResource Color.GreenSoft}" />
           <SolidColorBrush x:Key="Brush.GreenHover" Color="{StaticResource Color.GreenHover}" />
           <SolidColorBrush x:Key="Brush.Muted" Color="{StaticResource Color.Muted}" />
           <SolidColorBrush x:Key="Brush.Divider" Color="{StaticResource Color.Divider}" />
@@ -77,6 +80,28 @@
           <SolidColorBrush x:Key="Brush.HeroFg" Color="{StaticResource Color.White}" />
           <SolidColorBrush x:Key="Brush.HeroMuted" Color="{StaticResource Color.HeroMuted}" />
           <SolidColorBrush x:Key="Brush.HeroDiv" Color="{StaticResource Color.HeroDiv}" />
+          <!-- Colour system v2 (3D, DD-44): hue meanings per the brief's tables.
+               Forest = the existing Color.Green/Brush.Green; Red's light value = Color.Error. -->
+          <Color x:Key="Color.Ink88">#E0163F35</Color>
+          <Color x:Key="Color.Teal">#1F6A6A</Color>          <Color x:Key="Color.TealTint">#DBE4DC</Color>
+          <Color x:Key="Color.Clay">#9A4228</Color>          <Color x:Key="Color.ClayTint">#EAE0D4</Color>
+          <Color x:Key="Color.Berry">#A0345A</Color>         <Color x:Key="Color.BerryTint">#EBDEDA</Color>
+          <Color x:Key="Color.Umber">#7A5A2E</Color>         <Color x:Key="Color.UmberTint">#E6E2D4</Color>
+          <Color x:Key="Color.Ochre">#7E5400</Color>         <Color x:Key="Color.OchreTint">#E7E2CF</Color>
+          <Color x:Key="Color.OchreFill">#D9A441</Color>
+          <Color x:Key="Color.Violet">#6A4C9C</Color>        <Color x:Key="Color.VioletTint">#E4E1E2</Color>
+          <Color x:Key="Color.Stone">#5E635A</Color>         <Color x:Key="Color.StoneTint">#E3E3DA</Color>
+          <Color x:Key="Color.Red">#A32A2A</Color>           <Color x:Key="Color.RedTint">#EBD9D9</Color>
+          <SolidColorBrush x:Key="Brush.Ink88" Color="{StaticResource Color.Ink88}" />
+          <SolidColorBrush x:Key="Brush.Teal" Color="{StaticResource Color.Teal}" />       <SolidColorBrush x:Key="Brush.TealTint" Color="{StaticResource Color.TealTint}" />
+          <SolidColorBrush x:Key="Brush.Clay" Color="{StaticResource Color.Clay}" />       <SolidColorBrush x:Key="Brush.ClayTint" Color="{StaticResource Color.ClayTint}" />
+          <SolidColorBrush x:Key="Brush.Berry" Color="{StaticResource Color.Berry}" />     <SolidColorBrush x:Key="Brush.BerryTint" Color="{StaticResource Color.BerryTint}" />
+          <SolidColorBrush x:Key="Brush.Umber" Color="{StaticResource Color.Umber}" />     <SolidColorBrush x:Key="Brush.UmberTint" Color="{StaticResource Color.UmberTint}" />
+          <SolidColorBrush x:Key="Brush.Ochre" Color="{StaticResource Color.Ochre}" />     <SolidColorBrush x:Key="Brush.OchreTint" Color="{StaticResource Color.OchreTint}" />
+          <SolidColorBrush x:Key="Brush.OchreFill" Color="{StaticResource Color.OchreFill}" />
+          <SolidColorBrush x:Key="Brush.Violet" Color="{StaticResource Color.Violet}" />   <SolidColorBrush x:Key="Brush.VioletTint" Color="{StaticResource Color.VioletTint}" />
+          <SolidColorBrush x:Key="Brush.Stone" Color="{StaticResource Color.Stone}" />     <SolidColorBrush x:Key="Brush.StoneTint" Color="{StaticResource Color.StoneTint}" />
+          <SolidColorBrush x:Key="Brush.Red" Color="{StaticResource Color.Red}" />         <SolidColorBrush x:Key="Brush.RedTint" Color="{StaticResource Color.RedTint}" />
         </ResourceDictionary>
 
         <!-- ============ DARK — derived from the same green identity ============ -->
@@ -86,6 +111,7 @@
           <Color x:Key="Color.Sage">#24312A</Color>
           <Color x:Key="Color.Ink">#E8EFE7</Color>
           <Color x:Key="Color.Green">#3F9A76</Color>
+          <Color x:Key="Color.GreenSoft">#4BBA8E</Color>
           <Color x:Key="Color.GreenHover">#4CAC86</Color>
           <Color x:Key="Color.Muted">#9DB0A6</Color>
           <Color x:Key="Color.Divider">#27312B</Color>
@@ -100,7 +126,7 @@
           <Color x:Key="Color.Alert">#C75B32</Color>
           <Color x:Key="Color.Caution">#C79B49</Color>
           <Color x:Key="Color.CautionBg">#2E2410</Color>
-          <Color x:Key="Color.Error">#DA6E6E</Color>
+          <Color x:Key="Color.Error">#E07171</Color>
           <Color x:Key="Color.RowHover">#1F2924</Color>
           <Color x:Key="Color.SelBg">#2E4137</Color>
           <Color x:Key="Color.Sidebar">#141A16</Color>
@@ -116,6 +142,7 @@
           <SolidColorBrush x:Key="Brush.Sage" Color="{StaticResource Color.Sage}" />
           <SolidColorBrush x:Key="Brush.Ink" Color="{StaticResource Color.Ink}" />
           <SolidColorBrush x:Key="Brush.Green" Color="{StaticResource Color.Green}" />
+          <SolidColorBrush x:Key="Brush.GreenSoft" Color="{StaticResource Color.GreenSoft}" />
           <SolidColorBrush x:Key="Brush.GreenHover" Color="{StaticResource Color.GreenHover}" />
           <SolidColorBrush x:Key="Brush.Muted" Color="{StaticResource Color.Muted}" />
           <SolidColorBrush x:Key="Brush.Divider" Color="{StaticResource Color.Divider}" />
@@ -133,6 +160,27 @@
           <SolidColorBrush x:Key="Brush.OkBg" Color="{StaticResource Color.OkBg}" />
           <SolidColorBrush x:Key="Brush.Scrim" Color="{StaticResource Color.Scrim}" />
           <SolidColorBrush x:Key="Brush.Glow" Color="{StaticResource Color.Glow}" />
+          <!-- Colour system v2 (3D, DD-44) -->
+          <Color x:Key="Color.Ink88">#E0E8EFE7</Color>
+          <Color x:Key="Color.Teal">#6CC2BC</Color>          <Color x:Key="Color.TealTint">#203330</Color>
+          <Color x:Key="Color.Clay">#E58F6E</Color>          <Color x:Key="Color.ClayTint">#342B23</Color>
+          <Color x:Key="Color.Berry">#E77FA3</Color>         <Color x:Key="Color.BerryTint">#34282C</Color>
+          <Color x:Key="Color.Umber">#CFAE7E</Color>         <Color x:Key="Color.UmberTint">#303026</Color>
+          <Color x:Key="Color.Ochre">#E2B35A</Color>         <Color x:Key="Color.OchreTint">#333120</Color>
+          <Color x:Key="Color.OchreFill">#C99536</Color>
+          <Color x:Key="Color.Stone">#A3A89E</Color>         <Color x:Key="Color.StoneTint">#292F2B</Color>
+          <Color x:Key="Color.Violet">#B39BE3</Color>        <Color x:Key="Color.VioletTint">#2C2D36</Color>
+          <Color x:Key="Color.Red">#E07171</Color>           <Color x:Key="Color.RedTint">#352424</Color>
+          <SolidColorBrush x:Key="Brush.Ink88" Color="{StaticResource Color.Ink88}" />
+          <SolidColorBrush x:Key="Brush.Teal" Color="{StaticResource Color.Teal}" />       <SolidColorBrush x:Key="Brush.TealTint" Color="{StaticResource Color.TealTint}" />
+          <SolidColorBrush x:Key="Brush.Clay" Color="{StaticResource Color.Clay}" />       <SolidColorBrush x:Key="Brush.ClayTint" Color="{StaticResource Color.ClayTint}" />
+          <SolidColorBrush x:Key="Brush.Berry" Color="{StaticResource Color.Berry}" />     <SolidColorBrush x:Key="Brush.BerryTint" Color="{StaticResource Color.BerryTint}" />
+          <SolidColorBrush x:Key="Brush.Umber" Color="{StaticResource Color.Umber}" />     <SolidColorBrush x:Key="Brush.UmberTint" Color="{StaticResource Color.UmberTint}" />
+          <SolidColorBrush x:Key="Brush.Ochre" Color="{StaticResource Color.Ochre}" />     <SolidColorBrush x:Key="Brush.OchreTint" Color="{StaticResource Color.OchreTint}" />
+          <SolidColorBrush x:Key="Brush.OchreFill" Color="{StaticResource Color.OchreFill}" />
+          <SolidColorBrush x:Key="Brush.Violet" Color="{StaticResource Color.Violet}" />   <SolidColorBrush x:Key="Brush.VioletTint" Color="{StaticResource Color.VioletTint}" />
+          <SolidColorBrush x:Key="Brush.Stone" Color="{StaticResource Color.Stone}" />     <SolidColorBrush x:Key="Brush.StoneTint" Color="{StaticResource Color.StoneTint}" />
+          <SolidColorBrush x:Key="Brush.Red" Color="{StaticResource Color.Red}" />         <SolidColorBrush x:Key="Brush.RedTint" Color="{StaticResource Color.RedTint}" />
           <Color x:Key="Color.HeroBg">#1D312A</Color>
           <SolidColorBrush x:Key="Brush.HeroBg" Color="{StaticResource Color.HeroBg}" />
           <SolidColorBrush x:Key="Brush.HeroFg" Color="{StaticResource Color.Ink}" />
@@ -147,15 +195,25 @@
 
       </ResourceDictionary.ThemeDictionaries>
 
-      <!-- System UI type on macOS with the brand fallbacks; mono reserved for codes/ids -->
-      <FontFamily x:Key="Font.Ui">SF Pro Text, SF Pro, Host Grotesk, Helvetica Neue, Helvetica, Arial</FontFamily>
+      <!-- System UI type on macOS (3B v2): the Apple system face wins wherever Avalonia's
+           macOS font manager accepts it; bundled Inter is last-resort. Report the winner
+           with the fonts flag. -->
+      <FontFamily x:Key="Font.Ui">$Default, .AppleSystemUIFont, SF Pro Text, SF Pro, Inter, Host Grotesk, Helvetica Neue, Helvetica, Arial</FontFamily>
+      <!-- Display cut for 17pt-and-above sans roles (3B): SF Pro Display when installed,
+           otherwise the system face. -->
+      <FontFamily x:Key="Font.SansDisplay">$Default, .AppleSystemUIFont, SF Pro Display, SF Pro, Inter, Helvetica Neue, Helvetica</FontFamily>
       <FontFamily x:Key="Font.Mono">avares://QsppManager.Desktop/Assets/Fonts/JetBrainsMono-Regular.ttf#JetBrains Mono, SF Mono, Menlo, Consolas, monospace</FontFamily>
       <FontFamily x:Key="Font.MonoMedium">avares://QsppManager.Desktop/Assets/Fonts/JetBrainsMono-Medium.ttf#JetBrains Mono Medium, SF Mono, Menlo, monospace</FontFamily>
       <FontFamily x:Key="Font.Brand">avares://QsppManager.Desktop/Assets/Fonts/HostGrotesk.ttf#Host Grotesk, SF Pro Text, Helvetica Neue</FontFamily>
-      <!-- Editorial serif for the Today hero numeral and serif titles (pharmacopoeia set) -->
-      <!-- Editorial serif for page titles, detail titles, verbatim quotes and the Today
-           hero numeral (pharmacopoeia look). New York is present on modern macOS. -->
-      <FontFamily x:Key="Font.Serif">New York, Georgia, Hoefler Text, Times New Roman</FontFamily>
+      <!-- Editorial serif (3B v2): bundled Newsreader (SIL OFL), Display cut for the big
+           numerals and page titles. Lining + tabular digits are forced with lnum/tnum via
+           TextElement.FontFeatures in code (Georgia's old-style figures must not leak in
+           if the bundle is missing). -->
+      <FontFamily x:Key="Font.SerifDisplay">avares://QsppManager.Desktop/Assets/Fonts/Newsreader-Light.ttf#Newsreader Light, Newsreader Display, Newsreader, Georgia</FontFamily>
+      <FontFamily x:Key="Font.SerifDisplayLight">avares://QsppManager.Desktop/Assets/Fonts/Newsreader-Light.ttf#Newsreader Light, Newsreader Display Light, Newsreader Light, Newsreader, Georgia</FontFamily>
+      <FontFamily x:Key="Font.Serif">avares://QsppManager.Desktop/Assets/Fonts/Newsreader-Regular.ttf#Newsreader, Newsreader, Georgia, Hoefler Text, Times New Roman</FontFamily>
+      <FontFamily x:Key="Font.SerifMedium">avares://QsppManager.Desktop/Assets/Fonts/Newsreader-Medium.ttf#Newsreader Medium, Newsreader Medium, Newsreader, Georgia</FontFamily>
+      <FontFamily x:Key="Font.SerifItalic">avares://QsppManager.Desktop/Assets/Fonts/Newsreader-Italic.ttf#Newsreader Italic, Newsreader Italic, Newsreader, Georgia Italic, Georgia</FontFamily>
 
       <!-- Fluent theme tab-header font: shrink from the 24px default (M7.2) -->
       <x:Double x:Key="TabItemHeaderFontSize">13.5</x:Double>
@@ -181,32 +239,47 @@
       <Setter Property="Foreground" Value="{DynamicResource Brush.Ink}" />
       <Setter Property="Background" Value="{DynamicResource Brush.Paper}" />
     </Style>
+    <!-- Every number in the app is lining + tabular (3B/3A): the global TextBlock default
+         carries lnum+tnum, so Georgia-style old-style figures can never leak in anywhere. -->
+    <Style Selector="TextBlock, SelectableTextBlock">
+      <Setter Property="FontFeatures">
+        <FontFeatureCollection>
+          <FontFeature Tag="lnum" />
+          <FontFeature Tag="tnum" />
+        </FontFeatureCollection>
+      </Setter>
+    </Style>
 
-    <!-- ============ Type scale (premium-polish section 2): the nine named styles ============ -->
-    <!-- title.large: page title (26 serif regular) -->
-    <Style Selector="TextBlock.titleLarge"><Setter Property="FontFamily" Value="{StaticResource Font.Serif}" /><Setter Property="FontSize" Value="26" /><Setter Property="FontWeight" Value="Regular" /><Setter Property="LetterSpacing" Value="0" /></Style>
-    <!-- title.2: detail pane title (20 serif regular) -->
-    <Style Selector="TextBlock.title2"><Setter Property="FontFamily" Value="{StaticResource Font.Serif}" /><Setter Property="FontSize" Value="20" /><Setter Property="FontWeight" Value="Regular" /></Style>
-    <!-- headline: section headers, row titles -->
-    <Style Selector="TextBlock.headline"><Setter Property="FontSize" Value="13" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="TextWrapping" Value="Wrap" /></Style>
-    <!-- callout: secondary lines -->
-    <Style Selector="TextBlock.callout"><Setter Property="FontSize" Value="12" /><Setter Property="Foreground" Value="{DynamicResource Brush.Muted}" /><Setter Property="TextWrapping" Value="Wrap" /></Style>
-    <!-- footnote: citations, metadata -->
-    <Style Selector="TextBlock.footnote"><Setter Property="FontSize" Value="11" /><Setter Property="Foreground" Value="{DynamicResource Brush.Muted}" /><Setter Property="TextWrapping" Value="Wrap" /></Style>
-    <!-- code: refs, ids, dates in tables -->
-    <Style Selector="TextBlock.code"><Setter Property="FontFamily" Value="{StaticResource Font.Mono}" /><Setter Property="FontSize" Value="11" /><Setter Property="Foreground" Value="{DynamicResource Brush.Muted}" /></Style>
-    <!-- quote: verbatim source wording -->
-    <Style Selector="SelectableTextBlock.quote"><Setter Property="FontFamily" Value="{StaticResource Font.Serif}" /><Setter Property="FontSize" Value="15" /><Setter Property="LineHeight" Value="22" /><Setter Property="TextWrapping" Value="Wrap" /></Style>
-
-    <!-- Type scale -->
-    <Style Selector="TextBlock.h1"><Setter Property="FontFamily" Value="{StaticResource Font.Serif}" /><Setter Property="FontSize" Value="26" /><Setter Property="FontWeight" Value="Regular" /><Setter Property="LineHeight" Value="32" /><Setter Property="TextWrapping" Value="Wrap" /></Style>
-    <Style Selector="TextBlock.h2"><Setter Property="FontSize" Value="19" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="LetterSpacing" Value="-0.25" /></Style>
-    <Style Selector="TextBlock.h3"><Setter Property="FontSize" Value="15" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="LetterSpacing" Value="-0.1" /></Style>
-    <Style Selector="TextBlock.lead"><Setter Property="FontSize" Value="13" /><Setter Property="Foreground" Value="{DynamicResource Brush.Muted}" /><Setter Property="TextWrapping" Value="Wrap" /></Style>
-    <Style Selector="TextBlock.small"><Setter Property="FontSize" Value="11.5" /><Setter Property="Foreground" Value="{DynamicResource Brush.Muted}" /></Style>
-    <Style Selector="TextBlock.label"><Setter Property="FontSize" Value="10.5" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="LetterSpacing" Value="0.5" /><Setter Property="Foreground" Value="{DynamicResource Brush.Muted}" /></Style>
-    <Style Selector="TextBlock.mono"><Setter Property="FontFamily" Value="{StaticResource Font.Mono}" /><Setter Property="FontSize" Value="12" /></Style>
-    <Style Selector="TextBlock.monoSm"><Setter Property="FontFamily" Value="{StaticResource Font.Mono}" /><Setter Property="FontSize" Value="11" /></Style>
+    <!-- ========== Type system v2 (phase 3 brief 3C, DD-43): every neighbouring pair of
+         levels differs in at least two of family, size, weight, colour. Roles: serif
+         display/page/detail/stat/quote; sans Display section titles + eyebrows; sans UI
+         lines; mono codes. Sizes never appear inline in code-behind (DD-43). ========== -->
+    <Style Selector="TextBlock.displayHero"><Setter Property="FontFamily" Value="{StaticResource Font.SerifDisplayLight}" /><Setter Property="FontSize" Value="80" /><Setter Property="LineHeight" Value="80" /><Setter Property="FontWeight" Value="Light" /><Setter Property="Foreground" Value="{DynamicResource Brush.HeroFg}" /></Style>
+    <!-- title.page: serif 30/36 (aliases h1, titleLarge, serifTitle for existing markup) -->
+    <Style Selector="TextBlock.h1, TextBlock.titleLarge, TextBlock.serifTitle"><Setter Property="FontFamily" Value="{StaticResource Font.Serif}" /><Setter Property="FontSize" Value="30" /><Setter Property="FontWeight" Value="Regular" /><Setter Property="LineHeight" Value="36" /><Setter Property="LetterSpacing" Value="-0.2" /><Setter Property="TextWrapping" Value="Wrap" /></Style>
+    <!-- title.detail: serif 22/28 (alias title2) -->
+    <Style Selector="TextBlock.title2, TextBlock.titleDetail"><Setter Property="FontFamily" Value="{StaticResource Font.Serif}" /><Setter Property="FontSize" Value="22" /><Setter Property="FontWeight" Value="Regular" /><Setter Property="LineHeight" Value="28" /><Setter Property="TextWrapping" Value="Wrap" /></Style>
+    <!-- stat: serif 28/32, lining + tabular digits (features applied in code: Ui.Lining) -->
+    <Style Selector="TextBlock.stat"><Setter Property="FontFamily" Value="{StaticResource Font.Serif}" /><Setter Property="FontSize" Value="28" /><Setter Property="FontWeight" Value="Regular" /><Setter Property="LineHeight" Value="32" /></Style>
+    <Style Selector="TextBlock.serifCount"><Setter Property="FontFamily" Value="{StaticResource Font.Serif}" /><Setter Property="FontSize" Value="17" /></Style>
+    <!-- title.section: sans Display cut 17/22 Semibold (aliases h2, titleSection) -->
+    <Style Selector="TextBlock.h2, TextBlock.titleSection"><Setter Property="FontFamily" Value="{StaticResource Font.SansDisplay}" /><Setter Property="FontSize" Value="17" /><Setter Property="LineHeight" Value="22" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="LetterSpacing" Value="-0.1" /><Setter Property="TextWrapping" Value="Wrap" /></Style>
+    <Style Selector="TextBlock.h3"><Setter Property="FontFamily" Value="{StaticResource Font.SansDisplay}" /><Setter Property="FontSize" Value="15" /><Setter Property="LineHeight" Value="20" /><Setter Property="FontWeight" Value="Medium" /></Style>
+    <!-- eyebrow: caps reserved for this role; colour applied contextually (area hue) -->
+    <Style Selector="TextBlock.eyebrow"><Setter Property="FontSize" Value="11" /><Setter Property="LineHeight" Value="14" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="LetterSpacing" Value="0.9" /></Style>
+    <Style Selector="TextBlock.headline"><Setter Property="FontSize" Value="13.5" /><Setter Property="LineHeight" Value="18" /><Setter Property="FontWeight" Value="Medium" /><Setter Property="TextWrapping" Value="Wrap" /></Style>
+    <Style Selector="TextBlock.body"><Setter Property="FontSize" Value="13" /><Setter Property="LineHeight" Value="19" /><Setter Property="Foreground" Value="{DynamicResource Brush.Ink88}" /><Setter Property="TextWrapping" Value="Wrap" /></Style>
+    <Style Selector="TextBlock.callout, TextBlock.lead, TextBlock.small"><Setter Property="FontSize" Value="12" /><Setter Property="LineHeight" Value="16" /><Setter Property="Foreground" Value="{DynamicResource Brush.Muted}" /><Setter Property="TextWrapping" Value="Wrap" /></Style>
+    <Style Selector="TextBlock.footnote"><Setter Property="FontSize" Value="11" /><Setter Property="LineHeight" Value="14" /><Setter Property="Foreground" Value="{DynamicResource Brush.Muted}" /><Setter Property="TextWrapping" Value="Wrap" /></Style>
+    <!-- label: medium muted, sentence case now (3C kills all-caps form labels) -->
+    <Style Selector="TextBlock.label"><Setter Property="FontSize" Value="11.5" /><Setter Property="LineHeight" Value="14" /><Setter Property="FontWeight" Value="Medium" /><Setter Property="Foreground" Value="{DynamicResource Brush.Muted}" /></Style>
+    <Style Selector="TextBlock.code"><Setter Property="FontFamily" Value="{StaticResource Font.Mono}" /><Setter Property="FontSize" Value="11" /><Setter Property="LineHeight" Value="14" /><Setter Property="Foreground" Value="{DynamicResource Brush.Muted}" /></Style>
+    <Style Selector="TextBlock.mono"><Setter Property="FontFamily" Value="{StaticResource Font.Mono}" /><Setter Property="FontSize" Value="12" /><Setter Property="LineHeight" Value="14" /></Style>
+    <Style Selector="TextBlock.monoSm"><Setter Property="FontFamily" Value="{StaticResource Font.Mono}" /><Setter Property="FontSize" Value="11" /><Setter Property="LineHeight" Value="14" /></Style>
+    <Style Selector="TextBlock.monoDate"><Setter Property="FontFamily" Value="{StaticResource Font.Mono}" /><Setter Property="FontSize" Value="12.5" /><Setter Property="Foreground" Value="{DynamicResource Brush.Ink}" /></Style>
+    <!-- quote: serif 16/24; quote.cite 11/14 sans muted -->
+    <Style Selector="SelectableTextBlock.quote"><Setter Property="FontFamily" Value="{StaticResource Font.Serif}" /><Setter Property="FontSize" Value="16" /><Setter Property="LineHeight" Value="24" /><Setter Property="TextWrapping" Value="Wrap" /></Style>
+    <Style Selector="TextBlock.quoteCite"><Setter Property="FontSize" Value="11" /><Setter Property="LineHeight" Value="14" /><Setter Property="Foreground" Value="{DynamicResource Brush.Muted}" /></Style>
 
     <!-- Tab headers: Fluent's TabItemHeaderFontSize default of 24 blew out the detail-page
          tabs (four oversized headers wrapped, leaving a giant orphan line). M7.2 keeps them
@@ -291,11 +364,48 @@
       <Setter Property="BorderBrush" Value="Transparent" />
       <Setter Property="Foreground" Value="{DynamicResource Brush.Green}" />
     </Style>
+    <Style Selector="Button.textlink">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.Green}" />
+      <Setter Property="FontWeight" Value="Medium" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="Height" Value="26" />
+      <Setter Property="Padding" Value="0" />
+    </Style>
+
+    <!-- 3F: the toolbar filter field (Mac search look: sage fill, no border, radius 7) -->
+    <Style Selector="TextBox.searchMac">
+      <Setter Property="Background" Value="{DynamicResource Brush.Sage}" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="CornerRadius" Value="7" />
+      <Setter Property="Height" Value="28" />
+      <Setter Property="FontSize" Value="12.5" />
+      <Setter Property="Padding" Value="24,4,8,4" />
+    </Style>
+
+    <!-- 3D #3/#4: section count pill + chips (tint bg, hue text contextual) -->
+    <Style Selector="Border.statPill">
+      <Setter Property="CornerRadius" Value="9" />
+      <Setter Property="Height" Value="18" />
+      <Setter Property="Padding" Value="7,0" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Border.chip">
+      <Setter Property="CornerRadius" Value="5" />
+      <Setter Property="Padding" Value="7,2" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Border.chip > TextBlock">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="FontWeight" Value="Medium" />
+    </Style>
 
     <!-- Today screen (24 Oct): eyebrow labels, editorial serif, hero panel text, ledger rows -->
-    <Style Selector="TextBlock.eyebrow"><Setter Property="FontSize" Value="10.5" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="LetterSpacing" Value="1.2" /><Setter Property="Foreground" Value="{DynamicResource Brush.Muted}" /></Style>
-    <Style Selector="TextBlock.heroNum"><Setter Property="FontFamily" Value="{StaticResource Font.Serif}" /><Setter Property="FontSize" Value="104" /><Setter Property="FontWeight" Value="Light" /><Setter Property="Foreground" Value="{DynamicResource Brush.HeroFg}" /></Style>
-    <Style Selector="TextBlock.heroDays"><Setter Property="FontSize" Value="17" /><Setter Property="Foreground" Value="{DynamicResource Brush.HeroFg}" /></Style>
+    <Style Selector="TextBlock.heroDays"><Setter Property="FontFamily" Value="{StaticResource Font.SansDisplay}" /><Setter Property="FontSize" Value="17" /><Setter Property="FontWeight" Value="Medium" /><Setter Property="Foreground" Value="{DynamicResource Brush.HeroFg}" /></Style>
     <Style Selector="TextBlock.heroTitle"><Setter Property="FontSize" Value="16" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="Foreground" Value="{DynamicResource Brush.HeroFg}" /></Style>
     <Style Selector="TextBlock.heroDate"><Setter Property="FontSize" Value="13" /><Setter Property="Opacity" Value="0.9" /><Setter Property="Foreground" Value="{DynamicResource Brush.HeroFg}" /></Style>
     <Style Selector="TextBlock.heroMeta"><Setter Property="FontSize" Value="13" /><Setter Property="Foreground" Value="{DynamicResource Brush.HeroMuted}" /></Style>
@@ -346,6 +456,14 @@
       <Setter Property="Background" Value="{DynamicResource Brush.Surface}" />
       <Setter Property="BorderBrush" Value="{DynamicResource Brush.ControlBorder}" />
     </Style>
+    <!-- Calendar day-picker glyph: Fluent's default icon rendered oversized in the settings
+         rows (3F #5); cap the flyout button's icon column so the field reads like every
+         other control. -->
+    <Style Selector="CalendarDatePicker /template/ Button#PART_FlyoutButton">
+      <Setter Property="Width" Value="18" />
+      <Setter Property="FontSize" Value="11" />
+    </Style>
+
     <Style Selector="CalendarDatePicker:focus /template/ TextBox">
       <Setter Property="BorderBrush" Value="{DynamicResource Brush.Green}" />
     </Style>
@@ -373,6 +491,32 @@
       <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="Foreground" Value="{DynamicResource Brush.Ink}" />
     </Style>
+    <!-- Sidebar icon hue per destination (3D #1): the icon always wears its hue; the
+         selected row re-inks the icon to 100% opacity and takes the hue tint as fill. -->
+    <Style Selector="Button.navRow.hueOchre local|LucideGlyph"><Setter Property="GlyphBrush" Value="{DynamicResource Brush.Ochre}" /><Setter Property="Opacity" Value="0.85" /></Style>
+    <Style Selector="Button.navRow.hueForest local|LucideGlyph"><Setter Property="GlyphBrush" Value="{DynamicResource Brush.Green}" /><Setter Property="Opacity" Value="0.85" /></Style>
+    <Style Selector="Button.navRow.hueTeal local|LucideGlyph"><Setter Property="GlyphBrush" Value="{DynamicResource Brush.Teal}" /><Setter Property="Opacity" Value="0.85" /></Style>
+    <Style Selector="Button.navRow.hueClay local|LucideGlyph"><Setter Property="GlyphBrush" Value="{DynamicResource Brush.Clay}" /><Setter Property="Opacity" Value="0.85" /></Style>
+    <Style Selector="Button.navRow.hueUmber local|LucideGlyph"><Setter Property="GlyphBrush" Value="{DynamicResource Brush.Umber}" /><Setter Property="Opacity" Value="0.85" /></Style>
+    <Style Selector="Button.navRow.hueBerry local|LucideGlyph"><Setter Property="GlyphBrush" Value="{DynamicResource Brush.Berry}" /><Setter Property="Opacity" Value="0.85" /></Style>
+    <Style Selector="Button.navRow.hueViolet local|LucideGlyph"><Setter Property="GlyphBrush" Value="{DynamicResource Brush.Violet}" /><Setter Property="Opacity" Value="0.85" /></Style>
+    <Style Selector="Button.navRow.hueStone local|LucideGlyph"><Setter Property="GlyphBrush" Value="{DynamicResource Brush.Stone}" /><Setter Property="Opacity" Value="0.85" /></Style>
+    <Style Selector="Button.navRow.hueOchre.sel local|LucideGlyph"><Setter Property="Opacity" Value="1" /></Style>
+    <Style Selector="Button.navRow.hueForest.sel local|LucideGlyph"><Setter Property="Opacity" Value="1" /></Style>
+    <Style Selector="Button.navRow.hueTeal.sel local|LucideGlyph"><Setter Property="Opacity" Value="1" /></Style>
+    <Style Selector="Button.navRow.hueClay.sel local|LucideGlyph"><Setter Property="Opacity" Value="1" /></Style>
+    <Style Selector="Button.navRow.hueUmber.sel local|LucideGlyph"><Setter Property="Opacity" Value="1" /></Style>
+    <Style Selector="Button.navRow.hueBerry.sel local|LucideGlyph"><Setter Property="Opacity" Value="1" /></Style>
+    <Style Selector="Button.navRow.hueViolet.sel local|LucideGlyph"><Setter Property="Opacity" Value="1" /></Style>
+    <Style Selector="Button.navRow.hueStone.sel local|LucideGlyph"><Setter Property="Opacity" Value="1" /></Style>
+    <Style Selector="Button.navRow.hueOchre.sel /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="{DynamicResource Brush.OchreTint}" /></Style>
+    <Style Selector="Button.navRow.hueForest.sel /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="{DynamicResource Brush.SelBg}" /></Style>
+    <Style Selector="Button.navRow.hueTeal.sel /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="{DynamicResource Brush.TealTint}" /></Style>
+    <Style Selector="Button.navRow.hueClay.sel /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="{DynamicResource Brush.ClayTint}" /></Style>
+    <Style Selector="Button.navRow.hueUmber.sel /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="{DynamicResource Brush.UmberTint}" /></Style>
+    <Style Selector="Button.navRow.hueBerry.sel /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="{DynamicResource Brush.BerryTint}" /></Style>
+    <Style Selector="Button.navRow.hueViolet.sel /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="{DynamicResource Brush.VioletTint}" /></Style>
+    <Style Selector="Button.navRow.hueStone.sel /template/ ContentPresenter#PART_ContentPresenter"><Setter Property="Background" Value="{DynamicResource Brush.StoneTint}" /></Style>
 
     <!-- DataGrid: quiet rows, hairlines, sage selection -->
     <Style Selector="dg|DataGrid">
@@ -389,9 +533,9 @@
     <Style Selector="dg|DataGridColumnHeader">
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="Foreground" Value="{DynamicResource Brush.Muted}" />
-      <Setter Property="FontSize" Value="11" />
-      <Setter Property="FontWeight" Value="SemiBold" />
-      <Setter Property="Padding" Value="10,7" />
+      <Setter Property="FontSize" Value="11.5" />
+      <Setter Property="FontWeight" Value="Medium" />
+      <Setter Property="Padding" Value="10,8" />
       <Setter Property="BorderThickness" Value="0,0,0,1" />
       <Setter Property="BorderBrush" Value="{DynamicResource Brush.Divider}" />
     </Style>
@@ -406,6 +550,34 @@
     </Style>
 
     <!-- Status chips -->
+    <!-- Mac search field look for the toolbar filter (3F #3): sage fill, no border,
+         radius 7. The magnifier rides the template TextBox's left adornment. -->
+    <Style Selector="TextBox.searchfield">
+      <Setter Property="Background" Value="{DynamicResource Brush.Sage}" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="CornerRadius" Value="7" />
+      <Setter Property="InnerLeftContent">
+        <Template>
+          <local:LucideGlyph Glyph="search" GlyphSize="13" GlyphBrush="{DynamicResource Brush.Muted}" StrokeThickness="1.5" Margin="10,0,0,0" />
+        </Template>
+      </Setter>
+    </Style>
+
+    <!-- Keycap (3F #3): quiet 1px chip for shortcut hints next to a word. -->
+    <Style Selector="Border.keycap">
+      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="Padding" Value="5,1" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.Divider}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Background" Value="{DynamicResource Brush.Sage}" />
+    </Style>
+    <Style Selector="Border.keycap TextBlock">
+      <Setter Property="FontSize" Value="10.5" />
+      <Setter Property="FontWeight" Value="Medium" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.Muted}" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
     <Style Selector="Border.tag">
       <Setter Property="CornerRadius" Value="5" />
       <Setter Property="Padding" Value="8,3" />

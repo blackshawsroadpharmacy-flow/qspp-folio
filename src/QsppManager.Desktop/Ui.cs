@@ -32,6 +32,39 @@ public interface IPagePrintRequest { void OpenPrintRequest(); }
 /// pages on Helpers.ThemeChanged.</summary>
 public static class Ui
 {
+    /// <summary>ShellPage → (eyebrow, icon, hue-name) per the v2 destination table (3D).</summary>
+    public static readonly System.Collections.Generic.Dictionary<ViewModels.ShellPage, (string Eyebrow, string Icon, string HueBrush, string TileBrush)> HueTable =
+        new()
+        {
+            { ViewModels.ShellPage.Today,       ("Focus",    "house",          "Brush.Ochre",    "Brush.OchreTint"    ) },
+            { ViewModels.ShellPage.Requirements,("Prepare",  "list-checks",    "Brush.Green",    "Brush.SelBg"        ) },
+            { ViewModels.ShellPage.Documents,   ("Evidence", "files",          "Brush.Teal",     "Brush.TealTint"     ) },
+            { ViewModels.ShellPage.Tasks,       ("Plan",     "calendar-days",  "Brush.Clay",     "Brush.ClayTint"     ) },
+            { ViewModels.ShellPage.Registers,   ("Govern",   "clipboard-list", "Brush.Umber",    "Brush.UmberTint"    ) },
+            { ViewModels.ShellPage.People,      ("People",   "users",      "Brush.Berry",    "Brush.BerryTint"    ) },
+            { ViewModels.ShellPage.Assessments, ("Assess",   "clipboard-check", "Brush.Violet", "Brush.VioletTint") },
+            { ViewModels.ShellPage.Library,     ("Library",  "book-open",  "Brush.Ink",      "Brush.SelBg"        ) },
+            { ViewModels.ShellPage.PrintCentre, ("Print",    "printer",    "Brush.Stone",    "Brush.StoneTint"    ) },
+            { ViewModels.ShellPage.Settings,    ("Setup",    "settings",   "Brush.Stone",    "Brush.StoneTint"    ) },
+        };
+
+    /// <summary>Standard page header for a destination: hue tile + eyebrow above the serif
+    /// title, then the lead. The titles mirror the sidebar labels exactly.</summary>
+    public static Control PageTitle(ViewModels.ShellPage page, string lead, string? explainer = null) =>
+        page switch
+        {
+            ViewModels.ShellPage.Documents   => PageHeader("Evidence & documents", lead, explainer, page),
+            ViewModels.ShellPage.Tasks       => PageHeader("Tasks & calendar", lead, explainer, page),
+            ViewModels.ShellPage.People      => PageHeader("People & training", lead, explainer, page),
+            ViewModels.ShellPage.PrintCentre => PageHeader("Print centre", lead, explainer, page),
+            ViewModels.ShellPage.Requirements=> PageHeader("Requirements", lead, explainer, page),
+            ViewModels.ShellPage.Registers   => PageHeader("Registers", lead, explainer, page),
+            ViewModels.ShellPage.Assessments => PageHeader("Assessments", lead, explainer, page),
+            ViewModels.ShellPage.Library     => PageHeader("Library", lead, explainer, page),
+            ViewModels.ShellPage.Settings    => PageHeader("Settings", lead, explainer, page),
+            _                                => PageHeader(page.ToString(), lead, explainer, page),
+        };
+
     public const double IconSizeDefault = 16;
 
     // ---------- text ----------
@@ -49,25 +82,69 @@ public static class Ui
     public static Control Footnote(string t) => new TextBlock { Classes = { "footnote" }, Text = t };
 
     // ---------- page header (premium-polish 3.9) ----------
-    /// <summary>Serif page title, one short callout line (90 characters at most), and an
-    /// ⓘ button whose popover carries the former long explanation word for word. The
-    /// page then gets out of the way: no paragraph above the fold (section 6).</summary>
-    public static Control PageHeader(string title, string lead, string? explainer = null)
+    /// <summary>Page header v2 (3D #2): 32pt rounded tile with the destination icon in its
+    /// hue, the page eyebrow in the hue above the serif title, then one short callout lead
+    /// (90 characters at most) and the ⓘ popover. One tile per page (v2 brief).</summary>
+    public static Control PageHeader(string title, string lead, string? explainer = null,
+        ViewModels.ShellPage? page = null)
     {
-        var row = new AvaloniaGrid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
+        var spage = page ?? default;
+        var hasTile = page is { } p2 && HueTable.ContainsKey(p2);
+        var row = new AvaloniaGrid
+        {
+            ColumnDefinitions = new ColumnDefinitions(hasTile ? "Auto,*,Auto" : "*,Auto"),
+            ColumnSpacing = 12,
+        };
         var textCol = new StackPanel { Spacing = 6 };
+        Control? infoButton = null;   // built later when an explainer exists
+        if (hasTile)
+        {
+            // Destination tile + hue eyebrow (3D places 1-2), one tile per page.
+            var h = HueTable[spage];
+            var eyebrowRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+            var eyebrow = new TextBlock
+            {
+                Classes = { "eyebrow" },
+                Text = h.Eyebrow.ToUpperInvariant(),
+                Foreground = Br(h.HueBrush),
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            eyebrowRow.Children.Add(eyebrow);
+            infoButton = new Button
+            {
+                Classes = { "ghost" }, Width = 22, Height = 22, Padding = new(0),
+                VerticalAlignment = VerticalAlignment.Center, Margin = new(0, 2, 0, 0),
+            };
+            eyebrowRow.Children.Add(infoButton);
+            textCol.Children.Add(eyebrowRow);
+        }
         textCol.Children.Add(new TextBlock { Classes = { "titleLarge" }, Text = title });
-        textCol.Children.Add(new TextBlock { Classes = { "callout" }, Text = lead, TextWrapping = TextWrapping.Wrap });
-        AvaloniaGrid.SetColumn(textCol, 0);
+        if (!string.IsNullOrWhiteSpace(lead))
+            textCol.Children.Add(new TextBlock { Classes = { "callout" }, Text = lead, TextWrapping = TextWrapping.Wrap });
+        var textColumn = hasTile ? 1 : 0;
+        AvaloniaGrid.SetColumn(textCol, textColumn);
         row.Children.Add(textCol);
+        if (hasTile)
+        {
+            var h = HueTable[spage];
+            var tile = new Border
+            {
+                Width = 32, Height = 32, CornerRadius = new(8),
+                Background = Br(h.TileBrush),
+                Child = Lucide(h.Icon, 16, Br(h.HueBrush), center: true),
+                VerticalAlignment = VerticalAlignment.Top,
+            };
+            AvaloniaGrid.SetColumn(tile, 0);
+            row.Children.Insert(0, tile);
+        }
 
         if (!string.IsNullOrWhiteSpace(explainer))
         {
-            var button = new Button
+            var button = (Button)(infoButton ?? new Button
             {
                 Classes = { "ghost" }, Width = 24, Height = 24, Padding = new(0),
                 VerticalAlignment = VerticalAlignment.Top, Margin = new(0, 4, 0, 0),
-            };
+            });
             Ui.Ax(button, "About this screen");
             var popup = new Popup
             {
@@ -87,8 +164,13 @@ public static class Ui
             };
             button.Content = new Panel { Children = { Lucide("info", 15, Br("Brush.Muted"), center: true), popup } };
             button.Click += (_, _) => { if (popup is { } p) p.IsOpen = !p.IsOpen; };
-            AvaloniaGrid.SetColumn(button, 1);
-            row.Children.Add(button);
+            if (infoButton is null)
+            {
+                // No tile: ⓘ rides the trailing grid column after the title text.
+                AvaloniaGrid.SetColumn(button, 1);
+                row.Children.Add(button);
+            }
+            // With a tile the ⓘ already sits beside the eyebrow; nothing else to do.
         }
         return row;
     }
@@ -125,6 +207,83 @@ public static class Ui
             Child = quote,
         };
     }
+
+    // ---------- grouped settings rows (3E #1, macOS System Settings style) ----------
+    /// <summary>A surface group box (radius 10, 1px Divider) over 40pt rows separated by
+    /// inset 1px rules. Left label in body, right control. A footnote (callout) rides under
+    /// the box. Label/optional suffix supported: pass "(optional)" via the row text.</summary>
+    public static Control GroupedRows((Control? Label, Control Field)[] rows, string? footnote = null)
+    {
+        var box = new Border
+        {
+            CornerRadius = new(10),
+            Background = Br("Brush.Surface"),
+            BorderBrush = Br("Brush.Divider"),
+            BorderThickness = new(1),
+            Padding = new(0, 4),
+        };
+        var col = new StackPanel { Spacing = 0 };
+        for (var i = 0; i < rows.Length; i++)
+        {
+            var (label, field) = rows[i];
+            var row = new AvaloniaGrid
+            {
+                ColumnDefinitions = new ColumnDefinitions("*,Auto"),
+                Height = 44,
+                Margin = new(14, 0),
+            };
+            if (label is not null)
+            {
+                AvaloniaGrid.SetColumn(label, 0);
+                label.VerticalAlignment = VerticalAlignment.Center;
+                row.Children.Add(label);
+            }
+            field.VerticalAlignment = VerticalAlignment.Center;
+            AvaloniaGrid.SetColumn(field, 1);
+            row.Children.Add(field);
+            col.Children.Add(row);
+            if (i < rows.Length - 1)
+                col.Children.Add(new Border { Height = 1, Background = Br("Brush.Divider"), Margin = new(14, 0, 14, 0) });
+        }
+        box.Child = col;
+        if (footnote is null) return box;
+        return new StackPanel { Spacing = 6, Children =
+        {
+            box,
+            new TextBlock { Classes = { "callout" }, Text = footnote, TextWrapping = TextWrapping.Wrap },
+        } };
+    }
+
+    /// <summary>A 40pt row with the label on the left and an extra line under the box's rows
+    /// (used by list-style rows like the deadlines two-column list).</summary>
+    public static Control GroupedList(Control content, string? footnote = null)
+    {
+        var box = new Border
+        {
+            CornerRadius = new(10),
+            Background = Br("Brush.Surface"),
+            BorderBrush = Br("Brush.Divider"),
+            BorderThickness = new(1),
+            Padding = new(14, 8),
+            Child = content,
+        };
+        if (footnote is null) return box;
+        return new StackPanel { Spacing = 6, Children =
+        {
+            box,
+            new TextBlock { Classes = { "callout" }, Text = footnote, TextWrapping = TextWrapping.Wrap },
+        } };
+    }
+
+    /// <summary>Sentence-case label with a lighter "(optional)" suffix (3C).</summary>
+    public static Control OptionalLabel(string text, bool optional) =>
+        new TextBlock
+        {
+            Classes = { "body" },
+            Inlines = { new Avalonia.Controls.Documents.Run(text), new Avalonia.Controls.Documents.Run(optional ? " (optional)" : "")
+                { FontWeight = FontWeight.Normal, Foreground = Br("Brush.Muted") } },
+            VerticalAlignment = VerticalAlignment.Center,
+        };
 
     // ---------- scaffolding ----------
     /// <summary>Standard page scaffold: scrollable, content capped at 760pt and centred
@@ -189,26 +348,28 @@ public static class Ui
     /// <summary>Empty state (premium-polish 3.8): one short block at most 120pt tall —
     /// a bare 20pt icon (no tinted circle behind it), one headline line, one callout
     /// line, one optional quiet action. No large white box, no card chrome.</summary>
-    public static Control EmptyState(string iconName, string title, string hint, Control? action = null)
+    public static Control EmptyState(string iconName, string title, string hint, Control? action = null, string? hueBrush = null)
     {
-        var col = new StackPanel { Spacing = 4, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, MaxWidth = 430 };
-        col.Children.Add(Lucide(iconName, 20, Br("Brush.Muted"), center: true));
-        col.Children.Add(new TextBlock { Classes = { "headline" }, Text = title, TextAlignment = TextAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center });
+        // 3E #4: top-aligned under their header, never centred in a void; 20pt icon in the
+        // page hue; the whole block stays at most 120pt tall.
+        var col = new StackPanel { Spacing = 4, VerticalAlignment = VerticalAlignment.Top, MaxWidth = 430 };
+        col.Children.Add(Lucide(iconName, 20, Br(hueBrush ?? "Brush.Stone")));
+        col.Children.Add(new TextBlock { Classes = { "headline" }, Text = title });
         col.Children.Add(new TextBlock
         {
-            Classes = { "callout" }, Text = hint, TextAlignment = TextAlignment.Center,
-            TextWrapping = TextWrapping.Wrap, HorizontalAlignment = HorizontalAlignment.Center, MaxWidth = 380,
+            Classes = { "callout" }, Text = hint,
+            TextWrapping = TextWrapping.Wrap, MaxWidth = 420,
         });
         if (action != null)
         {
             action.Margin = new(0, 8, 0, 0);
-            action.HorizontalAlignment = HorizontalAlignment.Center;
             col.Children.Add(action);
         }
         return new Border
         {
-            Padding = new(12, 16),
-            HorizontalAlignment = HorizontalAlignment.Center,
+            Padding = new(12, 14),
+            MaxHeight = 120,
+            HorizontalAlignment = HorizontalAlignment.Left,
             Child = col,
         };
     }
@@ -300,33 +461,72 @@ public static class Ui
         return g;
     }
 
-    // ---------- chips / status ----------
-    /// <summary>Tone chips carry their meaning in text as well as colour.</summary>
+    // ---------- chips / status (3D #4: tint bg, hue text, leading dot) ----------
+    /// <summary>Status chips carry their meaning in text as well as colour; the dot
+    /// communicates state to colour-blind users. Status hues per the v2 table: verified
+    /// Forest, in progress Ochre, ready for review Violet, overdue/blocked Red, planning
+    /// and unknown Stone (hollow).</summary>
     public static Border Chip(string text, string tone = "neutral", bool mono = false)
     {
-        var (bg, fg) = Tone(tone);
+        var hue = Tone(tone);              // "Brush.Forest" | "Brush.Ochre" | ...
+        var hollow = tone is "neutral" or "none";
         var tb = new TextBlock
         {
-            Text = text, FontSize = 11, FontWeight = FontWeight.SemiBold,
-            Foreground = fg, TextWrapping = TextWrapping.NoWrap,
+            Text = text, FontSize = 11, FontWeight = FontWeight.Medium,
+            Foreground = Br(hue), TextWrapping = TextWrapping.NoWrap,
         };
         if (mono) tb.FontFamily = new FontFamily(FontFamilies.Mono);
+        var panel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 5 };
+        var dot = new Border
+        {
+            Width = 6, Height = 6, CornerRadius = new(3),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        if (hollow)
+        {
+            dot.Background = Brushes.Transparent;
+            dot.BorderBrush = Br(hue);
+            dot.BorderThickness = new(1.2);
+        }
+        else
+        {
+            dot.Background = Br(hue);
+        }
+        panel.Children.Add(dot);
+        panel.Children.Add(tb);
         return new Border
         {
             CornerRadius = new(5), Padding = new(8, 3),
-            Background = bg, BorderThickness = new(0),
-            Child = tb,
+            Background = Br(HueTint(hue)),
+            BorderThickness = new(0),
+            Child = panel,
         };
     }
 
-    private static (IBrush? bg, IBrush? fg) Tone(string tone) => tone switch
+    private static string Tone(string tone) => tone switch
     {
-        "ok" => (Br("Brush.OkBg"), Br("Brush.Green")),
-        "open" => (Br("Brush.OkBg"), Br("Brush.Green")),
-        "warn" => (Br("Brush.Sage"), Br("Brush.Caution")),
-        "bad" => (Br("Brush.DangerBg"), Br("Brush.Alert")),
-        "info" => (Br("Brush.Sage"), Br("Brush.Muted")),
-        _ => (Br("Brush.Sage"), Br("Brush.Ink")),
+        // 11pt chip text on the SelBg tint needs 4.5:1 in dark too — GreenSoft is the
+        // chip-safe green (light: identical to Green; dark: #4BBA8E). Buttons keep Green.
+        "ok" or "open" => "Brush.GreenSoft", // verified/in-progress families split below
+        "review" => "Brush.Violet",
+        "warn" => "Brush.Ochre",
+        "bad" => "Brush.Red",
+        "info" => "Brush.Stone",
+        _ => "Brush.Stone",
+    };
+
+    private static string HueTint(string hueBrush) => hueBrush switch
+    {
+        "Brush.Green" or "Brush.GreenSoft" => "Brush.SelBg",
+        "Brush.Teal" => "Brush.TealTint",
+        "Brush.Clay" => "Brush.ClayTint",
+        "Brush.Berry" => "Brush.BerryTint",
+        "Brush.Umber" => "Brush.UmberTint",
+        "Brush.Ochre" => "Brush.OchreTint",
+        "Brush.Violet" => "Brush.VioletTint",
+        "Brush.Stone" => "Brush.StoneTint",
+        "Brush.Red" => "Brush.RedTint",
+        _ => "Brush.SelBg",
     };
 
     // ---------- data grids ----------
@@ -414,6 +614,7 @@ public static class Ui
         CustomDateFormatString = "d MMM yyyy",
         Watermark = "Not set",
         SelectedDate = value,
+        Width = 180,
     };
 
     /// <summary>Small two-column fact row for the About dialog (label / value).</summary>

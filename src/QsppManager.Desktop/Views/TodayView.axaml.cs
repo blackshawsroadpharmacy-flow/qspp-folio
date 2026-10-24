@@ -28,6 +28,9 @@ public partial class TodayView : UserControl
         DetachedFromLogicalTree += (_, _) => StopTimer();
     }
 
+    /// <summary>Layout assertions (--assert-today) read the hero geometry through this.</summary>
+    internal TodayScreen Screen => _screen;
+
     public void Refresh()
     {
         _vm.Refresh();

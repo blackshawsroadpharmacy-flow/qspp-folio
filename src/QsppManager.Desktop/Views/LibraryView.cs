@@ -20,11 +20,11 @@ public partial class LibraryView : UserControl, IPageSearchFocus
     private TableHost _sourcesHost = null!;
     private readonly DataGrid _issues = Ui.Grid(rowHeight: 34).With(_ => _.Height = 140);
     private readonly DataGrid _superseded = Ui.Grid(rowHeight: 34).With(_ => _.Height = 150);
-    private readonly TextBox _searchBox = new() { Watermark = "Search the whole corpus — try potency, mid-cycle, attestation…" };
+    private readonly TextBox _searchBox = new() { Watermark = "Search the whole corpus. Try potency, mid-cycle, attestation." };
     private readonly ListBox _results = new() { Height = 220, Classes = { "list" } };
     private readonly Grid _resultsHost = new();
     private readonly Control _resultsEmpty = Ui.EmptyState("search", "Search the corpus",
-        "Find requirements, evidence records and source documents. Press Enter or click Search; double-click a result to open the record.");
+        "Find requirements, evidence records and source documents. Press Enter or click Search; double-click a result to open the record.", null, "Brush.Ink");
     private readonly NoticeHost _resultBar = new();
     private readonly StackPanel _issueDetail = new() { Spacing = 6 };
     private readonly ListBox _diffLines = new() { Height = 160, Background = Brushes.Transparent };
@@ -38,8 +38,7 @@ public partial class LibraryView : UserControl, IPageSearchFocus
     private Control Build(ShellViewModel shell)
     {
         var sp = new StackPanel { Margin = new(32, 28), Spacing = 14, MaxWidth = 1040, HorizontalAlignment = HorizontalAlignment.Left };
-        sp.Children.Add(Ui.H1("Library"));
-        sp.Children.Add(Ui.Lead("Search every imported requirement, evidence record and source document, read the governing documents with their checksums, and track the interpretation questions that are deliberately kept open until a source settles them."));
+        sp.Children.Add(Ui.PageTitle(ViewModels.ShellPage.Library, "Search requirements, evidence and sources; open questions stay visible.", "Search every imported requirement, evidence record and source document, read the governing documents with their checksums, and track the interpretation questions that are deliberately kept open until a source settles them."));
         sp.Children.Add(_resultBar);
 
         sp.Children.Add(SearchSection(shell));
@@ -123,7 +122,7 @@ public partial class LibraryView : UserControl, IPageSearchFocus
             }));
 
         Ui.WrapGaps(docRow);
-        _sourcesHost = Host(_sources, 220, "file-text", "No source documents imported", "The verified corpus appears here as documents are imported during setup - each with its checksum and provenance.");
+        _sourcesHost = Host(_sources, 220, "file-text", "No source documents imported", "The verified corpus appears here as documents are imported during setup - each with its checksum and provenance.", "Brush.Ink");
         return Ui.Section("Source documents (verified corpus)", Ui.Col(10, _sourcesHost.Panel, docRow));
     }
 
@@ -348,9 +347,9 @@ public partial class LibraryView : UserControl, IPageSearchFocus
     public void SetFilter(string text) => OpenLibrarySearch(text);
     /// <summary>Table with an in-place empty state; the visible child tracks the row count
     /// (premium-polish 3.8 — Library source documents).</summary>
-    private static TableHost Host(Control table, double minHeight, string icon, string title, string hint)
+    private static TableHost Host(Control table, double minHeight, string icon, string title, string hint, string hue = "Brush.Stone")
     {
-        var empty = Ui.EmptyState(icon, title, hint);
+        var empty = Ui.EmptyState(icon, title, hint, null, hue);
         empty.IsVisible = false;
         var panel = new Panel { MinHeight = minHeight };
         panel.Children.Add(table);

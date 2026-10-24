@@ -27,11 +27,13 @@ public class TodayScreen
     private Border _heroFull = null!;
     private StackPanel _heroEmpty = null!;
     private TextBlock _heroNumeral = null!;
+    private Panel? _heroNumeralRow;
     private TextBlock _heroDaysWord = null!;
     private TextBlock _heroDateLine = null!;
     private TextBlock _heroTitle = null!;
     private TextBlock _heroBody = null!;
     private TextBlock _heroProvenance = null!;
+    private TextBlock _heroConsequence = null!;
     private Border _planTag = null!;
     private TextBlock _afterLine = null!;
     private RunLine _run = null!;
@@ -127,6 +129,14 @@ public class TodayScreen
         return scroll;
     }
 
+    /// <summary>--assert-today hook (3A): the numerals row, date line and title bounds
+    /// after a layout pass. The layout assertions in TodayLayoutAssert read these.</summary>
+    internal (Rect Numeral, Rect Date, Rect Title) HeroQaRects()
+    {
+        var numeral = _heroNumeralRow?.Bounds ?? _heroNumeral.Bounds;
+        return (numeral, _heroDateLine.Bounds, _heroTitle.Bounds);
+    }
+
     private Border BuildHeroFull(TodayViewModel vm)
     {
         Cursor? hand = new Cursor(StandardCursorType.Hand);
@@ -138,19 +148,23 @@ public class TodayScreen
             Spacing = 10,
             VerticalAlignment = VerticalAlignment.Top,
         };
-        _heroNumeral = new TextBlock { Classes = { "heroNum" }, FontSize = 96, VerticalAlignment = VerticalAlignment.Bottom, Margin = new(0, -14, 0, -22) };
-        _heroDaysWord = new TextBlock { Classes = { "heroDays" }, VerticalAlignment = VerticalAlignment.Bottom, Margin = new(0, 0, 0, 10) };
+        // 3A: numeral + days live in a row sized by the numeral's line height (the
+        // display.hero style), no negative margins anywhere; the date line sits 14 below.
+        _heroNumeralRow = numeralRow;
+        _heroNumeral = new TextBlock { Classes = { "displayHero" }, VerticalAlignment = VerticalAlignment.Bottom };
+        _heroDaysWord = new TextBlock { Classes = { "heroDays" }, VerticalAlignment = VerticalAlignment.Bottom, Margin = new(0, 0, 0, 9) };
         numeralRow.Children.Add(_heroNumeral);
         numeralRow.Children.Add(_heroDaysWord);
 
-        _heroDateLine = new TextBlock { Classes = { "heroDate" } };
+        _heroDateLine = new TextBlock { Classes = { "heroDate" }, Margin = new(0, 14, 0, 0) };
         _heroTitle = new TextBlock { Classes = { "heroTitle" }, TextWrapping = TextWrapping.Wrap, Margin = new(0, 2, 0, 0) };
         _heroBody = new TextBlock { Classes = { "heroMeta" }, TextWrapping = TextWrapping.Wrap };
 
-        _run = new RunLine { Height = 16, Margin = new(0, 12, 4, 2) };
+        _run = new RunLine { Height = 26, Margin = new(0, 12, 4, 2) };   // labels under the line (3F #8)
 
         var provRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         _heroProvenance = new TextBlock { Classes = { "heroMeta" }, FontSize = 11.5 };
+        _heroConsequence = new TextBlock { Classes = { "heroMeta" }, FontSize = 11.5, TextWrapping = TextWrapping.Wrap };
         _planTag = new Border
         {
             CornerRadius = new(3),
@@ -170,6 +184,7 @@ public class TodayScreen
         body.Children.Add(_heroBody);
         body.Children.Add(_run);
         body.Children.Add(provRow);
+        body.Children.Add(_heroConsequence);   // 3F #8: the consequence on its own line
         body.Children.Add(_afterLine);
 
         var panel = new Border
@@ -184,6 +199,34 @@ public class TodayScreen
         // The whole hero opens the Assessments page; its automation name carries the countdown.
         panel.PointerReleased += (_, _) => vm.OpenHeroCommand.Execute(null);
         return panel;
+    }
+
+    /// <summary>3F #8 display formatter: "Source: PPA notice (ppaonline.com.au) · Confirmed".
+    /// Pure display — the underlying provenance strings are untouched.</summary>
+    private static string ProvenanceLine(QsppManager.Domain.Services.DeadlineInfo f)
+    {
+        var src = f.Source ?? "";
+        string label = src switch
+        {
+            string s when s.StartsWith("PPA") => "PPA notice",
+            string s when s.StartsWith("Assessment provider") => "Assessment provider",
+            string s when s.StartsWith("T&C") => "Terms and conditions",
+            string s when s.StartsWith("Program Rules") => "Program rules",
+            string s when s.StartsWith("internal") => "Internal planning",
+            string s when s.StartsWith("ISSUE-") => "Interpretation issue",
+            _ => "",
+        };
+        string? host = null;
+        var m = System.Text.RegularExpressions.Regex.Match(src, @"\(([a-z0-9.\-]+\.[a-z]{2,})\)");
+        if (m.Success) host = m.Groups[1].Value;
+        if (label == "")
+        {
+            // Fallback: first sentence-ish fragment of the raw source, trimmed.
+            var cut = src.IndexOfAny(['(', '—', ':']);
+            label = cut > 0 ? src[..cut].Trim() : (src.Length > 50 ? src[..50].TrimEnd() + "…" : src.Trim());
+        }
+        var status = f.PlanningOnly ? "Planning only" : "Confirmed";
+        return "Source: " + label + (host is { } ? " (" + host + ")" : "") + " · " + status;
     }
 
     private static StackPanel BuildHeroEmpty(TodayViewModel vm)
@@ -203,6 +246,7 @@ public class TodayScreen
     private StackPanel BuildPosition(TodayViewModel vm)
     {
         var p = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Top };
+        // eyebrow stays caps (caps are reserved for eyebrows, 3C)
         p.Children.Add(new TextBlock { Classes = { "eyebrow" }, Text = "ACCREDITATION POSITION" });
         _positionPanel = new StackPanel { Spacing = 0 };
         p.Children.Add(_positionPanel);
@@ -361,13 +405,37 @@ public class TodayScreen
         headerRow.Children.Add(new TextBlock { Classes = { "eyebrow" }, Text = "ACTIVITY" });
         _activityCount = new TextBlock { Classes = { "small" }, VerticalAlignment = VerticalAlignment.Center };
         headerRow.Children.Add(_activityCount);
-        var expander = new Expander
+        // 3F #8: Activity becomes a text disclosure, not a box that looks like a combobox.
+        var toggle = new Avalonia.Controls.Button
         {
-            Header = headerRow,
-            Content = _activityBody,
-            IsExpanded = false,
+            Classes = { "ghost" }, Padding = new(0), Height = 24,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left,
         };
-        return expander;
+        var chevronPath = new Avalonia.Controls.Shapes.Path
+        {
+            Stroke = TodayInk.Br("Brush.Muted"), StrokeThickness = 1.5,
+            Data = Avalonia.Media.Geometry.Parse("M 4,7 L 8,11 L 12,7"),
+            Width = 14, Height = 12, VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+        };
+        void SyncToggle()
+        {
+            // chevron alone: _activityCount stays in headerRow (double-parenting crash).
+            toggle.Content = chevronPath;
+        }
+        toggle.Click += (_, _) =>
+        {
+            _activityBody.IsVisible = !_activityBody.IsVisible;
+            chevronPath.Data = Avalonia.Media.Geometry.Parse(
+                _activityBody.IsVisible ? "M 4,7 L 8,11 L 12,7" : "M 4,11 L 8,7 L 12,11");  // down = open
+            SyncToggle();
+        };
+        headerRow.Children.Add(toggle);
+        var host = new Avalonia.Controls.StackPanel { Spacing = 4 };
+        host.Children.Add(headerRow);
+        _activityBody.IsVisible = false;
+        host.Children.Add(_activityBody);
+        SyncToggle();
+        return host;
     }
 
     // ---------------------------------------------------------------- populate
@@ -397,7 +465,8 @@ public class TodayScreen
             _heroDateLine.Text = vm.DeadlineFullDate;
             _heroTitle.Text = vm.DeadlineTitle;
             _heroBody.Text = vm.DeadlineBody;
-            _heroProvenance.Text = vm.DeadlineProvenance;
+            _heroProvenance.Text = ProvenanceLine(f);   // 3F #8 display formatter
+            _heroConsequence.Text = f.Explanation;
             _planTag.IsVisible = f.PlanningOnly;
             _afterLine.Text = vm.AfterThis;
             Ui.Ax(_heroFull, vm.HeroAutomationName, "Opens the Assessments page");
@@ -422,7 +491,11 @@ public class TodayScreen
         _roundLead.Text = vm.RoundLead;
         _roundNext.Text = vm.RoundNextEvent;
         _roundBarHost.Children.Clear();
-        if (items > 0) _roundBarHost.Children.Add(SegmentedBar.Build(items, withEvidence, inProgress, verified));
+        var hasBar = items > 0;
+        _roundBarHost.IsVisible = hasBar;   // 3F #8: no orphan dash when the round is empty
+        _roundBarHost.Height = hasBar ? 3 : 0;
+        _roundBarHost.Margin = hasBar ? new(0, 8, 0, 2) : new(0);
+        if (hasBar) _roundBarHost.Children.Add(SegmentedBar.Build(items, withEvidence, inProgress, verified));
 
         // Year ahead
         _yearRange.Text = vm.YearAheadRange;
