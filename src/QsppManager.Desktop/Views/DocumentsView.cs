@@ -1,7 +1,10 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Templates;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
+using Avalonia.VisualTree;
 using Avalonia.Media;
 using Microsoft.EntityFrameworkCore;
 using QsppManager.Desktop.ViewModels;
@@ -59,9 +62,15 @@ public partial class DocumentsView : UserControl
     private Control BuildBrowser()
     {
         _grid.Columns.Add(new DataGridTextColumn { Header = "Document", Binding = new Avalonia.Data.Binding("Title"), Width = new DataGridLength(3, DataGridLengthUnitType.Star) });
-        _grid.Columns.Add(new DataGridTextColumn { Header = "Kind", Binding = new Avalonia.Data.Binding("KindDisplay"), Width = new DataGridLength(130) });
-        _grid.Columns.Add(new DataGridTextColumn { Header = "Review", Binding = new Avalonia.Data.Binding("ReviewDisplay"), Width = new DataGridLength(150) });
-        Ui.Ax(_grid, "Evidence records", "Select a row to review, open or supersede it");
+        _grid.Columns.Add(new DataGridTextColumn { Header = "Kind", Binding = new Avalonia.Data.Binding("KindDisplay"), Width = new DataGridLength(112) });
+        _grid.Columns.Add(new DataGridTextColumn { Header = "Review", Binding = new Avalonia.Data.Binding("ReviewDisplay"), Width = new DataGridLength(118) });
+        // Every row acts directly (owner brief: actions on every file): a quiet Open button
+        // on each row, plus double-click and Enter. Review and supersede stay in the detail
+        // pane, where they have room for their notes (§5).
+        _grid.Columns.Add(OpenColumn());
+        Ui.Ax(_grid, "Evidence records", "Select a row to review, open or supersede it; double-click opens the file");
+        _grid.DoubleTapped += GridDoubleTapped;
+        _grid.KeyDown += GridKeyDown;
         _evidenceHost = Host(_grid, "files", "No evidence records yet", "Attach the first evidence file; it is copied into managed storage with a checksum.", "Brush.Teal");
 
         var listDock = new DockPanel { Margin = new(10, 10, 10, 12), LastChildFill = true };
@@ -93,8 +102,14 @@ public partial class DocumentsView : UserControl
         var browser = new Avalonia.Controls.Grid
         {
             MinHeight = 430,
-            ColumnDefinitions = new ColumnDefinitions("470,Auto,*"),
+            ColumnDefinitions = new ColumnDefinitions("600,Auto,*"),
         };
+        // Splitter clamps: the list can widen but never swallows the detail pane, and the
+        // detail pane can never be dragged away entirely — actions stay on screen. At the
+        // 1120 content cap the detail pane keeps at least 352pt (760 + 8 + 352).
+        browser.ColumnDefinitions[0].MinWidth = 420;
+        browser.ColumnDefinitions[0].MaxWidth = 760;
+        browser.ColumnDefinitions[2].MinWidth = 330;
         browser.Children.Add(listPane);
         browser.Children.Add(splitter);
         browser.Children.Add(detailPane);
@@ -173,6 +188,9 @@ public partial class DocumentsView : UserControl
             e.EffectiveTo is { } eff && eff <= todayPlus90,
             e.SupersededById)).ToList();
         ApplyFilter();
+        // First paint: the pane shows its empty-state hint until a row is selected (Load
+        // builds the list without a SelectionChanged, so refresh it once here).
+        RefreshDetail();
     }
 
     private void ApplyFilter()
@@ -197,7 +215,20 @@ public partial class DocumentsView : UserControl
             _detailPane.Children.Add(Ui.EmptyState("file-text", "No document selected", "Select a document on the left to review and action it."));
             return;
         }
-        _detailPane.Children.Add(BuildDocumentDetail(row));
+        try
+        {
+            _detailPane.Children.Add(BuildDocumentDetail(row));
+        }
+        catch (Exception ex)
+        {
+            // The pane must never go blank on a data hiccup: identity and the open action stay.
+            var fallback = new StackPanel { Spacing = 10 };
+            fallback.Children.Add(new TextBlock { Text = row.Title, FontSize = 15, FontWeight = FontWeight.SemiBold, TextWrapping = TextWrapping.Wrap });
+            fallback.Children.Add(Ui.Row(6, Ui.Chip(row.KindDisplay), Ui.Chip(row.ReviewDisplay, ReviewTone(row.ReviewState))));
+            fallback.Children.Add(Ui.Callout($"The detail pane could not be shown: {ex.Message}"));
+            fallback.Children.Add(Btn("Open file", "Open the managed evidence file in the system viewer", (_, _) => OpenSelected()));
+            _detailPane.Children.Add(fallback);
+        }
     }
 
     private Control BuildDocumentDetail(EvidenceRow row)
@@ -331,7 +362,18 @@ public partial class DocumentsView : UserControl
     private void OpenSelected()
     {
         if (_grid.SelectedItem is not EvidenceRow row) { _resultBar.Show(NoticeTone.Info, "Select an evidence row first."); return; }
-        Helpers.OpenWithSystemViewer(App.Store.AbsolutePath(row.StoredRelativePath));
+        OpenRow(row);
+    }
+
+    /// <summary>Open one row's managed file; selecting it first keeps the detail pane in
+    /// step. A missing stored file is reported, never swallowed silently.</summary>
+    private void OpenRow(EvidenceRow row)
+    {
+        if (_grid.SelectedItem is not EvidenceRow current || current.Id != row.Id) _grid.SelectedItem = row;
+        var abs = App.Store.AbsolutePath(row.StoredRelativePath);
+        if (Helpers.OpenWithSystemViewer(abs)) return;
+        if (System.IO.File.Exists(abs)) return; // the system-open toast already surfaced the failure
+        _resultBar.Show(NoticeTone.Error, "The stored file is missing on disk.", abs);
     }
 
     private async Task SupersedeAsync()
@@ -426,6 +468,48 @@ public partial class DocumentsView : UserControl
         return b;
     }
     private static Button PrimaryBtn(string label, string axHelp, EventHandler<RoutedEventArgs> onClick) => Btn(label, axHelp, onClick, "primary");
+
+    /// <summary>The quiet per-row Open button (textlink green): a visible action on every
+    /// row, available no matter which pane state it is in.</summary>
+    private DataGridTemplateColumn OpenColumn() =>
+        new()
+        {
+            Header = "Open",
+            Width = new DataGridLength(86),
+            CellTemplate = new FuncDataTemplate<EvidenceRow>((row, _) =>
+            {
+                var b = new Button
+                {
+                    Content = "Open",
+                    Classes = { "textlink" },
+                    HorizontalAlignment = HorizontalAlignment.Right,
+                    Margin = new(0, 0, 12, 0),
+                };
+                b.Click += (_, _) => OpenRow(row);
+                Ui.Ax(b, "Open file", "Open the managed evidence file in the system viewer");
+                return b;
+            }, true),
+        };
+
+    /// <summary>The evidence row under a pointer event, via its containing DataGridRow.</summary>
+    private EvidenceRow? RowAt(object? source) =>
+        (source as Control)?.GetSelfAndVisualAncestors()
+            .OfType<Avalonia.Controls.DataGridRow>()
+            .FirstOrDefault()?.DataContext as EvidenceRow;
+
+    private void GridDoubleTapped(object? sender, Avalonia.Input.TappedEventArgs e)
+    {
+        // A double-tap on the Open button belongs to the button's own handler.
+        if ((e.Source as Control)?.GetSelfAndVisualAncestors().OfType<Button>().Any() == true) return;
+        if (RowAt(e.Source) is not { } row) return;
+        OpenRow(row);
+    }
+
+    private void GridKeyDown(object? sender, Avalonia.Input.KeyEventArgs e)
+    {
+        if (e.Key != Avalonia.Input.Key.Enter || _grid.SelectedItem is not EvidenceRow row) return;
+        OpenRow(row);
+    }
 
     /// <summary>Table with an in-place empty state; the visible child tracks the row count.</summary>
     private static TableHost Host(Control table, string icon, string title, string hint, string hue = "Brush.Stone")
