@@ -17,6 +17,7 @@ namespace QsppManager.Desktop.Views;
 public partial class LibraryView : UserControl, IPageSearchFocus
 {
     private readonly DataGrid _sources = Ui.Grid().With(_ => _.Height = 220);
+    private TableHost _sourcesHost = null!;
     private readonly DataGrid _issues = Ui.Grid(rowHeight: 34).With(_ => _.Height = 140);
     private readonly DataGrid _superseded = Ui.Grid(rowHeight: 34).With(_ => _.Height = 150);
     private readonly TextBox _searchBox = new() { Watermark = "Search the whole corpus — try potency, mid-cycle, attestation…" };
@@ -24,7 +25,7 @@ public partial class LibraryView : UserControl, IPageSearchFocus
     private readonly Grid _resultsHost = new();
     private readonly Control _resultsEmpty = Ui.EmptyState("search", "Search the corpus",
         "Find requirements, evidence records and source documents. Press Enter or click Search; double-click a result to open the record.");
-    private readonly TextBox _resultBar = new() { IsReadOnly = true, TextWrapping = TextWrapping.Wrap, MinHeight = 34, Watermark = "Result messages appear here", Classes = { "result" } };
+    private readonly NoticeHost _resultBar = new();
     private readonly StackPanel _issueDetail = new() { Spacing = 6 };
     private readonly ListBox _diffLines = new() { Height = 160, Background = Brushes.Transparent };
 
@@ -92,17 +93,17 @@ public partial class LibraryView : UserControl, IPageSearchFocus
             {
                 if (_sources.SelectedItem is SourceDocRow s)
                     Helpers.OpenWithSystemViewer(App.Store.AbsolutePath(s.StoredRelativePath));
-                else _resultBar.Text = "Select a source document first.";
+                                else _resultBar.Show(NoticeTone.Info, "Select a source document first.");
             };
         }));
         docRow.Children.Add(Ui.Btn("Extract full text (selected)").With(b => b.Height = 32).
             With(b => b.Click += (_, _) =>
             {
-                if (_sources.SelectedItem is not SourceDocRow s) { _resultBar.Text = "Select a source document first."; return; }
+                                if (_sources.SelectedItem is not SourceDocRow s) { _resultBar.Show(NoticeTone.Info, "Select a source document first."); return; }
                 var (ok, pages, err) = App.TextIndex.Extract(s.Id);
-                _resultBar.Text = ok
-                    ? $"Extracted {pages} pages from “{s.DisplayName}” into the search index. Ctrl+K and the search box now find words inside that document."
-                    : $"Extraction failed: {err}";
+                                _resultBar.Show(ok,
+                    $"Extracted {pages} pages from “{s.DisplayName}” into the search index. Ctrl+K and the search box now find words inside that document.",
+                    $"Extraction failed: {err}");
                 Load();
             }));
         docRow.Children.Add(Ui.Btn("Extract & index all documents").With(b => b.Height = 32).
@@ -115,14 +116,15 @@ public partial class LibraryView : UserControl, IPageSearchFocus
                     var (ok, pages, err) = App.TextIndex.Extract(d.Id);
                     if (ok) { done++; pagesTotal += pages; } else { failed++; lastError = $"{d.DisplayName}: {err}"; }
                 }
-                _resultBar.Text = done == docs.Count
-                    ? $"Indexed {done} documents ({pagesTotal} pages). The full corpus text is now searchable."
-                    : $"Indexed {done} of {docs.Count} documents ({pagesTotal} pages); {failed} failed — first failure: {lastError}";
+                _resultBar.Show(done == docs.Count ? NoticeTone.Ok : NoticeTone.Error,
+                    $"Indexed {done} documents ({pagesTotal} pages). The full corpus text is now searchable.",
+                    $"Indexed {done} of {docs.Count} documents ({pagesTotal} pages); {failed} failed — first failure: {lastError}");
                 Load();
             }));
 
         Ui.WrapGaps(docRow);
-        return Ui.Section("Source documents (verified corpus)", Ui.Col(10, _sources, docRow));
+        _sourcesHost = Host(_sources, 220, "file-text", "No source documents imported", "The verified corpus appears here as documents are imported during setup - each with its checksum and provenance.");
+        return Ui.Section("Source documents (verified corpus)", Ui.Col(10, _sourcesHost.Panel, docRow));
     }
 
     // ---- interpretation issues ----
@@ -166,14 +168,14 @@ public partial class LibraryView : UserControl, IPageSearchFocus
         cmpRow.Children.Add(Ui.Btn("Compare full text of two documents…").With(b => { b.Height = 32; b.Click += async (_, _) =>
         {
             var docs = App.Workspace.AllSourceDocuments().Where(d => d.Sha256Hex.Length > 0).ToList();
-            if (docs.Count < 2) { _resultBar.Text = "Two source documents are needed for a compare."; return; }
+                        if (docs.Count < 2) { _resultBar.Show(NoticeTone.Info, "Two source documents are needed for a compare."); return; }
             var list = string.Join("\n", docs.Select((d, i) => $"{i + 1}. {d.DisplayName} ({d.FileName})"));
             var aIdx = await Dialogs.Prompt(this, "Compare source versions — the OLDER version", "Number of the first document…\n" + list);
             if (aIdx is null || !int.TryParse(aIdx, out var ai) || ai < 1 || ai > docs.Count) return;
             var bIdx = await Dialogs.Prompt(this, "Compare source versions — the NEWER version", "Number of the second document");
             if (bIdx is null || !int.TryParse(bIdx, out var bi) || bi < 1 || bi > docs.Count) return;
             var (ok, err, summary, lines) = SourceCompare.DiffDocuments(App.TextIndex, docs[ai - 1], docs[bi - 1]);
-            _resultBar.Text = ok ? summary : err;
+                        _resultBar.Show(ok ? NoticeTone.Ok : NoticeTone.Error, ok ? summary : err);
             _diffLines.ItemsSource = lines.Take(150).Select(l => new DiffRow(l)).ToList();
         }; }));
 
@@ -192,6 +194,7 @@ public partial class LibraryView : UserControl, IPageSearchFocus
             .Select(i => new IssueRow(i.Id, i.Key, i.Title, i.Status, i.ConservativePlanning)).ToList();
         _superseded.ItemsSource = App.Workspace.SupersessionReview()
             .Select(r => new SupersededRow(r.OldTitle, r.ReplacementTitle, r.Reason, r.AffectedRequirementLinks.ToString(), r.OpenTaskCount.ToString())).ToList();
+        _sourcesHost?.Refresh(_sources.ItemsSource?.Cast<object>().Count() ?? 0);
         SelectFirstIssue();
     }
 
@@ -205,7 +208,7 @@ public partial class LibraryView : UserControl, IPageSearchFocus
         _results.ItemsSource = App.Search.Query(_searchBox.Text, 60, hidePatientDataEvidence: App.Session?.ReadOnly == true)
             .Select(r => new SearchRow(r.Kind, r.Title, r.Excerpt, r.Meta, r.Id)).ToList();
         UpdateResultsHost();
-        if (_results.ItemCount == 0) _resultBar.Text = "Nothing matched. The LIKE fallback also ran — try a shorter term.";
+                if (_results.ItemCount == 0) _resultBar.Show(NoticeTone.Info, "Nothing matched. The LIKE fallback also ran — try a shorter term.");
     }
 
     private void UpdateResultsHost()
@@ -225,7 +228,7 @@ public partial class LibraryView : UserControl, IPageSearchFocus
 
     private void ShowIssueSources()
     {
-        if (SelectedIssue is not { } row) { _resultBar.Text = "Select an interpretation issue first."; return; }
+                if (SelectedIssue is not { } row) { _resultBar.Show(NoticeTone.Info, "Select an interpretation issue first."); return; }
         var issue = App.Workspace.Issues().First(i => i.Id == row.Id);
         _issueDetail.Children.Clear();
         _issueDetail.Children.Add(Ui.Label("SOURCES — VERBATIM, AS RETRIEVED"));
@@ -277,20 +280,20 @@ public partial class LibraryView : UserControl, IPageSearchFocus
 
     private void Acknowledge()
     {
-        if (SelectedIssue is not { } row) { _resultBar.Text = "Select an interpretation issue first."; return; }
+                if (SelectedIssue is not { } row) { _resultBar.Show(NoticeTone.Info, "Select an interpretation issue first."); return; }
         var res = App.Workspace.AcknowledgeIssue(row.Id, App.Session!);
-        _resultBar.Text = res.Ok ? "Acknowledged — recorded in the audit trail. The conservative planning reading still applies." : res.Error;
+                _resultBar.Show(res.Ok, "Acknowledged — recorded in the audit trail. The conservative planning reading still applies.", res.Error);
         Load();
     }
 
     private async Task ResolveAsync()
     {
-        if (SelectedIssue is not { } row) { _resultBar.Text = "Select an interpretation issue first."; return; }
+                if (SelectedIssue is not { } row) { _resultBar.Show(NoticeTone.Info, "Select an interpretation issue first."); return; }
         var note = await Dialogs.Prompt(this, "Resolution record (required)",
             "Who settled this, and which source is taken as authoritative?");
         if (string.IsNullOrWhiteSpace(note)) return;
         var res = App.Workspace.ResolveIssue(row.Id, note, App.Session!);
-        _resultBar.Text = res.Ok ? "Resolved and recorded. Planning flags for this question can now follow the settled source." : res.Error;
+                _resultBar.Show(res.Ok, "Resolved and recorded. Planning flags for this question can now follow the settled source.", res.Error);
         Load();
     }
 
@@ -343,4 +346,25 @@ public partial class LibraryView : UserControl, IPageSearchFocus
         _searchBox.SelectAll();
     }
     public void SetFilter(string text) => OpenLibrarySearch(text);
+    /// <summary>Table with an in-place empty state; the visible child tracks the row count
+    /// (premium-polish 3.8 — Library source documents).</summary>
+    private static TableHost Host(Control table, double minHeight, string icon, string title, string hint)
+    {
+        var empty = Ui.EmptyState(icon, title, hint);
+        empty.IsVisible = false;
+        var panel = new Panel { MinHeight = minHeight };
+        panel.Children.Add(table);
+        panel.Children.Add(empty);
+        return new TableHost(table, empty, panel);
+    }
+
+    private sealed record TableHost(Control Table, Control Empty, Panel Panel)
+    {
+        public void Refresh(int rowCount)
+        {
+            Table.IsVisible = rowCount > 0;
+            Empty.IsVisible = rowCount == 0;
+        }
+    }
+
 }

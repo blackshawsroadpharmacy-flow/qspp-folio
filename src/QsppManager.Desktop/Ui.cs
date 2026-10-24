@@ -6,11 +6,14 @@ using System.Text.RegularExpressions;
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Shapes;
 using Avalonia.Controls.Templates;
 using Avalonia.Data;
+using Avalonia.Input.Platform;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Threading;
 using AvaloniaPath = Avalonia.Controls.Shapes.Path;
 using AvaloniaGroup = Avalonia.Media.GeometryGroup;
 using AvaloniaGrid = Avalonia.Controls.Grid;
@@ -40,12 +43,96 @@ public static class Ui
     public static TextBlock Label(string t) => new() { Classes = { "label" }, Text = t };
     public static TextBlock Para(string t) => new() { Text = t, TextWrapping = TextWrapping.Wrap, MaxWidth = 820, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left };
     public static TextBlock Mono(string t) => new() { Classes = { "mono" }, Text = t };
+    public static Control TitleLarge(string t) => new TextBlock { Classes = { "titleLarge" }, Text = t };
+    public static Control Title2(string t) => new TextBlock { Classes = { "title2" }, Text = t };
+    public static Control Callout(string t, double? maxWidth = null) => new TextBlock { Classes = { "callout" }, Text = t, MaxWidth = maxWidth ?? double.NaN };
+    public static Control Footnote(string t) => new TextBlock { Classes = { "footnote" }, Text = t };
+
+    // ---------- page header (premium-polish 3.9) ----------
+    /// <summary>Serif page title, one short callout line (90 characters at most), and an
+    /// ⓘ button whose popover carries the former long explanation word for word. The
+    /// page then gets out of the way: no paragraph above the fold (section 6).</summary>
+    public static Control PageHeader(string title, string lead, string? explainer = null)
+    {
+        var row = new AvaloniaGrid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
+        var textCol = new StackPanel { Spacing = 6 };
+        textCol.Children.Add(new TextBlock { Classes = { "titleLarge" }, Text = title });
+        textCol.Children.Add(new TextBlock { Classes = { "callout" }, Text = lead, TextWrapping = TextWrapping.Wrap });
+        AvaloniaGrid.SetColumn(textCol, 0);
+        row.Children.Add(textCol);
+
+        if (!string.IsNullOrWhiteSpace(explainer))
+        {
+            var button = new Button
+            {
+                Classes = { "ghost" }, Width = 24, Height = 24, Padding = new(0),
+                VerticalAlignment = VerticalAlignment.Top, Margin = new(0, 4, 0, 0),
+            };
+            Ui.Ax(button, "About this screen");
+            var popup = new Popup
+            {
+                Placement = PlacementMode.Bottom,
+                PlacementTarget = button,
+                Child = new Border
+                {
+                    Background = Br("Brush.Surface"), BorderBrush = Br("Brush.ControlBorder"),
+                    BorderThickness = new(1), CornerRadius = new(9), Padding = new(14, 12),
+                    MaxWidth = 440,
+                    Child = new ScrollViewer
+                    {
+                        MaxHeight = 340,
+                        Content = new TextBlock { Classes = { "callout" }, Text = explainer, TextWrapping = TextWrapping.Wrap, MaxWidth = 400 },
+                    },
+                },
+            };
+            button.Content = new Panel { Children = { Lucide("info", 15, Br("Brush.Muted"), center: true), popup } };
+            button.Click += (_, _) => { if (popup is { } p) p.IsOpen = !p.IsOpen; };
+            AvaloniaGrid.SetColumn(button, 1);
+            row.Children.Add(button);
+        }
+        return row;
+    }
+
+    // ---------- verbatim quote (premium-polish 3.7) ----------
+    /// <summary>Read-only source wording: selectable serif text, 2px green rule on the
+    /// left, 14px left padding, no box. Replaces read-only TextBoxes that looked editable.
+    /// maxHeight caps tall passages (M7.2 autosize contract: grows with content, then
+    /// scrolls inside the cap).</summary>
+    public static Control QuoteBlock(string text, double? maxHeight = null)
+    {
+        var quote = new SelectableTextBlock { Classes = { "quote" }, Text = text };
+        if (maxHeight is { } cap)
+        {
+            var scroll = new ScrollViewer
+            {
+                MaxHeight = cap,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Hidden,
+                Content = quote,
+            };
+            return new Border
+            {
+                BorderBrush = Br("Brush.Green"),
+                BorderThickness = new(2, 0, 0, 0),
+                Padding = new(14, 2, 8, 2),
+                Child = scroll,
+            };
+        }
+        return new Border
+        {
+            BorderBrush = Br("Brush.Green"),
+            BorderThickness = new(2, 0, 0, 0),
+            Padding = new(14, 2, 0, 2),
+            Child = quote,
+        };
+    }
 
     // ---------- scaffolding ----------
-    /// <summary>Standard page scaffold: scrollable, left-aligned, max width 1140.</summary>
+    /// <summary>Standard page scaffold: scrollable, content capped at 760pt and centred
+    /// (premium-polish 3.11); side gutters 32pt. List-and-detail pages build their own
+    /// full-width root instead.</summary>
     public static ScrollViewer Page(params Control[] children)
     {
-        var sp = new StackPanel { Margin = new(36, 30, 36, 44), Spacing = 14, MaxWidth = 1140, HorizontalAlignment = HorizontalAlignment.Left };
+        var sp = new StackPanel { Margin = new(32, 30, 32, 44), Spacing = 14, MaxWidth = 760, HorizontalAlignment = HorizontalAlignment.Center };
         foreach (var c in children) sp.Children.Add(c);
         return new ScrollViewer { Content = sp };
     }
@@ -99,28 +186,29 @@ public static class Ui
         if (!string.IsNullOrEmpty(help)) c.SetValue(AutomationProperties.HelpTextProperty, help);
     }
 
-    /// <summary>Empty state: icon, title, hint and an optional action.</summary>
+    /// <summary>Empty state (premium-polish 3.8): one short block at most 120pt tall —
+    /// a bare 20pt icon (no tinted circle behind it), one headline line, one callout
+    /// line, one optional quiet action. No large white box, no card chrome.</summary>
     public static Control EmptyState(string iconName, string title, string hint, Control? action = null)
     {
-        var col = new StackPanel { Spacing = 8, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, MaxWidth = 430 };
-        col.Children.Add(new Border
-        {
-            Width = 46, Height = 46, CornerRadius = new(23),
-            Background = Br("Brush.Sage"),
-            HorizontalAlignment = HorizontalAlignment.Center,
-            Child = Lucide(iconName, 20, Br("Brush.Green"), center: true),
-        });
-        col.Children.Add(new TextBlock { Classes = { "h3" }, Text = title, TextAlignment = TextAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center });
+        var col = new StackPanel { Spacing = 4, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, MaxWidth = 430 };
+        col.Children.Add(Lucide(iconName, 20, Br("Brush.Muted"), center: true));
+        col.Children.Add(new TextBlock { Classes = { "headline" }, Text = title, TextAlignment = TextAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center });
         col.Children.Add(new TextBlock
         {
-            Classes = { "small" }, Text = hint, TextAlignment = TextAlignment.Center,
-            TextWrapping = TextWrapping.Wrap, HorizontalAlignment = HorizontalAlignment.Center,
+            Classes = { "callout" }, Text = hint, TextAlignment = TextAlignment.Center,
+            TextWrapping = TextWrapping.Wrap, HorizontalAlignment = HorizontalAlignment.Center, MaxWidth = 380,
         });
-        if (action != null) col.Children.Add(action);
+        if (action != null)
+        {
+            action.Margin = new(0, 8, 0, 0);
+            action.HorizontalAlignment = HorizontalAlignment.Center;
+            col.Children.Add(action);
+        }
         return new Border
         {
-            Padding = new(24, 34), CornerRadius = new(9),
-            Background = Br("Brush.Surface"), BorderBrush = Br("Brush.Divider"), BorderThickness = new(1),
+            Padding = new(12, 16),
+            HorizontalAlignment = HorizontalAlignment.Center,
             Child = col,
         };
     }
@@ -282,21 +370,22 @@ public static class Ui
     public static class FontFamilies
     {
         public const string Mono = "JetBrains Mono, SF Mono, Menlo, Consolas, monospace";
-        /// <summary>Editorial serif for the Today hero numeral and serif titles (pharmacopoeia look).</summary>
-        public const string Serif = "Georgia, Hoefler Text, Times New Roman";
+        /// <summary>Editorial serif for page titles, detail titles, verbatim quotes and the
+        /// Today hero numeral. New York first (modern macOS), Georgia fallback.</summary>
+        public const string Serif = "New York, Georgia, Hoefler Text, Times New Roman";
         public const string Ui = "SF Pro Text, SF Pro, Host Grotesk, Helvetica Neue, Helvetica, Arial";
     }
 
     /// <summary>Lucide icon rendered from the vendored SVG (ISC-licensed) as stroke
     /// geometry — no external SVG package needed.</summary>
-    public static Control Lucide(string name, double size = IconSizeDefault, IBrush? stroke = null, bool center = false)
+    public static Control Lucide(string name, double size = IconSizeDefault, IBrush? stroke = null, bool center = false, double strokeThickness = 2)
     {
         return new AvaloniaPath
         {
             Data = Shape(name),
             Stretch = Stretch.Uniform,
             Stroke = stroke ?? Br("Brush.Ink"),
-            StrokeThickness = 2,
+            StrokeThickness = strokeThickness,
             StrokeLineCap = PenLineCap.Round,
             StrokeJoin = PenLineJoin.Round,
             Fill = null,
@@ -315,6 +404,17 @@ public static class Ui
     }
 
     public static IBrush? Br(string key) => Helpers.Brush(key);
+
+    /// <summary>Styled optional date field (premium-polish 3.10): d MMM yyyy, blank
+    /// allowed and shown as "Not set" through the watermark. Replaces the cramped
+    /// day/month/year triplet fields.</summary>
+    public static CalendarDatePicker DateField(DateTime? value = null) => new()
+    {
+        SelectedDateFormat = Avalonia.Controls.CalendarDatePickerFormat.Custom,
+        CustomDateFormatString = "d MMM yyyy",
+        Watermark = "Not set",
+        SelectedDate = value,
+    };
 
     /// <summary>Small two-column fact row for the About dialog (label / value).</summary>
     public static Control InfoLine(string label, string value)
@@ -449,6 +549,145 @@ internal static class ControlExtensions
     }
 }
 
+public enum NoticeTone { Ok, Error, Info }
+
+/// <summary>Slim result banner pinned to the top of the page content (premium-polish
+/// 3.4): an icon, the message and a close button. Success notices fade after 6 seconds
+/// (180ms opacity fade, skipped under reduced motion); errors stay until dismissed and
+/// offer "Copy details" when the view supplies detail text. Replaces the eight
+/// read-only "Result messages appear here" TextBox strips; message text is unchanged.</summary>
+public sealed class NoticeHost : Border
+{
+    private readonly Panel _iconHost = new();
+    private readonly TextBlock _message = new()
+    {
+        TextWrapping = TextWrapping.Wrap,
+        VerticalAlignment = VerticalAlignment.Center,
+        FontSize = 13,
+    };
+    private readonly Button _copy;
+    private readonly Button _close;
+    private readonly StackPanel _copyRow;
+    private DispatcherTimer? _fadeTimer;
+    private string? _details;
+
+    public NoticeHost()
+    {
+        IsVisible = false;
+        CornerRadius = new(6);
+        Padding = new(10, 7);
+        _copy = Ui.Btn("Copy details", null, "ghost", axName: "Copy details");
+        _copy.FontSize = 12;
+        _copy.Padding = new(6, 0);
+        _copy.Height = 22;
+        _copy.Click += async (_, _) =>
+        {
+            var clip = TopLevel.GetTopLevel(this)?.Clipboard;
+            if (clip is not null && _details is { } d) await clip.SetTextAsync(d);
+        };
+
+        _close = new Button
+        {
+            Classes = { "ghost" }, Width = 22, Height = 22, Padding = new(0),
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Right,
+        };
+        Ui.Ax(_close, "Dismiss message");
+        _close.Click += (_, _) => { StopFade(); IsVisible = false; };
+
+        _copyRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, VerticalAlignment = VerticalAlignment.Center };
+
+        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,8,*,10,Auto,6,Auto") };
+        Grid.SetColumn(_iconHost, 0);
+        Grid.SetColumn(_message, 2);
+        Grid.SetColumn(_copyRow, 4);
+        _copyRow.Children.Add(_copy);
+        Grid.SetColumn(_close, 6);
+        grid.Children.Add(_iconHost);
+        grid.Children.Add(_message);
+        grid.Children.Add(_copyRow);
+        grid.Children.Add(_close);
+        Child = grid;
+    }
+
+    /// <summary>Convenience for the common outcome shape: one message on success,
+    /// another (with detail) on failure. Message text unchanged from the old strips.</summary>
+    public void Show(bool ok, string okMessage, string? errorDetails = null)
+        => Show(ok ? NoticeTone.Ok : NoticeTone.Error, ok ? okMessage : (errorDetails ?? okMessage));
+
+    /// <summary>Show a message. The view keeps producing the same text; only the
+    /// container changed. details (error path) becomes the Copy-details payload.</summary>
+    public void Show(NoticeTone tone, string message, string? details = null)
+    {
+        StopFade();
+        _details = details;
+        _message.Text = message;
+        var (icon, iconBrush, bg, fg) = tone switch
+        {
+            NoticeTone.Ok => ("check-circle-2", Ui.Br("Brush.Green"), Ui.Br("Brush.OkBg"), Ui.Br("Brush.Ink")),
+            NoticeTone.Error => ("alert-triangle", Ui.Br("Brush.Alert"), Ui.Br("Brush.DangerBg"), Ui.Br("Brush.Ink")),
+            _ => ("info", Ui.Br("Brush.Muted"), Ui.Br("Brush.Sage"), Ui.Br("Brush.Ink")),
+        };
+        _iconHost.Children.Clear();
+        _iconHost.Children.Add(Ui.Lucide(icon, 15, iconBrush, center: true));
+        _iconHost.VerticalAlignment = VerticalAlignment.Center;
+        _iconHost.Width = 16;
+        _message.Foreground = fg;
+        Background = bg;
+        _copyRow.IsVisible = tone == NoticeTone.Error && !string.IsNullOrEmpty(details);
+        Opacity = 1;
+        IsVisible = true;
+
+        if (tone == NoticeTone.Ok)
+        {
+            // Success fades after 6s (180ms), skipped under reduced motion.
+            HoldThenFade(6.0);
+        }
+    }
+
+    public void Clear()
+    {
+        StopFade();
+        IsVisible = false;
+    }
+
+    private void HoldThenFade(double holdSeconds)
+    {
+        _fadeTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(holdSeconds) };
+        _fadeTimer.Tick += (_, _) =>
+        {
+            _fadeTimer?.Stop();
+            _fadeTimer = null;
+            if (App.Config.ReduceMotion)
+            {
+                IsVisible = false;
+                Opacity = 1;
+                return;
+            }
+            // 30ms steps across 180ms: a quiet opacity fade without the 12 animation API.
+            var step = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(30) };
+            var elapsed = 0;
+            step.Tick += (_, _) =>
+            {
+                elapsed += 30;
+                if (elapsed >= 180) { step.Stop(); IsVisible = false; Opacity = 1; }
+                else Opacity = 1.0 - (elapsed / 180.0);
+            };
+            step.Start();
+        };
+        _fadeTimer.Start();
+    }
+
+    private void StopFade()
+    {
+        if (_fadeTimer is { } t)
+        {
+            t.Stop();
+            _fadeTimer = null;
+        }
+    }
+}
+
 /// <summary>XAML-usable Lucide icon glyph: sidebar and toolbar icons bind the brand
 /// stroke colour with DynamicResource so appearance changes repaint correctly.
 /// (Top-level class — the XAML compiler cannot resolve nested types.)</summary>
@@ -460,11 +699,15 @@ public class LucideGlyph : Control
     public static readonly StyledProperty<double> GlyphSizeProperty =
         AvaloniaProperty.Register<LucideGlyph, double>("GlyphSize", 16);
 
+    public static readonly StyledProperty<double> StrokeThicknessProperty =
+        AvaloniaProperty.Register<LucideGlyph, double>("StrokeThickness", 2.0);
+
     public static readonly StyledProperty<IBrush?> GlyphBrushProperty =
         AvaloniaProperty.Register<LucideGlyph, IBrush?>("GlyphBrush");
 
     public string Glyph { get => GetValue(GlyphProperty); set => SetValue(GlyphProperty, value); }
     public double GlyphSize { get => GetValue(GlyphSizeProperty); set => SetValue(GlyphSizeProperty, value); }
+    public double StrokeThickness { get => GetValue(StrokeThicknessProperty); set => SetValue(StrokeThicknessProperty, value); }
     public IBrush? GlyphBrush { get => GetValue(GlyphBrushProperty); set => SetValue(GlyphBrushProperty, value); }
 
     protected override Size MeasureOverride(Size availableSize) => new(GlyphSize, GlyphSize);
@@ -476,7 +719,7 @@ public class LucideGlyph : Control
         var scale = GlyphSize / 24;
         using (context.PushTransform(new Matrix(scale, 0, 0, scale, (GlyphSize - 24 * scale) / 2, (GlyphSize - 24 * scale) / 2)))
         {
-            context.DrawGeometry(null, new Pen(GlyphBrush, 2, null, PenLineCap.Round, PenLineJoin.Round), geo);
+            context.DrawGeometry(null, new Pen(GlyphBrush, StrokeThickness, null, PenLineCap.Round, PenLineJoin.Round), geo);
         }
     }
 }

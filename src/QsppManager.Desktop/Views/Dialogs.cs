@@ -43,6 +43,70 @@ public static class Dialogs
         await win.ShowDialog(TopLevel.GetTopLevel(owner) as Window ?? owner as Window ?? throw new InvalidOperationException("No window host for the dialog"));
         return tcs.Task.Status == TaskStatus.RanToCompletion ? tcs.Task.Result : null;
     }
+
+    /// <summary>Destructive-action confirm (premium-polish 3.5): "Retire" and its kind
+    /// ask before they act instead of sitting as a filled red button on the page.</summary>
+    public static async Task<bool> Confirm(Control owner, string title, string message)
+    {
+        var win = new Window { Title = title, Width = 460, SizeToContent = SizeToContent.Height, WindowStartupLocation = WindowStartupLocation.CenterOwner };
+        var tcs = new TaskCompletionSource<bool>();
+        var cancel = new Button { Content = "Cancel", MinWidth = 80 };
+        var ok = new Button { Content = title, Classes = { "destructive" }, MinWidth = 110 };
+        cancel.Click += (_, _) => { tcs.TrySetResult(false); win.Close(); };
+        ok.Click += (_, _) => { tcs.TrySetResult(true); win.Close(); };
+        win.Content = new StackPanel
+        {
+            Children =
+            {
+                new TextBlock { Classes = { "h3" }, Text = title, Margin = new(20, 14, 20, 0) },
+                new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap, Margin = new(20, 10, 20, 0) },
+                new StackPanel
+                {
+                    Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Spacing = 8,
+                    Margin = new(0, 0, 20, 16), Children = { cancel, ok },
+                },
+            },
+        };
+        await win.ShowDialog(TopLevel.GetTopLevel(owner) as Window ?? owner as Window ?? throw new InvalidOperationException("No window host for the dialog"));
+        return tcs.Task.IsCompletedSuccessfully && tcs.Task.Result;
+    }
+
+    /// <summary>Date prompt (premium-polish 3.10): a styled CalendarDatePicker, blank
+    /// allowed ("Not set", null returned) — replaces the type-it-hope-you-spelt-it
+    /// yyyy-MM-dd text prompts. blankMeansToday fills today's date when null accepted.</summary>
+    public static async Task<DateOnly?> PromptDate(Control owner, string title, string subtitle, bool required = false)
+    {
+        var win = new Window { Title = title, Width = 440, SizeToContent = SizeToContent.Height, WindowStartupLocation = WindowStartupLocation.CenterOwner };
+        var tcs = new TaskCompletionSource<DateOnly?>();
+        var date = Ui.DateField();
+        var pick2 = new StackPanel { Spacing = 6, Children = { new TextBlock { Text = subtitle, Classes = { "small" }, TextWrapping = TextWrapping.Wrap }, date } };
+        var ok = new Button { Content = "OK", Classes = { "primary" }, MinWidth = 90 };
+        var clear = new Button { Content = "Clear date", MinWidth = 90 };
+        var cancel = new Button { Content = "Cancel", MinWidth = 80 };
+        ok.Click += (_, _) =>
+        {
+            if (date.SelectedDate is { } d) tcs.TrySetResult(DateOnly.FromDateTime(d));
+            else if (required) { date.Opacity = 1; return; }   // cannot confirm without a date
+            else { tcs.TrySetResult(null); win.Close(); }
+        };
+        clear.Click += (_, _) => { date.SelectedDate = null; };
+        cancel.Click += (_, _) => { tcs.TrySetResult(null); win.Close(); };
+        win.Content = new StackPanel
+        {
+            Children =
+            {
+                new TextBlock { Classes = { "h3" }, Text = title, Margin = new(20, 14, 20, 0) },
+                pick2,
+                new StackPanel
+                {
+                    Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Spacing = 8,
+                    Margin = new(0, 0, 20, 16), Children = { cancel, clear, ok },
+                },
+            },
+        };
+        await win.ShowDialog(TopLevel.GetTopLevel(owner) as Window ?? owner as Window ?? throw new InvalidOperationException("No window host for the dialog"));
+        return tcs.Task.Status == TaskStatus.RanToCompletion ? tcs.Task.Result : null;
+    }
 }
 
 /// <summary>Attach-evidence dialog: title, kind, effective period, patient-data gate.</summary>

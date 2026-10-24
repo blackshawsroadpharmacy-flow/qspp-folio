@@ -22,7 +22,7 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
     private readonly ObservableCollection<RequirementItem> _items = [];
     private RequirementDetail? _detail;
     private DataGrid? _evidenceGrid;
-    private TextBox? _resultBar;
+    private NoticeHost? _resultBar;
     private TextBox? _notesBox;
     private string? _currentDetailId;
 
@@ -104,7 +104,7 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
 
     private void ShowResultSafe(string text)
     {
-        if (_resultBar != null) _resultBar.Text = text;
+                if (_resultBar != null) _resultBar.Show(NoticeTone.Info, text);
     }
 
     // ---------------- detail construction ----------------
@@ -132,7 +132,7 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
         tabs.Items.Add(new TabItem { Header = "Notes & issues", Content = Pad(notes) });
         sp.Children.Add(tabs);
 
-        _resultBar = AutoGrow(new TextBox { IsReadOnly = true, TextWrapping = TextWrapping.Wrap, MinHeight = 34, MaxHeight = 110, Watermark = "Result messages appear here", Classes = { "result" } });
+        _resultBar = new NoticeHost();
         sp.Children.Insert(2, _resultBar);   // under the status row, above the tabs
 
         return new ScrollViewer { Content = sp };
@@ -144,7 +144,7 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
 
     /// <summary>M7.2: autosize contract for the detail-page text areas — grow with content
     /// (expand and contract), scroll only past the MaxHeight cap. ScrollBarVisibility is an
-    /// attached property on Avalonia's TextBox, hence the helper.</summary>
+    /// attached property here.</summary>
     private static TextBox AutoGrow(TextBox b) { ScrollViewer.SetVerticalScrollBarVisibility(b, ScrollBarVisibility.Auto); return b; }
 
     private Control Header(RequirementDetail d)
@@ -222,16 +222,17 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
     {
         var st = new StackPanel { Spacing = 10 };
         st.Children.Add(new TextBlock { Text = "What the source requires (verbatim excerpt)", Classes = { "label" } });
-        st.Children.Add(AutoGrow(new TextBox
-        {
-            Text = string.IsNullOrWhiteSpace(d.Requirement.WordingExcerpt)
-                ? "(no verbatim excerpt was imported for this requirement — open the source document from the Library)"
-                : d.Requirement.WordingExcerpt,
-            // M7.2: the quote expands and contracts with the information — short asks stay
-            // compact, full source passages grow, anything beyond MaxHeight scrolls inside.
-            IsReadOnly = true, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap,
-            MinHeight = 96, MaxHeight = 480, FontSize = 12.5,
-        }));
+        // M7.2 + premium-polish 3.7: the verbatim excerpt is a quote — selectable serif
+        // text with a 2px green rule, no input box; it grows with content and scrolls
+        // past the 480pt cap.
+        st.Children.Add(string.IsNullOrWhiteSpace(d.Requirement.WordingExcerpt)
+            ? new TextBlock
+            {
+                Text = "(no verbatim excerpt was imported for this requirement — open the source document from the Library)",
+                Classes = { "callout" }, TextWrapping = TextWrapping.Wrap,
+                Margin = new(2, 6, 0, 2),
+            }
+            : Ui.QuoteBlock(d.Requirement.WordingExcerpt, maxHeight: 480));
         if (!string.IsNullOrWhiteSpace(d.Requirement.PlainSummary))
             st.Children.Add(new TextBlock { Text = "Plain English: " + d.Requirement.PlainSummary, TextWrapping = TextWrapping.Wrap });
 
@@ -506,7 +507,7 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
 
     private void ShowResult(string text)
     {
-        if (_resultBar != null) _resultBar.Text = text;
+                if (_resultBar != null) _resultBar.Show(NoticeTone.Info, text);
     }
     private void ShowInfo(string text) => ShowResult(text);
 

@@ -10,8 +10,7 @@
              Width="1280" Height="800" MinWidth="940" MinHeight="580"
              ExtendClientAreaToDecorationsHint="True"
              ExtendClientAreaTitleBarHeightHint="-1"
-             TransparencyLevelHint="AcrylicBlur"
-             Background="Transparent"
+             Background="{DynamicResource Brush.Paper}"
              AutomationProperties.AutomationId="QsppMainWindow">
 
   <Window.Resources>
@@ -30,68 +29,129 @@
   </Window.Resources>
 
   <Grid x:Name="RootGrid" ColumnDefinitions="Auto,*">
-    <!-- ============ Sidebar: spans both rows (transparent over the acrylic) ============ -->
+    <!-- ============ Sidebar: full height, one surface with the page (premium-polish 3.2/3.3) ============ -->
     <Border x:Name="Sidebar" Width="{Binding SidebarWidth}"
             Background="{DynamicResource Brush.Sidebar}"
             BorderBrush="{DynamicResource Brush.Divider}" BorderThickness="0,0,1,0"
             AutomationProperties.AutomationId="Sidebar"
             IsVisible="{Binding SignedIn}">
-      <Grid Grid.RowDefinitions="50,*">
-        <ListBox x:Name="NavList" Grid.Row="1"
-                 Classes="nav"
-                 ItemsSource="{Binding NavItems}"
-                 SelectedItem="{Binding SelectedNav}"
-                 AutomationProperties.AutomationId="NavList">
-          <ListBox.ItemTemplate>
-            <DataTemplate>
-              <StackPanel Orientation="Horizontal" Spacing="10">
-                <local:LucideGlyph Glyph="{Binding Icon}" GlyphSize="17"
-                                   GlyphBrush="{DynamicResource Brush.Ink}"/>
-                <TextBlock Text="{Binding Label}" VerticalAlignment="Center"
-                           TextTrimming="CharacterEllipsis"
-                           IsVisible="{Binding $parent[Window].DataContext.SidebarExpanded}"/>
-              </StackPanel>
-            </DataTemplate>
-          </ListBox.ItemTemplate>
-        </ListBox>
+      <!-- One window, one surface: opaque sidebar paper; no acrylic (3.1). -->
+      <Grid RowDefinitions="Auto,*,Auto">
+        <StackPanel x:Name="SidebarHeader" Margin="18,40,16,4" IsVisible="{Binding SidebarExpanded}">
+          <TextBlock Classes="headline" Text="{Binding PharmacyName}"/>
+          <TextBlock Classes="footnote" Text="QSPP Folio"/>
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Hidden">
+          <ItemsControl x:Name="NavGroupsHost" ItemsSource="{Binding NavGroups}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <StackPanel Margin="8,8,8,12" Spacing="1">
+                  <TextBlock Classes="eyebrow" Text="{Binding Label}" Margin="10,0,0,5"
+                             IsVisible="{Binding $parent[Window].DataContext.SidebarExpanded}"/>
+                  <ItemsControl ItemsSource="{Binding Items}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <Button Classes="navRow" Height="30" Margin="0,1"
+                                HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch"
+                                Command="{Binding $parent[Window].DataContext.NavigateCommand}"
+                                CommandParameter="{Binding Page}"
+                                Classes.sel="{Binding IsActive}"
+                                ToolTip.Tip="{Binding Label}"
+                                AutomationProperties.AutomationId="NavItem">
+                          <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                            <local:LucideGlyph Glyph="{Binding Icon}" GlyphSize="16"
+                                               GlyphBrush="{DynamicResource Brush.Ink}"
+                                               StrokeThickness="1.5"/>
+                            <TextBlock Grid.Column="1" Text="{Binding Label}"
+                                       VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis"
+                                       IsVisible="{Binding $parent[Window].DataContext.SidebarExpanded}"/>
+                            <!-- Today-only overdue count badge (premium-polish 3.3) -->
+                            <Border Grid.Column="2" MinWidth="17" Height="17" CornerRadius="8.5"
+                                    Background="{DynamicResource Brush.SelBg}"
+                                    Padding="4,0" VerticalAlignment="Center"
+                                    IsVisible="{Binding Badge, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                    AutomationProperties.AutomationId="NavBadge">
+                              <TextBlock Text="{Binding Badge}" FontSize="9.5" FontWeight="SemiBold"
+                                         Foreground="{DynamicResource Brush.Ink}"
+                                         HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                          </Grid>
+                        </Button>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+
+        <!-- Settings pinned at the bottom -->
+        <Border Grid.Row="2" BorderBrush="{DynamicResource Brush.Divider}" BorderThickness="0,1,0,0"
+                Margin="8,4,8,10" Padding="0,6,0,0">
+          <Button Classes="navRow" Height="30" HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch"
+                  Command="{Binding NavigateCommand}" CommandParameter="{Binding SettingsItem.Page}"
+                  Classes.sel="{Binding IsSettingsActive}"
+                  ToolTip.Tip="Settings"
+                  AutomationProperties.AutomationId="NavSettings">
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+              <local:LucideGlyph Glyph="settings" GlyphSize="16"
+                                 GlyphBrush="{DynamicResource Brush.Ink}"
+                                 StrokeThickness="1.5"/>
+              <TextBlock Grid.Column="1" Text="Settings" VerticalAlignment="Center"
+                         IsVisible="{Binding SidebarExpanded}"/>
+            </Grid>
+          </Button>
+        </Border>
       </Grid>
     </Border>
 
-    <!-- ============ Right column — the single page host (always visible; pre-auth pages fill the window) ============ -->
+    <!-- ============ Right column — toolbar + the single page host ============ -->
     <Grid Grid.Column="1" Grid.RowDefinitions="52,*">
-      <!-- Toolbar: transparent so the acrylic strip shows through (mac material) -->
-      <Border x:Name="ToolbarRow" Background="Transparent"
+      <!-- Toolbar: opaque paper with a 1px divider; no acrylic, no coloured bars (3.1).
+           Left: sidebar toggle, screen filter (⌘F), Commands (⌘K). Right: the user chip.
+           The page title lives in the page content, not here (3.2). -->
+      <Border x:Name="ToolbarRow" Background="{DynamicResource Brush.Paper}"
               BorderBrush="{DynamicResource Brush.Divider}" BorderThickness="0,0,0,1"
               AutomationProperties.AutomationId="Toolbar">
-        <Grid x:Name="ToolbarContent" ColumnDefinitions="Auto,10,Auto,*,Auto,10,Auto,Auto,16" VerticalAlignment="Center" Margin="16,26,14,0"
+        <Grid x:Name="ToolbarContent" ColumnDefinitions="Auto,10,Auto,10,Auto,*,Auto,12" VerticalAlignment="Center" Margin="14,0,14,0"
               IsVisible="{Binding SignedIn}">
-          <Button x:Name="SidebarToggle" Classes="ghost" Height="30" Width="32" Padding="4,0"
+          <Button x:Name="SidebarToggle" Classes="ghost" Height="28" Width="30" Padding="4,0"
                   Command="{Binding ToggleSidebarCommand}"
                   AutomationProperties.Name="Toggle sidebar"
                   ToolTip.Tip="Toggle sidebar (⌥⌘S)">
             <Grid Width="17" Height="17">
-              <local:LucideGlyph Glyph="panel-left-close" GlyphBrush="{DynamicResource Brush.Ink}" IsVisible="{Binding SidebarExpanded}" />
-              <local:LucideGlyph Glyph="panel-left-open"  GlyphBrush="{DynamicResource Brush.Ink}" IsVisible="{Binding SidebarCollapsed}" />
+              <local:LucideGlyph Glyph="panel-left-close" GlyphBrush="{DynamicResource Brush.Ink}" StrokeThickness="1.5" IsVisible="{Binding SidebarExpanded}" />
+              <local:LucideGlyph Glyph="panel-left-open"  GlyphBrush="{DynamicResource Brush.Ink}" StrokeThickness="1.5" IsVisible="{Binding SidebarCollapsed}" />
             </Grid>
           </Button>
-          <TextBlock x:Name="PageHeading" Grid.Column="2" Classes="h3"
-                     Text="{Binding PageTitle}" VerticalAlignment="Center"/>
-          <!-- empty stretch: dragging here moves the window (handled in code-behind) -->
-          <Border x:Name="ToolbarDragStrip" Grid.Column="3" Background="Transparent" />
-          <TextBox x:Name="ToolbarSearch" Grid.Column="4" Width="250" Height="30" FontSize="12.5"
+          <TextBox x:Name="ToolbarSearch" Grid.Column="2" Width="220" Height="26" FontSize="12.5"
                    Watermark="Filter current screen ⌘F"
                    AutomationProperties.AutomationId="ToolbarSearch"/>
-          <Button x:Name="PaletteButton" Grid.Column="6" Classes="ghost" Height="30" Padding="6,0"
+          <Button x:Name="PaletteButton" Grid.Column="4" Classes="ghost" Height="26" Padding="6,0"
                   Command="{Binding TogglePaletteCommand}"
                   AutomationProperties.AutomationId="PaletteButton"
                   ToolTip.Tip="Command palette (⌘K)">
             <StackPanel Orientation="Horizontal" Spacing="6">
-              <local:LucideGlyph Glyph="command" GlyphSize="13" GlyphBrush="{DynamicResource Brush.Ink}" />
+              <local:LucideGlyph Glyph="command" GlyphSize="13" GlyphBrush="{DynamicResource Brush.Ink}" StrokeThickness="1.5" />
               <TextBlock Text="Commands ⌘K" FontSize="11.5" VerticalAlignment="Center"/>
             </StackPanel>
           </Button>
-          <TextBlock x:Name="SessionText" Grid.Column="7" Classes="small" VerticalAlignment="Center"
-                     Text="{Binding SessionLabel}"/>
+          <!-- empty stretch: dragging here moves the window (handled in code-behind) -->
+          <Border x:Name="ToolbarDragStrip" Grid.Column="5" Background="Transparent" />
+          <Button x:Name="UserChip" Grid.Column="6" Classes="ghost" Height="28" Padding="2,0"
+                  AutomationProperties.Name="Account and appearance">
+            <Border Width="24" Height="24" CornerRadius="12"
+                    Background="{DynamicResource Brush.SelBg}"
+                    HorizontalAlignment="Right">
+              <TextBlock x:Name="UserChipInitials" Text="{Binding Initials}"
+                         FontSize="9" FontWeight="SemiBold"
+                         Foreground="{DynamicResource Brush.Ink}"
+                         HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+          </Button>
         </Grid>
       </Border>
 
@@ -106,14 +166,14 @@
           x:Name="PaletteOverlay"
           IsVisible="{Binding PaletteOpen}"
           AutomationProperties.AutomationId="CommandPalette">
-      <Border Background="#44000000" />
+      <Border Background="{DynamicResource Brush.Scrim}" />
       <Border x:Name="PaletteBackdrop" Background="Transparent" />
       <Border Width="600" MaxHeight="420" HorizontalAlignment="Center" VerticalAlignment="Top"
               Margin="0,60,0,0" CornerRadius="10"
               Background="{DynamicResource Brush.Surface}"
               BorderBrush="{DynamicResource Brush.ControlBorder}"
               BorderThickness="1" Padding="10"
-              BoxShadow="0 10 24 0 #33000000">
+              BoxShadow="{StaticResource Shadow.Overlay}">
         <StackPanel Spacing="6">
           <TextBox x:Name="PaletteSearch" Height="36" FontSize="14"
                    Watermark="Search requirements, evidence, issues, sources — Return opens"

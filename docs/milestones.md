@@ -375,3 +375,32 @@ Branch `design/premium-polish`; brief `docs/plans/2026-10-24-hermes-premium-poli
   (Reproduced on the real render harness; grids now draw headers + rows.)
 - Baseline before-set (real data snapshot, 1440×900): `docs/screenshots/before/01-today` …
   `10-settings`.
+
+## Premium polish, Phase 2 (shell and kit)
+- **Sidebar:** header (pharmacy name headline + "QSPP Folio" footnote), three quiet groups
+  Prepare / Operate / Assess with eyebrow labels, ten destinations only, Settings pinned at the
+  bottom with its own active state; rows 30pt, Lucide icons 16pt @1.5, 6% ink hover; Today shows
+  the overdue-count badge only when it is above zero (same query as the Today position card).
+- **Toolbar:** opaque Paper with 1px divider; toggle, screen filter (⌘F) and Commands (⌘K) left;
+  the signed-in user right as a 24pt initials circle with menu (identity, Sign out, Appearance).
+  Page title removed from the toolbar (lives in the page content now).
+- **NoticeHost** replaces all eight "Result messages appear here" strips: icon + message + close;
+  success fades after 6s (180ms, skipped under reduced motion), errors stay and offer
+  "Copy details". Message text per screen unchanged.
+- **Type + metrics:** body 13.5; h1 serif 26 Regular; lead 13 muted wrap; buttons 26/28 radius 6;
+  ComboBox + CalendarDatePicker + TabItem metrics; the accent-leak Fluent brushes (tab pipe,
+  CalendarDatePicker glyph, text-control focus borders) pinned to the green identity inside both
+  theme dictionaries. BoxShadow tokens (`Shadow.Overlay`) replace the string-embedded
+  `{DynamicResource}` crash on the real MainWindow (caught by launching from source — offscreen
+  shell bypasses that XAML).
+- **Quote style:** verbatim excerpt renders as a selectable serif quote with a 2px green rule
+  (maxHeight 480, scrolls past the cap) instead of a read-only TextBox that looked editable.
+- **Date input:** `Ui.DateField` (CalendarDatePicker, "Not set" watermark, d MMM yyyy) replaces
+  the type-it-and-hope yyyy-MM-dd prompts (assessment events, recall received, calibration due,
+  Settings dates) and a `Dialogs.Confirm` sheet stands in front of destructive Retire.
+- **Empty state discipline (3.8):** TableHost empty states on every zero-row grid — Registers
+  (all six sections), Print centre recent jobs, Library source documents join Tasks/People/
+  Evidence/Documents from Phase 1.
+- After-kit renders (real scratch snapshot, 1440×900): `docs/screenshots/after-kit/01-today` …
+  `10-settings`; dark Today + real-MainWindow chrome verified from source.
+- Suite: 198 green on the finished tree.

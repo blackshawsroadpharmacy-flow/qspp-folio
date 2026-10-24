@@ -48,26 +48,26 @@ public partial class AssessmentsView : UserControl
             {
                 var kind = await Dialogs.Prompt(this, "New assessment event", "Onsite, MidCycle, ReAccreditation or Other", "Onsite");
                 if (string.IsNullOrWhiteSpace(kind)) return;
-                var dateText = await Dialogs.Prompt(this, "New assessment event", "Scheduled date (yyyy-MM-dd)");
-                if (!DateOnly.TryParse(dateText, out var date)) { _resultBar.Text = "Date must be yyyy-MM-dd."; return; }
+                var date = await Dialogs.PromptDate(this, "New assessment event", "Scheduled date", required: true);
+                if (date is null) return;
                 var note = await Dialogs.Prompt(this, "New assessment event", "Note (provider, booking ref…)") ?? "";
-                var res = App.Workspace.AddAssessmentEvent(kind.Trim(), date, note, App.Session!);
-                _resultBar.Text = res.Ok ? "Event recorded on the timeline." : res.Error;
+                var res = App.Workspace.AddAssessmentEvent(kind.Trim(), date.Value, note, App.Session!);
+                                _resultBar.Show(res.Ok, "Event recorded on the timeline.", res.Error);
                 LoadEvents();
             }),
             Ui.Btn("Mark completed").With(b => b.Click += (_, _) =>
             {
-                if (_events.SelectedItem is not EvRow r) { _resultBar.Text = "Select an event first."; return; }
+                                if (_events.SelectedItem is not EvRow r) { _resultBar.Show(NoticeTone.Info, "Select an event first."); return; }
                 var res = App.Workspace.SetAssessmentEventState(r.Id, "Completed", "", App.Session!);
-                _resultBar.Text = res.Ok ? "Marked completed." : res.Error;
+                                _resultBar.Show(res.Ok, "Marked completed.", res.Error);
                 LoadEvents();
             }),
             Ui.Btn("Outcome received…").With(b => b.Click += async (_, _) =>
             {
-                if (_events.SelectedItem is not EvRow r) { _resultBar.Text = "Select an event first."; return; }
+                                if (_events.SelectedItem is not EvRow r) { _resultBar.Show(NoticeTone.Info, "Select an event first."); return; }
                 var refText = await Dialogs.Prompt(this, "Outcome received", "Report or letter reference (required)");
                 var res = App.Workspace.SetAssessmentEventState(r.Id, "OutcomeReceived", refText ?? "", App.Session!);
-                _resultBar.Text = res.Ok ? "Outcome recorded with its reference — the closure evidence the program expects." : res.Error;
+                                _resultBar.Show(res.Ok, "Outcome recorded with its reference — the closure evidence the program expects.", res.Error);
                 LoadEvents();
             }));
         body.Children.Add(evRow);
@@ -83,21 +83,21 @@ public partial class AssessmentsView : UserControl
         var fRow = Ui.BtnRow(
             Ui.PrimaryBtn("Record finding…").With(b => b.Click += async (_, _) =>
             {
-                if (_events.SelectedItem is not EvRow ev) { _resultBar.Text = "Select an event first."; return; }
+                                if (_events.SelectedItem is not EvRow ev) { _resultBar.Show(NoticeTone.Info, "Select an event first."); return; }
                 var desc = await Dialogs.Prompt(this, "Record finding", "What was found");
                 if (string.IsNullOrWhiteSpace(desc)) return;
                 var reqRef = await Dialogs.Prompt(this, "Record finding", "Related requirement ref (optional, e.g. 2.2.3.8)") ?? "";
                 var sev = await Dialogs.Prompt(this, "Record finding", "Severity (free text — the program defines no taxonomy)") ?? "";
                 var res = App.Workspace.AddFinding(ev.Id, reqRef, desc, sev, App.Session!.UserId, App.Session);
-                _resultBar.Text = res.Ok ? "Finding recorded — it stays open until a corrective action closes it." : res.Error;
+                                _resultBar.Show(res.Ok, "Finding recorded — it stays open until a corrective action closes it.", res.Error);
                 LoadEvents();
             }),
             Ui.Btn("Close finding…").With(b => b.Click += async (_, _) =>
             {
-                if (_findings.SelectedItem is not FRow f) { _resultBar.Text = "Select a finding first."; return; }
+                                if (_findings.SelectedItem is not FRow f) { _resultBar.Show(NoticeTone.Info, "Select a finding first."); return; }
                 var action = await Dialogs.Prompt(this, "Close finding", "Corrective action (required to close)");
                 var res = App.Workspace.SetFindingState(f.Id, "Closed", action ?? "", App.Session!);
-                _resultBar.Text = res.Ok ? "Finding closed with its corrective action on record." : res.Error;
+                                _resultBar.Show(res.Ok, "Finding closed with its corrective action on record.", res.Error);
                 LoadEvents();
             }));
         body.Children.Add(fRow);
@@ -112,15 +112,15 @@ public partial class AssessmentsView : UserControl
             var label = await Dialogs.Prompt(this, "Assessor pack", "Label for this export (optional)") ?? "";
             var svc = new AssessorPackService(App.Workspace, App.Db, App.Composer, App.Store, AppData.PackDir);
             var (ok, zipPath, error, reqCount, files, exclusions) = svc.Export(App.Session!, label);
-            if (!ok) { _resultBar.Text = $"Assessor pack failed: {error}"; return; }
+                        if (!ok) { _resultBar.Show(NoticeTone.Error, $"Assessor pack failed: {error}"); return; }
             var note = exclusions.Count > 0 ? $"\nREDACTION EXCLUSIONS ({exclusions.Count}):\n- " + string.Join("\n- ", exclusions.Take(6)) : "\nNo redaction exclusions.";
-            _resultBar.Text = $"Pack exported: {zipPath}\n{reqCount} requirement checklist(s), {files} evidence file(s).{note}";
+                        _resultBar.Show(NoticeTone.Info, $"Pack exported: {zipPath}\n{reqCount} requirement checklist(s), {files} evidence file(s).{note}");
             Helpers.OpenWithSystemViewer(zipPath);
         }));
         sp.Children.Add(Ui.Section("Assessor pack export", pack));
     }
 
-    private readonly TextBox _resultBar = new() { IsReadOnly = true, TextWrapping = TextWrapping.Wrap, MinHeight = 34, Watermark = "Result messages appear here", Classes = { "result" } };
+    private readonly NoticeHost _resultBar = new();
 
     private void LoadEvents()
     {

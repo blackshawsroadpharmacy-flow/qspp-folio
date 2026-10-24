@@ -156,68 +156,128 @@ public partial class App : Avalonia.Application
             shell.SignIn(App.Session);             // lands on Today; recurring occurrences generated (scratch DB)
             if (page != ShellPage.Today) shell.Navigate(page);
 
-            // ---- sidebar (mirrors MainWindow.axaml: 232pt list, hairline divider right)
-            var navList = new ListBox { Classes = { "nav" }, ItemsSource = shell.NavItems };
-            navList.SelectedItem = shell.SelectedNav;
-            navList.ItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<NavItem>((item, _) =>
+            // ---- sidebar (mirrors MainWindow.axaml: header, three groups, pinned Settings)
+            Button NavRow(ShellViewModel s, NavItem item, bool isSettings)
             {
-                var sp = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
-                sp.Children.Add(new LucideGlyph { Glyph = item?.Icon ?? "circle-dashed", GlyphSize = 17, GlyphBrush = Helpers.Brush("Brush.Ink") });
-                sp.Children.Add(new TextBlock { Text = item?.Label ?? "", VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis });
-                return sp;
-            });
+                var b = new Button
+                {
+                    Classes = { "navRow" }, Height = 30, HorizontalContentAlignment = HorizontalAlignment.Stretch,
+                    Command = s.NavigateCommand, CommandParameter = item.Page,
+                };
+                var g = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), ColumnSpacing = 10 };
+                g.Children.Add(new LucideGlyph { Glyph = item.Icon, GlyphSize = 16, GlyphBrush = Helpers.Brush("Brush.Ink"), StrokeThickness = 1.5 });
+                g.Children.Add(new TextBlock { Text = item.Label });
+                var label = (TextBlock)g.Children[1];
+                Grid.SetColumn(label, 1);
+                label.VerticalAlignment = VerticalAlignment.Center;
+                label.TextTrimming = TextTrimming.CharacterEllipsis;
+                b.Content = g;
+                void Sync()
+                {
+                    var active = isSettings ? s.IsSettingsActive : item.IsActive;
+                    if (active) b.Classes.Add("sel"); else b.Classes.Remove("sel");
+                }
+                item.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(NavItem.IsActive)) Sync(); };
+                s.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(ShellViewModel.IsSettingsActive)) Sync(); };
+                Sync();
+                return b;
+            }
+
+            var sidebarHeader = new StackPanel { Margin = new(18, 40, 16, 4) };
+            sidebarHeader.Children.Add(new TextBlock { Classes = { "headline" }, Text = shell.PharmacyName });
+            sidebarHeader.Children.Add(new TextBlock { Classes = { "footnote" }, Text = "QSPP Folio" });
+
+            var groupPanel = new StackPanel { Margin = new(8, 6, 8, 8) };
+            foreach (var group in shell.NavGroups)
+            {
+                groupPanel.Children.Add(new TextBlock { Classes = { "eyebrow" }, Text = group.Label, Margin = new(10, 10, 0, 5) });
+                foreach (var item in group.Items)
+                    groupPanel.Children.Add(NavRow(shell, item, isSettings: false));
+            }
+
+            var settingsPinned = new Border
+            {
+                BorderBrush = Helpers.Brush("Brush.Divider"),
+                BorderThickness = new Thickness(0, 1, 0, 0),
+                Margin = new Thickness(8, 4, 8, 10),
+                Padding = new Thickness(0, 6, 0, 0),
+                Child = NavRow(shell, shell.SettingsItem, isSettings: true),
+            };
+
+            var sidebarGrid = new Grid { RowDefinitions = new RowDefinitions("Auto,*,Auto") };
+            sidebarGrid.Children.Add(sidebarHeader);
+            var sidebarScroll = new ScrollViewer { Content = groupPanel };
+            Grid.SetRow(sidebarScroll, 1);
+            sidebarGrid.Children.Add(sidebarScroll);
+            Grid.SetRow(settingsPinned, 2);
+            sidebarGrid.Children.Add(settingsPinned);
+
             var sidebar = new Border
             {
                 Width = 232,
                 Background = Helpers.Brush("Brush.Sidebar"),
                 BorderBrush = Helpers.Brush("Brush.Divider"),
                 BorderThickness = new Thickness(0, 0, 1, 0),
+                Child = sidebarGrid,
             };
-            var sidebarGrid = new Grid { RowDefinitions = new RowDefinitions("50,*") };
-            sidebar.Child = sidebarGrid;
-            Grid.SetRow(navList, 1);
-            sidebarGrid.Children.Add(navList);
 
-            // ---- toolbar (mirrors MainWindow.axaml exactly: toggle, title, spacer, search, palette, session)
+            // ---- toolbar (opaque paper + 1px divider; toggle, filter, commands, drag strip, user chip)
             var toolbarGrid = new Grid
             {
-                ColumnDefinitions = new ColumnDefinitions("Auto,10,Auto,*,Auto,10,Auto,Auto,16"),
+                ColumnDefinitions = new ColumnDefinitions("Auto,10,Auto,10,Auto,*,Auto,12"),
                 VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(16, 8, 14, 0),
+                Margin = new Thickness(14, 0, 14, 0),
             };
             toolbarGrid.Children.Add(new Button
             {
-                Classes = { "ghost" }, Height = 30, Width = 32, Padding = new Thickness(4, 0),
-                Content = new LucideGlyph { Glyph = "panel-left-close", GlyphSize = 15, GlyphBrush = Helpers.Brush("Brush.Ink") },
+                Classes = { "ghost" }, Height = 28, Width = 30, Padding = new Thickness(4, 0),
+                Content = new LucideGlyph { Glyph = "panel-left-close", GlyphSize = 17, GlyphBrush = Helpers.Brush("Brush.Ink"), StrokeThickness = 1.5 },
             });
-            var heading = new TextBlock { Classes = { "h3" }, Text = shell.PageTitle, VerticalAlignment = VerticalAlignment.Center };
-            Grid.SetColumn(heading, 2);
-            toolbarGrid.Children.Add(heading);
-            var search = new TextBox { Width = 250, Height = 30, FontSize = 12.5, Watermark = "Filter current screen ⌘F" };
-            Grid.SetColumn(search, 4);
+            var search = new TextBox { Width = 220, Height = 26, FontSize = 12.5, Watermark = "Filter current screen ⌘F" };
+            Grid.SetColumn(search, 2);
             toolbarGrid.Children.Add(search);
             var palette = new Button
             {
-                Classes = { "ghost" }, Height = 30, Padding = new Thickness(6, 0),
+                Classes = { "ghost" }, Height = 26, Padding = new Thickness(6, 0),
                 Content = new StackPanel
                 {
                     Orientation = Orientation.Horizontal, Spacing = 6,
                     Children =
                     {
-                        new LucideGlyph { Glyph = "command", GlyphSize = 13, GlyphBrush = Helpers.Brush("Brush.Ink") },
+                        new LucideGlyph { Glyph = "command", GlyphSize = 13, GlyphBrush = Helpers.Brush("Brush.Ink"), StrokeThickness = 1.5 },
                         new TextBlock { Text = "Commands ⌘K", FontSize = 11.5, VerticalAlignment = VerticalAlignment.Center },
                     },
                 },
             };
-            Grid.SetColumn(palette, 6);
+            Grid.SetColumn(palette, 4);
             toolbarGrid.Children.Add(palette);
-            var sessionText = new TextBlock { Classes = { "small" }, Text = shell.SessionLabel, VerticalAlignment = VerticalAlignment.Center };
-            Grid.SetColumn(sessionText, 7);
-            toolbarGrid.Children.Add(sessionText);
+            var drag = new Border { Background = Brushes.Transparent };
+            Grid.SetColumn(drag, 5);
+            toolbarGrid.Children.Add(drag);
+            var chip = new Button
+            {
+                Classes = { "ghost" }, Height = 28, Padding = new Thickness(2, 0),
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Content = new Border
+                {
+                    Width = 24, Height = 24, CornerRadius = new(12),
+                    Background = Helpers.Brush("Brush.SelBg"),
+                    HorizontalAlignment = HorizontalAlignment.Right,
+                    Child = new TextBlock
+                    {
+                        Text = shell.Initials, FontSize = 9, FontWeight = FontWeight.SemiBold,
+                        Foreground = Helpers.Brush("Brush.Ink"),
+                        HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
+                    },
+                },
+            };
+            Grid.SetColumn(chip, 6);
+            toolbarGrid.Children.Add(chip);
 
             var toolbar = new Border
             {
                 Height = 52,
+                Background = Helpers.Brush("Brush.Paper"),
                 BorderBrush = Helpers.Brush("Brush.Divider"),
                 BorderThickness = new Thickness(0, 0, 0, 1),
                 Child = toolbarGrid,

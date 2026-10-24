@@ -14,11 +14,7 @@ public partial class TasksView : UserControl, IPageSearchFocus
 {
     private readonly ComboBox _filter = new() { SelectedIndex = 0, MinWidth = 180, ItemsSource = new[] { "All open", "Overdue", "Due next 7 days", "No due date" } };
     private readonly DataGrid _grid = new() { Height = 420, AutoGenerateColumns = false, IsReadOnly = true };
-    private readonly TextBox _resultBar = new()
-    {
-        IsReadOnly = true, TextWrapping = TextWrapping.Wrap, MinHeight = 34,
-        Watermark = "Result messages appear here", Classes = { "result" },
-    };
+    private readonly NoticeHost _resultBar = new();
     private TableHost _tasksHost = null!;
 
     public TasksView(ShellViewModel shell)
@@ -46,7 +42,7 @@ public partial class TasksView : UserControl, IPageSearchFocus
             {
                 if (_grid.SelectedItem is not null && _grid.SelectedItem.GetType().GetProperty("Id") is { } p && p.GetValue(_grid.SelectedItem) is Guid id)
                     new CompleteTaskDialog(this, id).ShowDialog(App.Main);
-                else _resultBar.Text = "Select a task.";
+                                else _resultBar.Show(NoticeTone.Info, "Select a task.");
                 Load();
             }));
         sp.Children.Add(row);
@@ -91,7 +87,7 @@ public partial class TasksView : UserControl, IPageSearchFocus
             t.Id,
         }).ToList();
         _tasksHost.Refresh(tasks.Count);
-        _resultBar.Text = $"{tasks.Count} task(s) shown. Completing a task records who completed it and when — that record is the evidence of the action.";
+                _resultBar.Show(NoticeTone.Info, $"{tasks.Count} task(s) shown. Completing a task records who completed it and when — that record is the evidence of the action.");
     }
 
     /// <summary>⌘F hook: the page's filter is a preset ComboBox, so toolbar text maps

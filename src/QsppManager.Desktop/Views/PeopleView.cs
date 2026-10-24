@@ -15,11 +15,7 @@ public partial class PeopleView : UserControl
 {
     private readonly DataGrid _staff = new() { Height = 220, AutoGenerateColumns = false, IsReadOnly = true, RowHeight = 34 };
     private readonly DataGrid _acks = new() { Height = 180, AutoGenerateColumns = false, IsReadOnly = true, RowHeight = 34 };
-    private readonly TextBox _resultBar = new()
-    {
-        IsReadOnly = true, TextWrapping = TextWrapping.Wrap, MinHeight = 34,
-        Watermark = "Result messages appear here", Classes = { "result" },
-    };
+    private readonly NoticeHost _resultBar = new();
     private TableHost _staffHost = null!;
     private TableHost _acksHost = null!;
 
@@ -98,29 +94,29 @@ public partial class PeopleView : UserControl
         if (string.IsNullOrWhiteSpace(name)) return;
         var role = await Dialogs.Prompt(this, "Role in the pharmacy", "Role (e.g. Pharmacist Assistant)") ?? "";
         var res = App.Workspace.AddStaffMember(name, role, App.Session!);
-        _resultBar.Text = res.Ok ? "Staff member added." : res.Error;
+                _resultBar.Show(res.Ok, "Staff member added.", res.Error);
         Load();
     }
 
     private async Task RecordTrainingAsync()
     {
-        if (_staff.SelectedItem is not StaffRow row) { _resultBar.Text = "Select a staff member first."; return; }
+                if (_staff.SelectedItem is not StaffRow row) { _resultBar.Show(NoticeTone.Info, "Select a staff member first."); return; }
         var dlg = new TrainingDialog();
         if (!await dlg.Show(this)) return;
         var res = App.Workspace.SetStaffTraining(row.Id, dlg.FirstSupply, dlg.Initial, dlg.Refresher, App.Session!);
-        _resultBar.Text = res.Ok ? "Training record updated." : res.Error;
+                _resultBar.Show(res.Ok, "Training record updated.", res.Error);
         Load();
     }
 
     private async Task AckAsync()
     {
-        if (_staff.SelectedItem is not StaffRow row) { _resultBar.Text = "Select a staff member first."; return; }
+                if (_staff.SelectedItem is not StaffRow row) { _resultBar.Show(NoticeTone.Info, "Select a staff member first."); return; }
         var policy = await Dialogs.Prompt(this, "Record acknowledgement", "Policy name (e.g. QSPP Assessments Policy)");
         if (string.IsNullOrWhiteSpace(policy)) return;
         var version = await Dialogs.Prompt(this, "Record acknowledgement", "Policy version (from the document itself)");
-        if (string.IsNullOrWhiteSpace(version)) { _resultBar.Text = "The version matters — acknowledgement without a version can't be checked later."; return; }
+                if (string.IsNullOrWhiteSpace(version)) { _resultBar.Show(NoticeTone.Info, "The version matters — acknowledgement without a version can't be checked later."); return; }
         var res = App.Workspace.AcknowledgePolicy(row.Id, policy, version, null, App.Session!);
-        _resultBar.Text = res.Ok ? "Acknowledgement recorded against that policy version." : res.Error;
+                _resultBar.Show(res.Ok, "Acknowledgement recorded against that policy version.", res.Error);
         Load();
     }
 

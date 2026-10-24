@@ -19,6 +19,11 @@
           <Color x:Key="Color.Muted">#52685C</Color>
           <Color x:Key="Color.Divider">#DCE2D4</Color>
           <Color x:Key="Color.ControlBorder">#CBD4C2</Color>
+          <SolidColorBrush x:Key="TabItemHeaderSelectedPipeFill" Color="{StaticResource Color.Green}" />
+          <SolidColorBrush x:Key="CalendarDatePickerGlyphBrush" Color="{StaticResource Color.Muted}" />
+          <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="{StaticResource Color.Green}" />
+          <SolidColorBrush x:Key="TextControlBorderBrushPressed" Color="{StaticResource Color.Green}" />
+          <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="{StaticResource Color.ControlBorder}" />
           <Color x:Key="Color.Acid">#DBE76B</Color>
           <Color x:Key="Color.Focus">#AB5537</Color>
           <Color x:Key="Color.Alert">#9A3F1F</Color>
@@ -28,9 +33,13 @@
           <Color x:Key="Color.RowHover">#EDF0DF</Color>
           <Color x:Key="Color.SelBg">#DCE4CF</Color>
           <Color x:Key="Color.Sidebar">#E9EDDF</Color>
-          <Color x:Key="Color.HoverTint">#66163F35</Color>
+          <Color x:Key="Color.HoverTint">#0F163F35</Color>
           <Color x:Key="Color.DangerBg">#F3E4DB</Color>
           <Color x:Key="Color.OkBg">#E9F0DC</Color>
+          <!-- Palette scrim + glow (command palette dim + shadow): 27% black on paper -->
+          <Color x:Key="Color.Scrim">#44000000</Color>
+          <Color x:Key="Color.Glow">#33000000</Color>
+          <BoxShadows x:Key="Shadow.Overlay">0 10 24 0 #33000000</BoxShadows>
           <!-- Today hero ground: designed values per theme. Light: ink ground, surface text.
                Dark: a designed deep green below, never a naive inversion. -->
           <Color x:Key="Color.HeroMuted">#C7D8CC</Color>
@@ -62,6 +71,8 @@
           <SolidColorBrush x:Key="Brush.HoverTint" Color="{StaticResource Color.HoverTint}" />
           <SolidColorBrush x:Key="Brush.DangerBg" Color="{StaticResource Color.DangerBg}" />
           <SolidColorBrush x:Key="Brush.OkBg" Color="{StaticResource Color.OkBg}" />
+          <SolidColorBrush x:Key="Brush.Scrim" Color="{StaticResource Color.Scrim}" />
+          <SolidColorBrush x:Key="Brush.Glow" Color="{StaticResource Color.Glow}" />
           <SolidColorBrush x:Key="Brush.HeroBg" Color="{StaticResource Color.Ink}" />
           <SolidColorBrush x:Key="Brush.HeroFg" Color="{StaticResource Color.White}" />
           <SolidColorBrush x:Key="Brush.HeroMuted" Color="{StaticResource Color.HeroMuted}" />
@@ -79,6 +90,11 @@
           <Color x:Key="Color.Muted">#9DB0A6</Color>
           <Color x:Key="Color.Divider">#27312B</Color>
           <Color x:Key="Color.ControlBorder">#35423B</Color>
+          <SolidColorBrush x:Key="TabItemHeaderSelectedPipeFill" Color="{StaticResource Color.Green}" />
+          <SolidColorBrush x:Key="CalendarDatePickerGlyphBrush" Color="{StaticResource Color.Muted}" />
+          <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="{StaticResource Color.Green}" />
+          <SolidColorBrush x:Key="TextControlBorderBrushPressed" Color="{StaticResource Color.Green}" />
+          <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="{StaticResource Color.ControlBorder}" />
           <Color x:Key="Color.Acid">#DBE76B</Color>
           <Color x:Key="Color.Focus">#F0A57D</Color>
           <Color x:Key="Color.Alert">#C75B32</Color>
@@ -88,9 +104,12 @@
           <Color x:Key="Color.RowHover">#1F2924</Color>
           <Color x:Key="Color.SelBg">#2E4137</Color>
           <Color x:Key="Color.Sidebar">#141A16</Color>
-          <Color x:Key="Color.HoverTint">#40E8EFE7</Color>
+          <Color x:Key="Color.HoverTint">#0FE8EFE7</Color>
           <Color x:Key="Color.DangerBg">#3B2A22</Color>
           <Color x:Key="Color.OkBg">#25342A</Color>
+          <Color x:Key="Color.Scrim">#59000000</Color>
+          <Color x:Key="Color.Glow">#44000000</Color>
+          <BoxShadows x:Key="Shadow.Overlay">0 10 24 0 #44000000</BoxShadows>
           <SolidColorBrush x:Key="Brush.Paper" Color="{StaticResource Color.Paper}" />
           <SolidColorBrush x:Key="Brush.White" Color="{StaticResource Color.White}" />
           <SolidColorBrush x:Key="Brush.Surface" Color="{StaticResource Color.White}" />
@@ -112,6 +131,8 @@
           <SolidColorBrush x:Key="Brush.HoverTint" Color="{StaticResource Color.HoverTint}" />
           <SolidColorBrush x:Key="Brush.DangerBg" Color="{StaticResource Color.DangerBg}" />
           <SolidColorBrush x:Key="Brush.OkBg" Color="{StaticResource Color.OkBg}" />
+          <SolidColorBrush x:Key="Brush.Scrim" Color="{StaticResource Color.Scrim}" />
+          <SolidColorBrush x:Key="Brush.Glow" Color="{StaticResource Color.Glow}" />
           <Color x:Key="Color.HeroBg">#1D312A</Color>
           <SolidColorBrush x:Key="Brush.HeroBg" Color="{StaticResource Color.HeroBg}" />
           <SolidColorBrush x:Key="Brush.HeroFg" Color="{StaticResource Color.Ink}" />
@@ -132,11 +153,16 @@
       <FontFamily x:Key="Font.MonoMedium">avares://QsppManager.Desktop/Assets/Fonts/JetBrainsMono-Medium.ttf#JetBrains Mono Medium, SF Mono, Menlo, monospace</FontFamily>
       <FontFamily x:Key="Font.Brand">avares://QsppManager.Desktop/Assets/Fonts/HostGrotesk.ttf#Host Grotesk, SF Pro Text, Helvetica Neue</FontFamily>
       <!-- Editorial serif for the Today hero numeral and serif titles (pharmacopoeia set) -->
-      <FontFamily x:Key="Font.Serif">Georgia, Hoefler Text, Times New Roman</FontFamily>
+      <!-- Editorial serif for page titles, detail titles, verbatim quotes and the Today
+           hero numeral (pharmacopoeia look). New York is present on modern macOS. -->
+      <FontFamily x:Key="Font.Serif">New York, Georgia, Hoefler Text, Times New Roman</FontFamily>
 
       <!-- Fluent theme tab-header font: shrink from the 24px default (M7.2) -->
       <x:Double x:Key="TabItemHeaderFontSize">13.5</x:Double>
       <x:Double x:Key="TabItemMinHeight">34</x:Double>
+
+      <!-- Accent-leak Fluent brushes (premium-polish 3.6) are defined inside
+           each theme dictionary below, where the per-variant Color.* tokens resolve. -->
     </ResourceDictionary>
 
   </Application.Resources>
@@ -156,11 +182,27 @@
       <Setter Property="Background" Value="{DynamicResource Brush.Paper}" />
     </Style>
 
+    <!-- ============ Type scale (premium-polish section 2): the nine named styles ============ -->
+    <!-- title.large: page title (26 serif regular) -->
+    <Style Selector="TextBlock.titleLarge"><Setter Property="FontFamily" Value="{StaticResource Font.Serif}" /><Setter Property="FontSize" Value="26" /><Setter Property="FontWeight" Value="Regular" /><Setter Property="LetterSpacing" Value="0" /></Style>
+    <!-- title.2: detail pane title (20 serif regular) -->
+    <Style Selector="TextBlock.title2"><Setter Property="FontFamily" Value="{StaticResource Font.Serif}" /><Setter Property="FontSize" Value="20" /><Setter Property="FontWeight" Value="Regular" /></Style>
+    <!-- headline: section headers, row titles -->
+    <Style Selector="TextBlock.headline"><Setter Property="FontSize" Value="13" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="TextWrapping" Value="Wrap" /></Style>
+    <!-- callout: secondary lines -->
+    <Style Selector="TextBlock.callout"><Setter Property="FontSize" Value="12" /><Setter Property="Foreground" Value="{DynamicResource Brush.Muted}" /><Setter Property="TextWrapping" Value="Wrap" /></Style>
+    <!-- footnote: citations, metadata -->
+    <Style Selector="TextBlock.footnote"><Setter Property="FontSize" Value="11" /><Setter Property="Foreground" Value="{DynamicResource Brush.Muted}" /><Setter Property="TextWrapping" Value="Wrap" /></Style>
+    <!-- code: refs, ids, dates in tables -->
+    <Style Selector="TextBlock.code"><Setter Property="FontFamily" Value="{StaticResource Font.Mono}" /><Setter Property="FontSize" Value="11" /><Setter Property="Foreground" Value="{DynamicResource Brush.Muted}" /></Style>
+    <!-- quote: verbatim source wording -->
+    <Style Selector="SelectableTextBlock.quote"><Setter Property="FontFamily" Value="{StaticResource Font.Serif}" /><Setter Property="FontSize" Value="15" /><Setter Property="LineHeight" Value="22" /><Setter Property="TextWrapping" Value="Wrap" /></Style>
+
     <!-- Type scale -->
-    <Style Selector="TextBlock.h1"><Setter Property="FontSize" Value="26" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="LetterSpacing" Value="-0.4" /></Style>
+    <Style Selector="TextBlock.h1"><Setter Property="FontFamily" Value="{StaticResource Font.Serif}" /><Setter Property="FontSize" Value="26" /><Setter Property="FontWeight" Value="Regular" /><Setter Property="LineHeight" Value="32" /><Setter Property="TextWrapping" Value="Wrap" /></Style>
     <Style Selector="TextBlock.h2"><Setter Property="FontSize" Value="19" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="LetterSpacing" Value="-0.25" /></Style>
     <Style Selector="TextBlock.h3"><Setter Property="FontSize" Value="15" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="LetterSpacing" Value="-0.1" /></Style>
-    <Style Selector="TextBlock.lead"><Setter Property="FontSize" Value="14" /><Setter Property="Foreground" Value="{DynamicResource Brush.Muted}" /></Style>
+    <Style Selector="TextBlock.lead"><Setter Property="FontSize" Value="13" /><Setter Property="Foreground" Value="{DynamicResource Brush.Muted}" /><Setter Property="TextWrapping" Value="Wrap" /></Style>
     <Style Selector="TextBlock.small"><Setter Property="FontSize" Value="11.5" /><Setter Property="Foreground" Value="{DynamicResource Brush.Muted}" /></Style>
     <Style Selector="TextBlock.label"><Setter Property="FontSize" Value="10.5" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="LetterSpacing" Value="0.5" /><Setter Property="Foreground" Value="{DynamicResource Brush.Muted}" /></Style>
     <Style Selector="TextBlock.mono"><Setter Property="FontFamily" Value="{StaticResource Font.Mono}" /><Setter Property="FontSize" Value="12" /></Style>
@@ -174,10 +216,13 @@
       <Setter Property="FontWeight" Value="Medium" />
     </Style>
 
-    <!-- Buttons: rounded, compact Mac push buttons -->
+    <!-- Buttons: rounded, compact Mac push buttons.
+         Metrics per the premium-polish brief: 26pt control (28 primary), 13pt text,
+         radius 6, 12pt horizontal padding. -->
     <Style Selector="Button">
       <Setter Property="CornerRadius" Value="6" />
-      <Setter Property="Height" Value="30" />
+      <Setter Property="Height" Value="26" />
+      <Setter Property="FontSize" Value="13" />
       <Setter Property="Padding" Value="12,0" />
       <Setter Property="VerticalContentAlignment" Value="Center" />
       <Setter Property="Background" Value="{DynamicResource Brush.Surface}" />
@@ -187,6 +232,7 @@
       <Setter Property="FontWeight" Value="Medium" />
     </Style>
     <Style Selector="Button.primary">
+      <Setter Property="Height" Value="28" />
       <Setter Property="Background" Value="{DynamicResource Brush.Green}" />
       <Setter Property="Foreground" Value="{DynamicResource Brush.White}" />
       <Setter Property="BorderBrush" Value="{DynamicResource Brush.Green}" />
@@ -290,30 +336,42 @@
       <Setter Property="Padding" Value="10,0" />
     </Style>
 
-    <!-- Sidebar navigation: clean pill selection, no borders -->
-    <Style Selector="ListBox.nav">
-      <Setter Property="Background" Value="Transparent" />
-      <Setter Property="BorderThickness" Value="0" />
-      <Setter Property="Padding" Value="0" />
-      <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Hidden" />
+    <!-- Combo/date-picker focus rides the green identity too (no toolkit blue anywhere) -->
+    <Style Selector="ComboBox:focus /template/ Border#PART_Border">
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.Green}" />
     </Style>
-    <Style Selector="ListBox.nav ListBoxItem">
-      <Setter Property="Height" Value="34" />
-      <Setter Property="CornerRadius" Value="7" />
-      <Setter Property="Padding" Value="10,0" />
+    <Style Selector="CalendarDatePicker">
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Height" Value="32" />
+      <Setter Property="Background" Value="{DynamicResource Brush.Surface}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.ControlBorder}" />
+    </Style>
+    <Style Selector="CalendarDatePicker:focus /template/ TextBox">
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.Green}" />
+    </Style>
+
+    <!-- Sidebar navigation rows (grouped, premium-polish 3.3): 30pt quiet rows,
+         16pt icons at 1.5 stroke, 6% ink hover, SelBg + Semibold on the active row -->
+    <Style Selector="Button.navRow">
       <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="10,0" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
       <Setter Property="Foreground" Value="{DynamicResource Brush.Ink}" />
       <Setter Property="FontSize" Value="13" />
-      <Setter Property="Margin" Value="10,2" />
+      <Setter Property="FontWeight" Value="Normal" />
+      <Setter Property="CornerRadius" Value="6" />
     </Style>
-    <Style Selector="ListBox.nav ListBoxItem:pointerover /template/ ContentPresenter">
+    <Style Selector="Button.navRow:pointerover /template/ ContentPresenter#PART_ContentPresenter">
       <Setter Property="Background" Value="{DynamicResource Brush.HoverTint}" />
     </Style>
-    <Style Selector="ListBox.nav ListBoxItem:selected /template/ ContentPresenter">
+    <Style Selector="Button.navRow.sel /template/ ContentPresenter#PART_ContentPresenter">
       <Setter Property="Background" Value="{DynamicResource Brush.SelBg}" />
     </Style>
-    <Style Selector="ListBox.nav ListBoxItem:selected">
-      <Setter Property="FontWeight" Value="Medium" />
+    <Style Selector="Button.navRow.sel">
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.Ink}" />
     </Style>
 
     <!-- DataGrid: quiet rows, hairlines, sage selection -->

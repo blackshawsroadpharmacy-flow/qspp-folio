@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Input;
 using Avalonia.Input.Platform;
@@ -12,8 +13,9 @@ using QsppManager.Infrastructure.Seed;
 namespace QsppManager.Desktop;
 
 /// <summary>Mac-first shell window: extended client area (traffic lights over the
-/// sidebar strip), collapsible sidebar, contextual toolbar, full native menu bar,
-/// command palette overlay. ⌘W hides (close ≠ quit); dock click reopens.</summary>
+/// sidebar strip), grouped collapsible sidebar, opaque toolbar with the user chip,
+/// full native menu bar, command palette overlay. Closing the window quits (24 Oct
+/// fix); LaunchServices relaunches normally.</summary>
 public partial class MainWindow : Window
 {
     private readonly ShellViewModel _shell = new();
@@ -61,11 +63,91 @@ public partial class MainWindow : Window
 
         Closing += OnWindowClosing;
         SizeChanged += OnSizeChangedAutoCollapse;
-        PropertyChanged += OnWindowPropertyChanged;   // watches TransparencyLevel
         WireReopen();
+        BuildUserMenu();
+        UserChip.Click += (_, _) =>
+        {
+            if (_userMenuPopup is { } p) p.IsOpen = !p.IsOpen;
+        };
+        _shell.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(ShellViewModel.SignedIn)) Avalonia.Threading.Dispatcher.UIThread.Post(BuildUserMenu);
+        };
 
         WireTextScale();
         if (OperatingSystem.IsMacOS()) BuildNativeMenu();
+    }
+
+    // ==================== user chip menu (premium-polish 3.2) ====================
+
+    private Popup? _userMenuPopup;
+
+    /// <summary>The toolbar's right edge: initials in a 24pt circle whose popup carries
+    /// the signed-in name and role, Sign out, and the Appearance choices. Rebuilt when
+    /// the session changes so the header matches the live session.</summary>
+    private void BuildUserMenu()
+    {
+        if (_userMenuPopup is { } old)
+        {
+            old.IsOpen = false;
+            (old.Parent as Panel)?.Children.Remove(old);
+            _userMenuPopup = null;
+        }
+
+        if (!_shell.SignedIn)
+        {
+            UserChip.IsVisible = false;
+            return;
+        }
+        UserChip.IsVisible = true;
+
+        var nameRow = new MenuItem { Header = _shell.SessionLabel, IsEnabled = false };
+        var signOut = new MenuItem { Header = "Sign out", Command = _shell.SignOutCommand };
+        MenuItem Item(string header, string mode, bool @checked) =>
+            new() { Header = header, Command = new RelayCommand(_ => ApplyMenuAppearance(mode)), IsChecked = @checked };
+        var appearanceSystem = Item("Use System Appearance", "system", App.Config.Appearance == "system");
+        var appearanceLight = Item("Light", "light", App.Config.Appearance == "light");
+        var appearanceDark = Item("Dark", "dark", App.Config.Appearance == "dark");
+        var appearance = new MenuItem { Header = "Appearance", Items = { appearanceSystem, appearanceLight, appearanceDark } };
+
+        var popup = new Popup
+        {
+            Placement = PlacementMode.Bottom,
+            PlacementTarget = UserChip,
+            Child = new Border
+            {
+                Background = Helpers.Brush("Brush.Surface"),
+                BorderBrush = Helpers.Brush("Brush.ControlBorder"),
+                BorderThickness = new(1),
+                CornerRadius = new(9),
+                Padding = new(4),
+                MinWidth = 210,
+                Child = new StackPanel
+                {
+                    Children = { nameRow, signOut, new Separator(), appearance },
+                },
+            },
+        };
+        foreach (var item in new[] { nameRow, signOut, appearanceSystem, appearanceLight, appearanceDark, appearance })
+            item.Click += (_, _) => popup.IsOpen = false;
+        appearanceSystem.Click += (_, _) => BuildUserMenu();
+        appearanceLight.Click += (_, _) => BuildUserMenu();
+        appearanceDark.Click += (_, _) => BuildUserMenu();
+
+        // The popup joins the chip's content panel (zero-measure logical child; the
+        // circle stays XAML-defined). The chip toggles it; rebuilt menus keep one popup.
+        if (UserChip.Content is Panel existing)
+        {
+            existing.Children.Insert(0, popup);
+        }
+        else
+        {
+            var visual = UserChip.Content as Control;
+            var host = new Panel { Children = { popup } };
+            if (visual is not null) host.Children.Insert(0, visual);
+            UserChip.Content = host;
+        }
+        _userMenuPopup = popup;
     }
 
     // ==================== keys ====================
@@ -196,23 +278,6 @@ public partial class MainWindow : Window
             _shell.ToggleSidebar();
             _autoCollapsed = false;
         }
-    }
-
-    /// <summary>When the achieved transparency level changes, solid fallback surfaces
-    /// replace the translucent chrome (no acrylic → no floating-glass look).</summary>
-    private void OnWindowPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
-    {
-        if (e.Property.Name != "ActualTransparencyLevel") return;
-        UpdateChrome();
-    }
-
-    private void UpdateChrome()
-    {
-        var acrylic = ActualTransparencyLevel == WindowTransparencyLevel.AcrylicBlur;
-        Sidebar.Background = acrylic
-            ? new SolidColorBrush(Color.FromArgb(0xB8, 0xE9, 0xED, 0xDF))
-            : Helpers.Brush("Brush.Sidebar");
-        ToolbarRow.Background = acrylic ? Brushes.Transparent : Helpers.Brush("Brush.Surface");
     }
 
     // ==================== native menu ====================

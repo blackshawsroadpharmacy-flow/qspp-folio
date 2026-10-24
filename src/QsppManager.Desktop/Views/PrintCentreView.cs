@@ -23,8 +23,9 @@ public partial class PrintCentreView : UserControl
     private readonly ComboBox _printer = new() { MinWidth = 240 };
     private readonly NumericUpDown _copies = new() { Minimum = 1, Maximum = 20, Value = 1, Width = 110 };
     private readonly CheckBox _duplex = new() { Content = "Duplex (long edge)", FontSize = 13 };
-    private readonly TextBox _resultBar = new() { IsReadOnly = true, TextWrapping = TextWrapping.Wrap, MinHeight = 34, Watermark = "Result messages appear here", Classes = { "result" } };
+    private readonly NoticeHost _resultBar = new();
     private readonly DataGrid _jobs = Ui.Grid().With(_ => _.Height = 220);
+    private TableHost _jobsHost = null!;
     private List<RequirementRow> _rows = [];
     private Guid _lastRenderedJob = Guid.Empty;
     private string _lastRenderedPdf = "";
@@ -66,7 +67,7 @@ public partial class PrintCentreView : UserControl
         printerRow.Children.Add(Ui.GhostBtn("Refresh printers").With(b =>
         {
             b.Height = 32;
-            b.Click += (_, _) => { LoadPrinters(); _resultBar.Text = ""; };
+                        b.Click += (_, _) => { LoadPrinters(); _resultBar.Clear(); };
         }));
         printerRow.Children.Add(_duplex);
         printerRow.Children.Add(Ui.FormField("COPIES", _copies));
@@ -93,7 +94,7 @@ public partial class PrintCentreView : UserControl
         row.Children.Add(Ui.GhostBtn("Open PDF externally").With(b => { b.Height = 32; b.Click += (_, _) =>
         {
             if (File.Exists(_lastRenderedPdf)) Helpers.OpenWithSystemViewer(_lastRenderedPdf);
-            else _resultBar.Text = "Render the document first.";
+                        else _resultBar.Show(NoticeTone.Info, "Render the document first.");
         }; }));
         Ui.WrapGaps(row);
         sp.Children.Add(row);
@@ -140,18 +141,18 @@ public partial class PrintCentreView : UserControl
         var names = printers.Select(p => p.Name).ToList();
         _printer.ItemsSource = names;
         _printer.SelectedIndex = names.Count > 0 ? 0 : -1;
-        _resultBar.Text = printers.Count == 0
+                _resultBar.Show(NoticeTone.Info, printers.Count == 0
             ? "No printers visible to CUPS (lpstat). You can still render and preview the PDF, or save it and print from another device."
-            : $"{printers.Count} printer(s) found via CUPS." + (printers.FirstOrDefault(p => p.IsDefault) is { } def ? $" Default: {def.Name}." : "");
+            : $"{printers.Count} printer(s) found via CUPS." + (printers.FirstOrDefault(p => p.IsDefault) is { } def ? $" Default: {def.Name}." : ""));
     }
 
     private async Task RenderAsync()
     {
-        if (_rows.Count == 0) { _resultBar.Text = "No requirements imported yet — print needs a requirement to reference."; return; }
+                if (_rows.Count == 0) { _resultBar.Show(NoticeTone.Info, "No requirements imported yet — print needs a requirement to reference."); return; }
         var row = _rows.ElementAtOrDefault(Math.Max(_req.SelectedIndex, 0));
-        if (row == null) { _resultBar.Text = "Choose a requirement first."; return; }
+                if (row == null) { _resultBar.Show(NoticeTone.Info, "Choose a requirement first."); return; }
         var detail = App.Workspace.RequirementDetail(row.Id, App.Session);
-        if (detail == null) { _resultBar.Text = "Requirement details could not be loaded."; return; }
+                if (detail == null) { _resultBar.Show(NoticeTone.Error, "Requirement details could not be loaded."); return; }
 
         var variant = _variant.SelectedItem as string ?? "completed";
         var evRows = variant == "prefilled"
@@ -201,13 +202,13 @@ public partial class PrintCentreView : UserControl
                 _lastRenderedJob = job.Id;
                 _lastRenderedPdf = Path.Combine(AppData.PdfDir, rel);
             });
-            _resultBar.Text = "Rendered. The preview window shows the generated pages; 'Send to printer' submits the same file through CUPS.";
+                        _resultBar.Show(NoticeTone.Ok, "Rendered. The preview window shows the generated pages; 'Send to printer' submits the same file through CUPS.");
             LoadJobs();
             ShowPreview(App.Printer.RecentJobs(30).First(j => j.Id == _lastRenderedJob));
         }
         catch (Exception ex)
         {
-            _resultBar.Text = $"Rendering failed: {ex.Message}. Nothing was queued and no state was changed.";
+                        _resultBar.Show(NoticeTone.Error, $"Rendering failed: {ex.Message}. Nothing was queued and no state was changed.");
         }
     }
 
@@ -216,9 +217,9 @@ public partial class PrintCentreView : UserControl
     /// job with DocumentKind "RemoteRoundPack", then previews it.</summary>
     private async Task RenderRoundPackAsync()
     {
-        if (App.Session == null) { _resultBar.Text = "Sign in first."; return; }
+                if (App.Session == null) { _resultBar.Show(NoticeTone.Info, "Sign in first."); return; }
         var items = App.Workspace.SurveillanceRoundPackItems();
-        if (items.Count == 0) { _resultBar.Text = "No surveillance (REM) requirements imported — nothing to pack."; return; }
+                if (items.Count == 0) { _resultBar.Show(NoticeTone.Info, "No surveillance (REM) requirements imported — nothing to pack."); return; }
         var round = App.Workspace.SurveillanceRound();
         var ph = App.Workspace.EnsurePharmacy();
         var summary = $"{round.Items} items · {round.WithEvidence} with evidence · {round.Verified} verified" +
@@ -255,41 +256,41 @@ public partial class PrintCentreView : UserControl
                 _lastRenderedJob = job.Id;
                 _lastRenderedPdf = Path.Combine(AppData.PdfDir, rel);
             });
-            _resultBar.Text = $"Round pack rendered: {items.Count} REM items in one PDF. 'Send to printer' submits it through CUPS; 'Open PDF externally' for emailing.";
+                        _resultBar.Show(NoticeTone.Ok, $"Round pack rendered: {items.Count} REM items in one PDF. 'Send to printer' submits it through CUPS; 'Open PDF externally' for emailing.");
             LoadJobs();
             ShowPreview(App.Printer.RecentJobs(30).First(j => j.Id == _lastRenderedJob));
         }
         catch (Exception ex)
         {
-            _resultBar.Text = $"Round pack rendering failed: {ex.Message}. Nothing was queued and no state was changed.";
+                        _resultBar.Show(NoticeTone.Error, $"Round pack rendering failed: {ex.Message}. Nothing was queued and no state was changed.");
         }
     }
 
     private void PrintLast()
     {
         if (_lastRenderedJob == Guid.Empty || !File.Exists(_lastRenderedPdf))
-        { _resultBar.Text = "Render a document first."; return; }
+                { _resultBar.Show(NoticeTone.Info, "Render a document first."); return; }
         var printer = _printer.SelectedItem as string;
-        if (string.IsNullOrWhiteSpace(printer)) { _resultBar.Text = "Choose a printer (none visible — refresh)."; return; }
+                if (string.IsNullOrWhiteSpace(printer)) { _resultBar.Show(NoticeTone.Info, "Choose a printer (none visible — refresh)."); return; }
         var outcome = App.Printer.SubmitToPrinter(_lastRenderedPdf, printer, (int)_copies.Value, _duplex.IsChecked == true);
         var state = outcome.Ok ? PrintJobState.SentToPrinter : PrintJobState.Failed;
         App.Printer.UpdateJobState(_lastRenderedJob, state, outcome.detail, "").GetAwaiter().GetResult();
-        _resultBar.Text = outcome.detail;
+                _resultBar.Show(outcome.Ok, outcome.detail);
         LoadJobs();
     }
 
     private void ReprintSelected()
     {
-        if (_jobs.SelectedItem is not JobRow row) { _resultBar.Text = "Select a job row."; return; }
+                if (_jobs.SelectedItem is not JobRow row) { _resultBar.Show(NoticeTone.Info, "Select a job row."); return; }
         var pdf = Path.Combine(AppData.PdfDir, $"job-{row.Id}.pdf");
-        if (!File.Exists(pdf)) { _resultBar.Text = "The rendered PDF for this job is gone (cleaned up). Render again instead."; return; }
+                if (!File.Exists(pdf)) { _resultBar.Show(NoticeTone.Error, "The rendered PDF for this job is gone (cleaned up). Render again instead."); return; }
         var printer = _printer.SelectedItem as string;
-        if (string.IsNullOrWhiteSpace(printer)) { _resultBar.Text = "Choose a printer."; return; }
+                if (string.IsNullOrWhiteSpace(printer)) { _resultBar.Show(NoticeTone.Info, "Choose a printer."); return; }
         var outcome = App.Printer.SubmitToPrinter(pdf, printer, (int)_copies.Value, _duplex.IsChecked == true);
         var job = App.Db.PrintJobs.FirstOrDefault(j => j.Id == row.Id);
         if (job != null)
             App.Printer.UpdateJobState(row.Id, outcome.Ok ? PrintJobState.SentToPrinter : PrintJobState.Failed, outcome.detail + " (re-print)", "").GetAwaiter().GetResult();
-        _resultBar.Text = outcome.detail;
+                _resultBar.Show(outcome.Ok, outcome.detail);
         LoadJobs();
     }
 
@@ -297,6 +298,7 @@ public partial class PrintCentreView : UserControl
     {
         var current = _jobs.ItemsSource;
         _jobs.ItemsSource = JobRows();
+        _jobsHost?.Refresh(JobRows().Count);
     }
 
     private void ShowPreview(PrintJob job)
@@ -309,7 +311,28 @@ public partial class PrintCentreView : UserControl
         }
         catch (Exception ex)
         {
-            _resultBar.Text = $"Preview could not open: {ex.Message}. Use 'Open PDF externally'.";
+                        _resultBar.Show(NoticeTone.Error, $"Preview could not open: {ex.Message}. Use 'Open PDF externally'.");
         }
     }
+    /// <summary>Table with an in-place empty state; the visible child tracks the row count
+    /// (premium-polish 3.8 — Print centre recent jobs).</summary>
+    private static TableHost Host(Control table, double minHeight, string icon, string title, string hint)
+    {
+        var empty = Ui.EmptyState(icon, title, hint);
+        empty.IsVisible = false;
+        var panel = new Panel { MinHeight = minHeight };
+        panel.Children.Add(table);
+        panel.Children.Add(empty);
+        return new TableHost(table, empty, panel);
+    }
+
+    private sealed record TableHost(Control Table, Control Empty, Panel Panel)
+    {
+        public void Refresh(int rowCount)
+        {
+            Table.IsVisible = rowCount > 0;
+            Empty.IsVisible = rowCount == 0;
+        }
+    }
+
 }

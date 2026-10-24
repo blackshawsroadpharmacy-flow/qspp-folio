@@ -17,11 +17,7 @@ public partial class DocumentsView : UserControl
     private readonly DataGrid _grid = new() { Height = 260, AutoGenerateColumns = false, IsReadOnly = true };
     private readonly DataGrid _sources = new() { Height = 240, AutoGenerateColumns = false, IsReadOnly = true };
     private readonly ShellViewModel _shell = null!;
-    private readonly TextBox _resultBar = new()
-    {
-        IsReadOnly = true, TextWrapping = TextWrapping.Wrap, MinHeight = 34,
-        Watermark = "Result messages appear here", Classes = { "result" },
-    };
+    private readonly NoticeHost _resultBar = new();
     private TableHost _evidenceHost = null!;
     private TableHost _sourcesHost = null!;
 
@@ -83,7 +79,7 @@ public partial class DocumentsView : UserControl
         {
             if (_sources.SelectedItem is SourceDocRow s)
                 Helpers.OpenWithSystemViewer(App.Store.AbsolutePath(s.StoredRelativePath));
-            else _resultBar.Text = "Select a source document row first.";
+                        else _resultBar.Show(NoticeTone.Info, "Select a source document row first.");
         }));
         sp.Children.Add(row2);
         return new ScrollViewer { Content = sp };
@@ -111,12 +107,12 @@ public partial class DocumentsView : UserControl
         var files = await tl.StorageProvider.OpenFilePickerAsync(new Avalonia.Platform.Storage.FilePickerOpenOptions { AllowMultiple = false, Title = "Attach an evidence document" });
         if (files.Count == 0) return;
         var path = files[0].Path.LocalPath;
-        if (string.IsNullOrEmpty(path)) { _resultBar.Text = "The chosen file has no local path."; return; }
+                if (string.IsNullOrEmpty(path)) { _resultBar.Show(NoticeTone.Info, "The chosen file has no local path."); return; }
         var dlg = new EvidenceDialog(this);
         await dlg.ShowDialog(App.Main!);
         if (!dlg.Confirmed) return;
         var (evidResult, _) = App.Workspace.ImportEvidence(path, dlg.TitleText, dlg.Kind, dlg.EffectiveFrom, dlg.EffectiveTo, dlg.HasPatientData, dlg.PatientDataAttestation, App.Session!);
-        _resultBar.Text = evidResult.Ok ? "Attached. Signature and checksum verified; review starts at Draft." : evidResult.Error;
+                _resultBar.Show(evidResult.Ok, "Attached. Signature and checksum verified; review starts at Draft.", evidResult.Error);
         Load();
     }
 
@@ -129,27 +125,27 @@ public partial class DocumentsView : UserControl
 
     private async void ReviewSelected(EvidenceReviewState target)
     {
-        if (_grid.SelectedItem is not EvidenceRow row) { _resultBar.Text = "Select an evidence row first."; return; }
+                if (_grid.SelectedItem is not EvidenceRow row) { _resultBar.Show(NoticeTone.Info, "Select an evidence row first."); return; }
         string note = "";
         if (target == EvidenceReviewState.ManagerVerified || target == EvidenceReviewState.NeedsRework)
             note = await Dialogs.Prompt(this, target == EvidenceReviewState.ManagerVerified ? "Verification note (optional)" : "Rework reason (required)", "Note") ?? "";
         var res = App.Workspace.SetEvidenceReview(row.Id, target, App.Session!, note);
-        _resultBar.Text = res.Ok ? "Review state updated." : res.Error;
+                _resultBar.Show(res.Ok, "Review state updated.", res.Error);
         Load();
     }
 
     private void OpenSelected()
     {
-        if (_grid.SelectedItem is not EvidenceRow row) { _resultBar.Text = "Select an evidence row first."; return; }
+                if (_grid.SelectedItem is not EvidenceRow row) { _resultBar.Show(NoticeTone.Info, "Select an evidence row first."); return; }
         Helpers.OpenWithSystemViewer(App.Store.AbsolutePath(row.StoredRelativePath));
     }
 
     private async Task SupersedeAsync()
     {
         if (_grid.SelectedItem is not EvidenceRow old || !old.Title.StartsWith("")) { }
-        if (_grid.SelectedItem is not EvidenceRow oldRow) { _resultBar.Text = "Select the superseded (current approved) evidence row first."; return; }
+                if (_grid.SelectedItem is not EvidenceRow oldRow) { _resultBar.Show(NoticeTone.Info, "Select the superseded (current approved) evidence row first."); return; }
         if (oldRow.ReviewState != nameof(EvidenceReviewState.ManagerVerified))
-        { _resultBar.Text = "Only ManagerVerified evidence uses the supersession flow. Drafts can simply be deleted or reworked."; return; }
+                { _resultBar.Show(NoticeTone.Info, "Only ManagerVerified evidence uses the supersession flow. Drafts can simply be deleted or reworked."); return; }
         var picker = new EvidencePickerDialog(this);
         await picker.ShowDialog(App.Main!);
         var replacement = picker.SelectedItem;
@@ -157,7 +153,7 @@ public partial class DocumentsView : UserControl
         var reason = await Dialogs.Prompt(this, "Supersession reason (required)", "Why is the old version being replaced?");
         if (string.IsNullOrWhiteSpace(reason)) return;
         var res = App.Workspace.SupersedeEvidence(oldRow.Id, replacement.Id, reason, App.Session!);
-        _resultBar.Text = res.Ok ? "Superseded: affected requirement links are flagged and a re-link task was created for each." : res.Error;
+                _resultBar.Show(res.Ok, "Superseded: affected requirement links are flagged and a re-link task was created for each.", res.Error);
         Load();
     }
 

@@ -12,10 +12,21 @@ namespace QsppManager.Desktop.ViewModels;
 /// <summary>Navigation keys. One destination per owner-brief sidebar line.</summary>
 public enum ShellPage { Loading, Onboarding, Login, Today, Requirements, Documents, Tasks, Registers, People, Assessments, Library, PrintCentre, Settings }
 
-public class NavItem(string label, ShellPage page)
+public class NavItem(string label, ShellPage page) : ViewModelBase
 {
     public string Label { get; } = label;
     public ShellPage Page { get; } = page;
+
+    private bool _isActive;
+    /// <summary>Sidebar selected state (premium-polish 3.3): SelBg row, Semibold
+    /// label only on the active destination. Raised through INPC so grouped rows
+    /// repaint on navigate.</summary>
+    public bool IsActive { get => _isActive; set => SetProperty(ref _isActive, value); }
+
+    private string? _badge;
+    /// <summary>Optional count badge (premium-polish 3.3): Today only, for overdue
+    /// items, and only when the count is above 0.</summary>
+    public string? Badge { get => _badge; internal set => SetProperty(ref _badge, value); }
 
     /// <summary>Lucide icon name for the sidebar (bundled assets/Icons, ISC).</summary>
     public string Icon { get; } = page switch
@@ -33,6 +44,11 @@ public class NavItem(string label, ShellPage page)
         _ => "circle-dashed",
     };
 }
+
+/// <summary>Sidebar group (premium-polish 3.3): Prepare / Operate / Assess, each an
+/// eyebrow label over its destinations. Settings is not grouped; it is pinned at the
+/// bottom of the sidebar.</summary>
+public sealed record NavGroup(string Label, NavItem[] Items);
 
 /// <summary>Shell state: navigation, session, palette, sidebar. Pages are created
 /// through the factory below so every page shares the same services and session.
@@ -67,6 +83,59 @@ public class ShellViewModel : ViewModelBase
         }
     }
     private NavItem? _selectedNav;
+
+    /// <summary>The sidebar's three quiet groups (premium-polish 3.3): Prepare,
+    /// Operate, Assess. Exactly the same ten destinations; Settings renders pinned
+    /// at the bottom instead of inside a group.</summary>
+    public IReadOnlyList<NavGroup> NavGroups
+    {
+        get
+        {
+            var items = NavItems;
+            return
+            [
+                new("Prepare", [items[0], items[1], items[2], items[3]]),   // Today, Requirements, Evidence, Tasks
+                new("Operate", [items[4], items[5]]),                       // Registers, People
+                new("Assess", [items[6], items[7], items[8]]),              // Assessments, Library, Print centre
+            ];
+        }
+    }
+
+    public NavItem SettingsItem => NavItems[9];
+
+    /// <summary>Pinned Settings row highlight (premium-polish 3.3).</summary>
+    public bool IsSettingsActive => _currentPageEnum == ShellPage.Settings;
+
+    /// <summary>Pharmacy name for the sidebar header (the DB-backed profile name; the
+    /// Today eyebrow reads the same source).</summary>
+    public string PharmacyName
+    {
+        get
+        {
+            try { return App.Workspace.EnsurePharmacy().Name; }
+            catch { return "Burke Road Compounding"; }
+        }
+    }
+
+    /// <summary>Initials for the toolbar user chip (24pt circle), e.g. "HN".</summary>
+    public string Initials
+    {
+        get
+        {
+            var name = _session?.DisplayName ?? "";
+            var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            return parts.Length switch
+            {
+                0 => "",
+                1 => parts[0][..Math.Min(2, parts[0].Length)].ToUpperInvariant(),
+                _ => (parts[0][0].ToString() + parts[^1][0]).ToUpperInvariant(),
+            };
+        }
+    }
+
+    /// <summary>Sidebar rows navigate directly (grouped ItemsControl, not a ListBox).</summary>
+    public ICommand NavigateCommand => _navigateCommand ??= new RelayCommand(p => { if (p is ShellPage page) Navigate(page); });
+    private ICommand? _navigateCommand;
 
     public Control CurrentPage { get => _currentPage; private set => SetProperty(ref _currentPage, value); }
 
@@ -124,11 +193,25 @@ public class ShellViewModel : ViewModelBase
     public ShellViewModel()
     {
         RefreshSessionAwareUi();
+        RefreshTodayBadge();
 
         if (App.Auth.ListUsers().Count == 0)
             Navigate(ShellPage.Onboarding);
         else
             Navigate(ShellPage.Login);
+    }
+
+    /// <summary>Today's overdue count on the sidebar badge (premium-polish 3.3):
+    /// shown only when above zero; same query as the Today position card.</summary>
+    public void RefreshTodayBadge()
+    {
+        try
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var overdue = App.Workspace.OpenTasks().Count(t => t.DueDate is { } d && d < today);
+            NavItems[0].Badge = overdue > 0 ? overdue.ToString() : null;
+        }
+        catch { NavItems[0].Badge = null; }
     }
 
     public void SignIn(UserSession session)
@@ -143,6 +226,7 @@ public class ShellViewModel : ViewModelBase
             App.Workspace.GenerateRecurringOccurrences(session: session); // idempotent; brings schedules live at sign-in
         }
         catch { /* generation failures must never block sign-in; the audit trail still logs */ }
+        RefreshTodayBadge();
         if (SelectedNav == null) SelectedNav = NavItems[0];
         Navigate(ShellPage.Today);
     }
@@ -175,6 +259,11 @@ public class ShellViewModel : ViewModelBase
         var navMatch = NavItems.FirstOrDefault(n => n.Page == page);
         if (navMatch != null && !ReferenceEquals(_selectedNav, navMatch)) _selectedNav = navMatch;
         OnPropertyChanged(nameof(SelectedNav));
+        // Grouped sidebar: exactly one row reads active (SelBg + Semibold).
+        var settingsActive = page == ShellPage.Settings;
+        foreach (var item in NavItems)
+            item.IsActive = item.Page == page && !settingsActive;
+        OnPropertyChanged(nameof(IsSettingsActive));
         CurrentPage = page switch
         {
             ShellPage.Onboarding => new OnboardingView(this),

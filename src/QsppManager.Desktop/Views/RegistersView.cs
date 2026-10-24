@@ -21,7 +21,34 @@ public partial class RegistersView : UserControl
     private readonly DataGrid _potency = new() { Height = 150, AutoGenerateColumns = false, IsReadOnly = true, RowHeight = 32 };
     private readonly TextBlock _potencyNote = new() { Classes = { "small" }, TextWrapping = TextWrapping.Wrap };
     // Result strip per contract rule 8 (was: bare TextBlock feedback line).
-    private readonly TextBox _resultBar = new() { IsReadOnly = true, TextWrapping = TextWrapping.Wrap, MinHeight = 34, Watermark = "Result messages appear here", Classes = { "result" } };
+    private readonly NoticeHost _resultBar = new();
+    private TableHost _defsHost = null!;
+    private TableHost _equipmentHost = null!;
+    private TableHost _incidentsHost = null!;
+    private TableHost _suppliersHost = null!;
+    private TableHost _recallsHost = null!;
+    private TableHost _potencyHost = null!;
+
+    /// <summary>Table with an in-place empty state; the visible child tracks the row count
+    /// (premium-polish 3.8 — no zero-row gridded voids on this screen).</summary>
+    private static TableHost Host(Control table, double minHeight, string icon, string title, string hint)
+    {
+        var empty = Ui.EmptyState(icon, title, hint);
+        empty.IsVisible = false;
+        var panel = new Panel { MinHeight = minHeight };
+        panel.Children.Add(table);
+        panel.Children.Add(empty);
+        return new TableHost(table, empty, panel);
+    }
+
+    private sealed record TableHost(Control Table, Control Empty, Panel Panel)
+    {
+        public void Refresh(int rowCount)
+        {
+            Table.IsVisible = rowCount > 0;
+            Empty.IsVisible = rowCount == 0;
+        }
+    }
 
     public RegistersView()
     {
@@ -62,10 +89,11 @@ public partial class RegistersView : UserControl
             Ui.Btn("Generate occurrences now").With(b => b.Click += (_, _) =>
             {
                 var n = App.Workspace.GenerateRecurringOccurrences(session: App.Session);
-                _resultBar.Text = n > 0 ? $"{n} occurrence(s) generated (idempotent — reopening never duplicates)." : "Nothing new to generate.";
+                                _resultBar.Show(n > 0 ? NoticeTone.Ok : NoticeTone.Info, n > 0 ? $"{n} occurrence(s) generated (idempotent — reopening never duplicates)." : "Nothing new to generate.");
                 Load();
             }));
-        return Ui.Section("Recurring schedules", Ui.Col(10, _defs, row));
+        _defsHost = Host(_defs, 170, "repeat", "No recurring schedules yet", "Create the first recurring obligation — occurrences appear as ordinary tasks with due dates.");
+        return Ui.Section("Recurring schedules", Ui.Col(10, _defsHost.Panel, row));
     }
 
     private Control EquipmentSection()
@@ -82,8 +110,15 @@ public partial class RegistersView : UserControl
             Ui.Btn("Set calibration due…").With(b => b.Click += async (_, _) => await CalibrationAsync()),
             Ui.Btn("Send to maintenance").With(b => b.Click += (_, _) => SetState("Maintenance")),
             Ui.Btn("Back in service").With(b => b.Click += (_, _) => SetState("InService")),
-            Ui.DangerBtn("Retire").With(b => b.Click += (_, _) => SetState("Retired")));
-        return Ui.Section("Equipment register", Ui.Col(10, _equipment, row));
+            Ui.DangerBtn("Retire").With(b => b.Click += async (_, _) =>
+            {
+                // Premium-polish 3.5: destructive actions confirm first — never a silent one-click retire.
+                if (!await Dialogs.Confirm(this, "Retire", "Retire this equipment? Retired instruments stop contributing to readiness until brought back into service."))
+                    return;
+                SetState("Retired");
+            }));
+        _equipmentHost = Host(_equipment, 200, "wrench", "No equipment recorded", "Add the instruments and powered devices — calibration dates create their monthly check schedules.");
+        return Ui.Section("Equipment register", Ui.Col(10, _equipmentHost.Panel, row));
     }
 
     private Control IncidentSection()
@@ -98,8 +133,9 @@ public partial class RegistersView : UserControl
         var row = Ui.BtnRow(
             Ui.PrimaryBtn("Report incident…").With(b => b.Click += async (_, _) => await ReportIncidentAsync()),
             Ui.Btn("Close with corrective action…").With(b => b.Click += async (_, _) => await CloseIncidentAsync()));
+        _incidentsHost = Host(_incidents, 200, "flag", "No incidents recorded", "Report incidents here; each links to requirement 1.1.2.4 and closes only with a corrective action.");
         return Ui.Section("Incident register", Ui.Col(10,
-            _incidents, row,
+            _incidentsHost.Panel, row,
             new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
                 Text = "Incidents link to requirement 1.1.2.4 (reporting to a person responsible) so the register is reachable from the clause. An incident cannot close without a recorded corrective action." }));
     }
@@ -119,17 +155,18 @@ public partial class RegistersView : UserControl
                 var supplies = await Dialogs.Prompt(this, "Add supplier", "What you buy from them") ?? "";
                 var note = await Dialogs.Prompt(this, "Add supplier", "Registration/licence note you verified") ?? "";
                 var res = App.Workspace.AddSupplier(name, supplies, note, App.Session!);
-                _resultBar.Text = res.Ok ? "Supplier added — 2.2.3.3 sourcing register." : res.Error;
+                                _resultBar.Show(res.Ok, "Supplier added — 2.2.3.3 sourcing register.", res.Error);
                 Load();
             }),
             Ui.Btn("Mark reviewed today").With(b => b.Click += (_, _) =>
             {
-                if (_suppliers.SelectedItem is not SupRow s) { _resultBar.Text = "Select a supplier first."; return; }
+                                if (_suppliers.SelectedItem is not SupRow s) { _resultBar.Show(NoticeTone.Info, "Select a supplier first."); return; }
                 var res = App.Workspace.SetSupplierReviewed(s.Id, null, DateOnly.FromDateTime(DateTime.Today), App.Session!);
-                _resultBar.Text = res.Ok ? "Supplier review date recorded." : res.Error;
+                                _resultBar.Show(res.Ok, "Supplier review date recorded.", res.Error);
                 Load();
             }));
-        return Ui.Section("Compounding — registered suppliers", Ui.Col(10, _suppliers, row));
+        _suppliersHost = Host(_suppliers, 140, "truck", "No suppliers recorded", "Add the compounding suppliers you buy from, with the registration detail you verified.");
+        return Ui.Section("Compounding — registered suppliers", Ui.Col(10, _suppliersHost.Panel, row));
     }
 
     private Control RecallsSection()
@@ -146,21 +183,22 @@ public partial class RegistersView : UserControl
                 var product = await Dialogs.Prompt(this, "Record recall", "Product name");
                 if (string.IsNullOrWhiteSpace(product)) return;
                 var batch = await Dialogs.Prompt(this, "Record recall", "Batch / lot") ?? "";
-                var dateText = await Dialogs.Prompt(this, "Record recall", "Date received (yyyy-MM-dd, blank = today)");
-                if (!DateOnly.TryParse(dateText, out var received)) received = DateOnly.FromDateTime(DateTime.Today);
+                var received = await Dialogs.PromptDate(this, "Record recall", "Date received (blank = today)")
+                               ?? DateOnly.FromDateTime(DateTime.Today);
                 var res = App.Workspace.AddRecall(product, batch, received, "", App.Session!);
-                _resultBar.Text = res.Ok ? "Recall recorded (open). Close it with the stock action once resolved." : res.Error;
+                                _resultBar.Show(res.Ok, "Recall recorded (open). Close it with the stock action once resolved.", res.Error);
                 Load();
             }),
             Ui.Btn("Close recall…").With(b => b.Click += async (_, _) =>
             {
-                if (_recalls.SelectedItem is not RecRow r) { _resultBar.Text = "Select a recall first."; return; }
+                                if (_recalls.SelectedItem is not RecRow r) { _resultBar.Show(NoticeTone.Info, "Select a recall first."); return; }
                 var action = await Dialogs.Prompt(this, "Close recall", "What was done with the affected stock (quarantined/returned/destroyed)?");
                 var res = App.Workspace.CloseRecall(r.Id, action ?? "", App.Session!);
-                _resultBar.Text = res.Ok ? "Recall closed with the stock action recorded." : res.Error;
+                                _resultBar.Show(res.Ok, "Recall closed with the stock action recorded.", res.Error);
                 Load();
             }));
-        return Ui.Section("Compounding — product recalls", Ui.Col(10, _recalls, row));
+        _recallsHost = Host(_recalls, 140, "package-x", "No recalls recorded", "Record supplier recalls as they arrive; the stock action closes each one.");
+        return Ui.Section("Compounding — product recalls", Ui.Col(10, _recallsHost.Panel, row));
     }
 
     private Control PotencySection()
@@ -176,10 +214,11 @@ public partial class RegistersView : UserControl
                 var dlg = new PotencyDialog();
                 if (!await dlg.Show(this)) return;
                 var res = App.Workspace.AddPotencyRecord(dlg.StaffId, dlg.Role, dlg.Drug, dlg.Form, dlg.TestedOn, dlg.Outcome, App.Session!);
-                _resultBar.Text = res.Ok ? "Potency record added to the per-person matrix." : res.Error;
+                                _resultBar.Show(res.Ok, "Potency record added to the per-person matrix.", res.Error);
                 Load();
             }));
-        return Ui.Section("Compounding — potency testing coverage (per person)", Ui.Col(10, _potency, row, _potencyNote));
+        _potencyHost = Host(_potency, 150, "flask-conical", "No potency records", "Add a potency testing record per person to build the coverage matrix.");
+        return Ui.Section("Compounding — potency testing coverage (per person)", Ui.Col(10, _potencyHost.Panel, row, _potencyNote));
     }
 
     private void Load()
@@ -204,6 +243,12 @@ public partial class RegistersView : UserControl
         var (potRows, potNoteText) = App.Workspace.PotencyCoverage();
         _potency.ItemsSource = potRows.Select(p => new PotRow(p.name, string.Join(", ", p.drugs) is var dl && dl.Length == 0 ? "—" : dl, string.Join(", ", p.forms) is var fl && fl.Length == 0 ? "—" : fl, p.status)).ToList();
         _potencyNote.Text = potNoteText;
+        _defsHost.Refresh(_defs.ItemsSource?.Cast<object>().Count() ?? 0);
+        _equipmentHost.Refresh(_equipment.ItemsSource?.Cast<object>().Count() ?? 0);
+        _incidentsHost.Refresh(_incidents.ItemsSource?.Cast<object>().Count() ?? 0);
+        _suppliersHost.Refresh(_suppliers.ItemsSource?.Cast<object>().Count() ?? 0);
+        _recallsHost.Refresh(_recalls.ItemsSource?.Cast<object>().Count() ?? 0);
+        _potencyHost.Refresh(_potency.ItemsSource?.Cast<object>().Count() ?? 0);
     }
 
     private async Task NewScheduleAsync()
@@ -212,15 +257,15 @@ public partial class RegistersView : UserControl
         if (!await dlg.Show(this)) return;
         var res = App.Workspace.CreateRecurringDef(dlg.TitleText, dlg.Details, null, null,
             dlg.AssignedTo, dlg.Cadence, dlg.CustomDays, dlg.Anchor, TaskPriority.Normal, App.Session!);
-        _resultBar.Text = res.Ok ? "Schedule created — occurrences generate on refresh, and via 'Generate occurrences now'." : res.Error;
+                _resultBar.Show(res.Ok, "Schedule created — occurrences generate on refresh, and via 'Generate occurrences now'.", res.Error);
         Load();
     }
 
     private void ToggleDef(bool active)
     {
-        if (_defs.SelectedItem is not DefRow row) { _resultBar.Text = "Select a schedule first."; return; }
+                if (_defs.SelectedItem is not DefRow row) { _resultBar.Show(NoticeTone.Info, "Select a schedule first."); return; }
         var res = App.Workspace.SetRecurringDefActive(row.Id, active, App.Session!);
-        _resultBar.Text = res.Ok ? (active ? "Schedule resumed." : "Schedule paused — no further occurrences generate until resumed.") : res.Error;
+                _resultBar.Show(res.Ok, (active ? "Schedule resumed." : "Schedule paused — no further occurrences generate until resumed."), res.Error);
         Load();
     }
 
@@ -232,26 +277,25 @@ public partial class RegistersView : UserControl
         var serial = await Dialogs.Prompt(this, "Serial number", "Serial") ?? "";
         var location = await Dialogs.Prompt(this, "Location in the pharmacy", "Location") ?? "";
         var res = App.Workspace.AddEquipment(name, model, serial, location, "", App.Session!);
-        _resultBar.Text = res.Ok ? "Equipment added to the register." : res.Error;
+                _resultBar.Show(res.Ok, "Equipment added to the register.", res.Error);
         Load();
     }
 
     private async Task CalibrationAsync()
     {
-        if (_equipment.SelectedItem is not EqRow row) { _resultBar.Text = "Select equipment first."; return; }
-        var text = await Dialogs.Prompt(this, $"Calibration due — {row.Name}", "Due date (yyyy-MM-dd)");
-        if (string.IsNullOrWhiteSpace(text) || !DateOnly.TryParse(text, out var due))
-        { _resultBar.Text = "Enter the date as yyyy-MM-dd."; return; }
-        var res = App.Workspace.SetCalibrationDue(row.Id, due, App.Session!);
-        _resultBar.Text = res.Ok ? "Calibration date recorded; a monthly check schedule now exists for this equipment." : res.Error;
+                if (_equipment.SelectedItem is not EqRow row) { _resultBar.Show(NoticeTone.Info, "Select equipment first."); return; }
+        var due = await Dialogs.PromptDate(this, $"Calibration due — {row.Name}", "Due date", required: true);
+        if (due is null) return;
+        var res = App.Workspace.SetCalibrationDue(row.Id, due.Value, App.Session!);
+                _resultBar.Show(res.Ok, "Calibration date recorded; a monthly check schedule now exists for this equipment.", res.Error);
         Load();
     }
 
     private void SetState(string state)
     {
-        if (_equipment.SelectedItem is not EqRow row) { _resultBar.Text = "Select equipment first."; return; }
+                if (_equipment.SelectedItem is not EqRow row) { _resultBar.Show(NoticeTone.Info, "Select equipment first."); return; }
         var res = App.Workspace.SetEquipmentState(row.Id, state, App.Session!);
-        _resultBar.Text = res.Ok ? $"Equipment marked {state}." : res.Error;
+                _resultBar.Show(res.Ok, $"Equipment marked {state}.", res.Error);
         Load();
     }
 
@@ -260,17 +304,17 @@ public partial class RegistersView : UserControl
         var dlg = new IncidentDialog();
         if (!await dlg.Show(this)) return;
         var res = App.Workspace.AddIncident(dlg.Date, dlg.Severity, dlg.Description, dlg.ImmediateAction, App.Session!.DisplayName, App.Session);
-        _resultBar.Text = res.Ok ? "Incident recorded and linked to the reporting requirement." : res.Error;
+                _resultBar.Show(res.Ok, "Incident recorded and linked to the reporting requirement.", res.Error);
         Load();
     }
 
     private async Task CloseIncidentAsync()
     {
-        if (_incidents.SelectedItem is not IncRow row) { _resultBar.Text = "Select an incident first."; return; }
+                if (_incidents.SelectedItem is not IncRow row) { _resultBar.Show(NoticeTone.Info, "Select an incident first."); return; }
         var action = await Dialogs.Prompt(this, "Corrective action (required to close)", "What was done so this doesn't recur?");
         if (string.IsNullOrWhiteSpace(action)) return;
         var res = App.Workspace.SetIncidentState(row.Id, "Closed", action, App.Session!);
-        _resultBar.Text = res.Ok ? "Incident closed with corrective action recorded." : res.Error;
+                _resultBar.Show(res.Ok, "Incident closed with corrective action recorded.", res.Error);
         Load();
     }
 

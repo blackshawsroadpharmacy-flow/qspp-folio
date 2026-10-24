@@ -24,9 +24,9 @@ public partial class SettingsView : UserControl
     private readonly CheckBox _sterile = new() { Content = "Sterile compounding (cleanroom)" };
     private readonly CheckBox _prescribing = new() { Content = "Prescribing by pharmacists" };
     private readonly CheckBox _indirect = new() { Content = "Indirect supply (delivery / RACF / online)" };
-    private readonly DatePicker _cycleStart = new();
-    private readonly DatePicker _expiry = new();
-    private readonly DatePicker _onsite = new();
+    private readonly CalendarDatePicker _cycleStart = Ui.DateField();
+    private readonly CalendarDatePicker _expiry = Ui.DateField();
+    private readonly CalendarDatePicker _onsite = Ui.DateField();
     private readonly ComboBox _scale = new() { SelectedIndex = 1, MinWidth = 200, ItemsSource = new[] { "Normal", "Larger (115%)", "Largest (130%)" } };
     private readonly ComboBox _appearance = new() { MinWidth = 200, ItemsSource = new[] { "Follow system", "Light", "Dark" } };
     private readonly ListBox _deadlineBox = new() { Height = 220, Background = Avalonia.Media.Brushes.Transparent, BorderThickness = new Avalonia.Thickness(0) };
@@ -161,9 +161,9 @@ public partial class SettingsView : UserControl
         _sterile.IsChecked = flags.HasFlag(ServiceScopeFlag.SterileCompounding);
         _prescribing.IsChecked = flags.HasFlag(ServiceScopeFlag.Prescribing);
         _indirect.IsChecked = flags.HasFlag(ServiceScopeFlag.IndirectSupply);
-        if (ph.CycleStartDate is { } cs) _cycleStart.SelectedDate = new DateTimeOffset(cs.ToDateTime(TimeOnly.MinValue));
-        if (ph.AccreditationExpiryDate is { } ex) _expiry.SelectedDate = new DateTimeOffset(ex.ToDateTime(TimeOnly.MinValue));
-        if (ph.OnsiteAssessmentDate is { } oa) _onsite.SelectedDate = new DateTimeOffset(oa.ToDateTime(TimeOnly.MinValue));
+        if (ph.CycleStartDate is { } cs) _cycleStart.SelectedDate = cs.ToDateTime(TimeOnly.MinValue);
+        if (ph.AccreditationExpiryDate is { } ex) _expiry.SelectedDate = ex.ToDateTime(TimeOnly.MinValue);
+        if (ph.OnsiteAssessmentDate is { } oa) _onsite.SelectedDate = oa.ToDateTime(TimeOnly.MinValue);
         LoadUsers();
         LoadDeadlines();
     }
@@ -198,9 +198,9 @@ public partial class SettingsView : UserControl
         if (_prescribing.IsChecked == true) flags |= (long)ServiceScopeFlag.Prescribing;
         if (_indirect.IsChecked == true) flags |= (long)ServiceScopeFlag.IndirectSupply;
         ph.ServiceScopeFlags = flags;
-        ph.CycleStartDate = _cycleStart.SelectedDate.HasValue ? DateOnly.FromDateTime(_cycleStart.SelectedDate.Value.DateTime) : null;
-        ph.AccreditationExpiryDate = _expiry.SelectedDate.HasValue ? DateOnly.FromDateTime(_expiry.SelectedDate.Value.DateTime) : null;
-        ph.OnsiteAssessmentDate = _onsite.SelectedDate.HasValue ? DateOnly.FromDateTime(_onsite.SelectedDate.Value.DateTime) : null;
+        ph.CycleStartDate = _cycleStart.SelectedDate.HasValue ? DateOnly.FromDateTime(_cycleStart.SelectedDate.Value) : null;
+        ph.AccreditationExpiryDate = _expiry.SelectedDate.HasValue ? DateOnly.FromDateTime(_expiry.SelectedDate.Value) : null;
+        ph.OnsiteAssessmentDate = _onsite.SelectedDate.HasValue ? DateOnly.FromDateTime(_onsite.SelectedDate.Value) : null;
         App.Db.SaveChanges();
         App.Audit.Append(App.Session?.DisplayName ?? "?", App.Session?.UserId, "pharmacy.profile", "pharmacy", ph.Id.ToString(), $"name={ph.Name}; scopeFlags={flags}; cycleStart={ph.CycleStartDate:O}; expiry={ph.AccreditationExpiryDate:O}; onsite={ph.OnsiteAssessmentDate:O}");
         _message.Text = "Profile saved. Deadlines below refresh immediately; planning markers remain clearly labelled.";
