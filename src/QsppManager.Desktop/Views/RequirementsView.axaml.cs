@@ -37,21 +37,25 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
     /// persists for the session per viewer without touching the data model (behaviour lock).</summary>
     private static readonly HashSet<string> _collapsedSections = [];
 
+    private readonly List<Button> _segButtons = [];
+    private MenuItem? _assignItem;
+    private TextBlock? _listCount;
+
     public RequirementsView(ShellViewModel shell)
     {
         InitializeComponent();
         _shell = shell;
         FilterBox.TextChanged += (_, _) => LoadList();
-        SegArea.Click += (_, _) => SetSegment(0);
-        SegRemote.Click += (_, _) => SetSegment(1);
-        SegHitlist.Click += (_, _) => SetSegment(2);
-        SegRules.Click += (_, _) => SetSegment(3);
+        BuildListHead();          // hue tile + word + count + "…" menu (owner items 4/8)
+        BuildSegmentedControl();  // one single-row segmented control (owner item 7)
         ReqList.SelectionChanged += (_, _) =>
         {
-            if (ReqList.SelectedItem is ListLeafEntry { Leaf: { } leaf })
+            var leaf = ReqList.SelectedItem as ListLeafEntry;
+            foreach (var e in _entries.OfType<ListLeafEntry>()) e.Selected = e == leaf; // 3px area rail
+            if (leaf != null)
             {
-                _selectedItem = leaf;
-                LoadDetail(leaf.Id);
+                _selectedItem = leaf.Leaf!;
+                LoadDetail(leaf.Leaf.Id);
             }
             else if (ReqList.SelectedItem is ListHeaderEntry head)
                 ToggleSection(head.Label);
@@ -70,16 +74,91 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
                 ReqList.SelectedItem = _entries.OfType<ListLeafEntry>().First(e => e.Leaf == firstLead);
             }
         }
-        ToolTip.SetTip(BulkAssign, "One click marks you (the signed-in user) as the owner of every requirement that has none. Audit-logged as a single entry.");
-        BulkAssign.Click += (_, _) =>
+    }
+
+    /// <summary>List pane header (owner items 4/8): the destination tile inline with the
+    /// page word, a live count, and a "…" menu carrying the bulk-owner action that used to
+    /// sit as a permanent button in the list.</summary>
+    private void BuildListHead()
+    {
+        var h = Ui.HueTable[ViewModels.ShellPage.Requirements];
+        var tile = new Border
         {
-            if (App.Session is not { ReadOnly: false } session) return;
-            var changed = App.Workspace.AssignAllOwnersToUser(session.UserId, session);
-            LoadList();
-            ShowResult(changed > 0 ? $"Owner recorded on {changed} requirement{(changed == 1 ? "" : "s")}." :
-                "No unassigned requirements left.");
-            if (changed > 0 && Guid.TryParse(_currentDetailId, out var claimed)) LoadDetail(claimed);
+            Width = 20, Height = 20, CornerRadius = new(6),
+            Background = Ui.Br(h.TileBrush),
+            Child = Ui.Lucide(h.Icon, 12, Ui.Br(h.HueBrush), center: true),
+            VerticalAlignment = VerticalAlignment.Center,
         };
+        _listCount = new TextBlock
+        {
+            Classes = { "small" }, Foreground = Ui.Br("Brush.Muted"),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        _assignItem = new MenuItem { Header = "Assign unassigned to me" };
+        _assignItem.Click += (_, _) => AssignAllOwnersToMe();
+        var flyout = new MenuFlyout();
+        flyout.Items.Add(_assignItem);
+        var more = new Button
+        {
+            Classes = { "ghost" }, Width = 26, Height = 26, Padding = new(0),
+            Content = "⋯", VerticalAlignment = VerticalAlignment.Center, FontSize = 14,
+        };
+        ToolTip.SetTip(more, "List actions");
+        more.Flyout = flyout;
+        ListHeadHost.Children.Add(tile);
+        ListHeadHost.Children.Add(new TextBlock
+        {
+            Classes = { "headline" }, Text = "Requirements",
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        ListHeadHost.Children.Add(_listCount);
+        ListHeadHost.Children.Add(more);
+        Grid.SetColumn(_listCount, 2);
+        Grid.SetColumn(more, 3);
+        ListHeadHost.ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto,Auto");
+    }
+
+    /// <summary>One single-row segmented control (owner item 7): joined cells with hairline
+    /// separators; counts ride inside the cell labels ("Round 19"). Short labels guarantee
+    /// the single row at the list pane's minimum width.</summary>
+    private void BuildSegmentedControl()
+    {
+        var host = new Border
+        {
+            CornerRadius = new(6),
+            BorderBrush = Ui.Br("Brush.ControlBorder"),
+            BorderThickness = new(1),
+            Background = Ui.Br("Brush.Surface"),
+            Padding = new(2, 2),
+        };
+        var row = new StackPanel { Orientation = Orientation.Horizontal };
+        for (var i = 0; i < 4; i++)
+        {
+            if (i > 0)
+                row.Children.Add(new Border
+                {
+                    Width = 1, Margin = new(1, 4), VerticalAlignment = VerticalAlignment.Stretch,
+                    Background = Ui.Br("Brush.Divider"),
+                });
+            var index = i;
+            var b = new Button { Height = 24, FontSize = 12, FontWeight = FontWeight.Medium, Padding = new(9, 0) };
+            b.Classes.Add("segcell");
+            b.Click += (_, _) => SetSegment(index);
+            _segButtons.Add(b);
+            row.Children.Add(b);
+        }
+        host.Child = row;
+        SegHost.Children.Add(host);
+    }
+
+    private void AssignAllOwnersToMe()
+    {
+        if (App.Session is not { ReadOnly: false } session) return;
+        var changed = App.Workspace.AssignAllOwnersToUser(session.UserId, session);
+        LoadList();
+        ShowResult(changed > 0 ? $"Owner recorded on {changed} requirement{(changed == 1 ? "" : "s")}." :
+            "No unassigned requirements left.");
+        if (changed > 0 && Guid.TryParse(_currentDetailId, out var claimed)) LoadDetail(claimed);
     }
 
     private void SetSegment(int i)
@@ -91,18 +170,14 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
 
     private void RefreshSegmentVisual()
     {
-        foreach (var (b, i) in new[] { (SegArea, 0), (SegRemote, 1), (SegHitlist, 2), (SegRules, 3) })
-            if (i == _segment) b.Classes.Add("on"); else b.Classes.Remove("on");
+        for (var i = 0; i < _segButtons.Count; i++)
+        {
+            if (i == _segment) _segButtons[i].Classes.Add("on"); else _segButtons[i].Classes.Remove("on");
+        }
     }
 
-    /// <summary>The segment a requirement belongs to, so deep links land in the right view.</summary>
-    private static int SegmentFor(RefKind kind) => kind switch
-    {
-        RefKind.Hitlist => 2,
-        RefKind.Surveillance => 1,
-        RefKind.Rule or RefKind.Tc or RefKind.Policy or RefKind.Obligation or RefKind.Std => 3,
-        _ => 0,
-    };
+    /// <summary>Deep-link segment for a kind: the shipped partition (one source of truth).</summary>
+    private static int SegmentFor(RefKind kind) => QsppManager.Domain.Services.RequirementDisplay.SegmentIndex(kind);
 
     /// <summary>Palette/search deep link: pick the segment the requirement lives in, open
     /// its group, select it and show the detail.</summary>
@@ -138,9 +213,16 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
     private void LoadList()
     {
         var rows = App.Workspace.RequirementRows(App.Session);
-        SegRemote.Content = $"Remote round ({rows.Count(r => r.RefKind == RefKind.Surveillance)})";
-        SegHitlist.Content = $"Readiness list ({rows.Count(r => r.RefKind == RefKind.Hitlist)})";
-        SegRules.Content = $"Rules and terms ({rows.Count(r => r.RefKind is not (RefKind.Hitlist or RefKind.Surveillance))})";
+        // Segment cells carry their own counts; Areas is the implied remainder (owner
+        // items 6/7): the partition test locks 350/19/14/87, sum 470, no overlap.
+        var segCounts = new int[4];
+        foreach (var r in rows)
+            segCounts[QsppManager.Domain.Services.RequirementDisplay.SegmentIndex(r.RefKind)]++;
+        _segButtons[0].Content = "Areas";
+        _segButtons[1].Content = $"Round {segCounts[1]}";
+        _segButtons[2].Content = $"Readiness {segCounts[2]}";
+        _segButtons[3].Content = $"Rules {segCounts[3]}";
+        _listCount!.Text = $"{rows.Count} requirements";
         var filter = FilterBox.Text?.Trim() ?? "";
         _items = rows
             .Select(r => new RequirementItem(r))
@@ -151,8 +233,11 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
             .ToList();
         RefillList();
         var unassigned = rows.Count(r => r.OwnerUnassigned);
-        BulkAssign.IsVisible = App.Session is { ReadOnly: false } && unassigned > 0;
-        if (BulkAssign.IsVisible) BulkAssign.Content = $"Assign {unassigned} unassigned to me";
+        if (_assignItem != null)
+        {
+            _assignItem.IsVisible = App.Session is { ReadOnly: false } && unassigned > 0;
+            if (_assignItem.IsVisible) _assignItem.Header = $"Assign {unassigned} unassigned to me";
+        }
     }
 
     /// <summary>Section header labels this leaf sits under in the CURRENT segment; they
@@ -174,29 +259,32 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
         {
             case 0:
             {
-                var domains = _items.Select(i => i.DomainLabel).Distinct().ToList();
+                // By area carries the standard-side kinds only (SegmentIndex 0): the rules,
+                // terms, policies and obligations live in Rules and terms; the round and the
+                // readiness list have their own segments — together they partition the corpus.
+                var seg0 = _items.Where(i => QsppManager.Domain.Services.RequirementDisplay.SegmentIndex(i.RefKind) == 0).ToList();
+                var domains = seg0.Select(i => i.DomainLabel).Distinct().ToList();
                 foreach (var dLabel in domains)
                 {
                     var domain = dLabel;
-                    AddHeader(domain, _items.Where(i => i.DomainLabel == domain).ToList(), indent: false);
-                    if (!_collapsedSections.Contains(domain))
+                    AddHeader(domain, seg0.Where(i => i.DomainLabel == domain).ToList(), indent: false);
+                    if (_collapsedSections.Contains(domain)) continue;
+                    var areaMembers = seg0.Where(i => i.DomainLabel == domain);
+                    var areas = areaMembers.Select(i => i.Area).Distinct().ToList();
+                    foreach (var area in areas)
                     {
-                        var areas = _items.Where(i => i.DomainLabel == domain).Select(i => i.Area).Distinct().ToList();
-                        foreach (var area in areas)
-                        {
-                            var key = $"{domain} · {area}";
-                            AddHeader(key, _items.Where(i => i.DomainLabel == domain && i.Area == area).ToList(), indent: true);
-                            if (_collapsedSections.Contains(key)) continue;
-                            foreach (var i in _items.Where(i => i.DomainLabel == domain && i.Area == area).OrderBy(SortRef))
-                                AddLeaf(i);
-                        }
+                        var key = $"{domain} · {area}";
+                        AddHeader(key, seg0.Where(i => i.DomainLabel == domain && i.Area == area).ToList(), indent: true);
+                        if (_collapsedSections.Contains(key)) continue;
+                        foreach (var i in seg0.Where(i => i.DomainLabel == domain && i.Area == area).OrderBy(SortRef))
+                            AddLeaf(i);
                     }
                 }
                 break;
             }
             case 1:
             {
-                AddHeader("Remote round", _items.Where(i => i.RefKind == RefKind.Surveillance).ToList(), indent: false);
+                AddHeader("Remote round", _items.Where(i => i.RefKind == RefKind.Surveillance).ToList(), indent: false, Ui.Br("Brush.Ink"));
                 if (!_collapsedSections.Contains("Remote round"))
                     foreach (var i in _items.Where(i => i.RefKind == RefKind.Surveillance).OrderBy(SortRef))
                         AddLeaf(i);
@@ -204,7 +292,7 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
             }
             case 2:
             {
-                AddHeader("Readiness list", _items.Where(i => i.RefKind == RefKind.Hitlist).ToList(), indent: false);
+                AddHeader("Readiness list", _items.Where(i => i.RefKind == RefKind.Hitlist).ToList(), indent: false, Ui.Br("Brush.Ink"));
                 if (!_collapsedSections.Contains("Readiness list"))
                     foreach (var i in _items.Where(i => i.RefKind == RefKind.Hitlist).OrderBy(SortRef))
                         AddLeaf(i);
@@ -212,14 +300,15 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
             }
             default:
             {
-                var kinds = _items.Where(i => i.RefKind is not (RefKind.Hitlist or RefKind.Surveillance))
-                    .Select(i => i.KindLabel).Distinct().ToList();
+                // Rules and terms = RULE + TC + POLICY + OBLIGATION only (owner item 6).
+                var rules = _items.Where(i => QsppManager.Domain.Services.RequirementDisplay.SegmentIndex(i.RefKind) == 3).ToList();
+                var kinds = rules.Select(i => i.KindLabel).Distinct().ToList();
                 foreach (var kind in kinds)
                 {
                     var k = kind;
-                    AddHeader(k, _items.Where(i => i.KindLabel == k).ToList(), indent: false);
+                    AddHeader(k, rules.Where(i => i.KindLabel == k).ToList(), indent: false, Ui.Br("Brush.Stone"));
                     if (_collapsedSections.Contains(k)) continue;
-                    foreach (var i in _items.Where(i => i.KindLabel == k).OrderBy(SortRef))
+                    foreach (var i in rules.Where(i => i.KindLabel == k).OrderBy(SortRef))
                         AddLeaf(i);
                 }
                 break;
@@ -238,7 +327,7 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
         }
         return;
 
-        void AddHeader(string label, List<RequirementItem> members, bool indent)
+        void AddHeader(string label, List<RequirementItem> members, bool indent, IBrush? brush = null)
         {
             var started = members.Count(m => m.Readiness is not RequirementReadiness.NotStarted);
             _entries.Add(new ListHeaderEntry
@@ -247,6 +336,7 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
                 Collapsed = _collapsedSections.Contains(label),
                 Chevron = _collapsedSections.Contains(label) ? "▸" : "▾",
                 Count = members.Count == 0 ? "" : $"{started} of {members.Count} started",
+                HeaderBrush = brush,
             });
         }
 
@@ -258,7 +348,7 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
                 Headline = i.DisplayTitleText,
                 StatusWord = i.ReadinessWord,
                 RefCode = i.Ref,
-                DotBrush = Ui.Br(Ui.ToneBrushKey(i.Tone)),
+                DotBrush = Ui.Br(i.AreaHueKey),
             });
         }
     }
@@ -313,6 +403,14 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
         var d = _detail!;
         var sp = new StackPanel { Margin = new(28, 24, 28, 24), Spacing = 14, MaxWidth = 980, HorizontalAlignment = HorizontalAlignment.Left };
 
+        // 3px top rule in the row's AREA hue (v2 3D #6) — the detail announces which area
+        // it serves before its eyebrow says it.
+        sp.Children.Add(new Border
+        {
+            Height = 3, CornerRadius = new(1.5), MaxWidth = 980,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Background = Ui.Br(d.Display.AreaHueKey),
+        });
         sp.Children.Add(Header(d));
         sp.Children.Add(StatusRow(d));
 
@@ -678,7 +776,19 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
         {
             st.Children.Add(new TextBlock { Text = "Expected evidence (from the source; examples unless marked required)", Classes = { "label" } });
             foreach (var e in d.Requirement.EvidenceExamples)
-                st.Children.Add(new TextBlock { Text = (e.Mandatory ? "• required: " : "• example: ") + e.Text, TextWrapping = TextWrapping.Wrap });
+            {
+                // No "example:" prefix (owner item 13): the bullet is the example marker, and
+                // source-mandated evidence gets a Required chip instead of a word prefix.
+                var line = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, VerticalAlignment = VerticalAlignment.Top };
+                line.Children.Add(new TextBlock { Text = "• " + e.Text, TextWrapping = TextWrapping.Wrap });
+                if (e.Mandatory)
+                {
+                    var chip = Ui.Chip("Required", "review");
+                    chip.HorizontalAlignment = HorizontalAlignment.Left;
+                    line.Children.Add(chip);
+                }
+                st.Children.Add(line);
+            }
         }
 
         st.Children.Add(new TextBlock { Text = "Applies to us?", Classes = { "h3" } });
@@ -717,11 +827,9 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
             open.Click += (_, _) => Helpers.OpenWithSystemViewer(App.Store.AbsolutePath(sd.StoredRelativePath));
             body.Children.Add(open);
         }
-        return new Expander
-        {
-            Header = new TextBlock { Text = "Source details", Classes = { "small" }, Foreground = Ui.Br("Brush.Muted") },
-            IsExpanded = false, Content = body, Margin = new(0, 2, 0, 4),
-        };
+        // Text disclosure (owner item 11): no expander box around provenance internals; the
+        // citation footnote above stays visible.
+        return Ui.TextDisclosure("Source details", body);
     }
 
     /// <summary>Loose containment test for the Plain-English duplicate check: true when
@@ -768,7 +876,8 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
             MinHeight = 48, MaxHeight = 240, MaxWidth = 760,
             HorizontalAlignment = HorizontalAlignment.Left,   // Stretch+MaxWidth centres; fields must align to the headings
         });
-        var save = PrimaryBtn("Save", (_, _) =>
+        var save = new Button { Content = "Save", Height = 26, HorizontalAlignment = HorizontalAlignment.Left };
+        save.Click += (_, _) =>
         {
             if (App.Session is not { ReadOnly: false }) return;
             var chosen = pending ?? current;
@@ -782,7 +891,7 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
                 RefreshSegmentVisual();
                 LoadList();
             }
-        });
+        };
         save.Margin = new(0, 8, 0, 0);
         return new StackPanel { Spacing = 8, Children = { seg, reason, save } };
     }
@@ -989,7 +1098,7 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
                 isp.Children.Add(new TextBlock { Text = issue.Title, FontWeight = FontWeight.SemiBold, TextWrapping = TextWrapping.Wrap });
                 isp.Children.Add(new TextBlock { Classes = { "small" }, Text = "Conservative planning: " + issue.ConservativePlanning, TextWrapping = TextWrapping.Wrap });
                 foreach (var s in ParseSources(issue.SourcesJson))
-                    isp.Children.Add(new TextBlock { Classes = { "small" }, FontStyle = FontStyle.Italic, TextWrapping = TextWrapping.Wrap, Text = $"{s.reference} — “{s.text}” ({s.file}{(s.approxLines == "-" ? "" : ", approx. lines " + s.approxLines)})" });
+                    isp.Children.Add(new TextBlock { Classes = { "small" }, FontStyle = FontStyle.Italic, TextWrapping = TextWrapping.Wrap, Text = $"{s.reference} · “{s.text}” ({s.file}{(s.approxLines == "-" ? "" : ", approx. lines " + s.approxLines)})" });
                 isp.Children.Add(new TextBlock { Classes = { "small" }, Text = $"Status: {issue.Status} · retrieved {issue.RetrievedDate} · pack {issue.PackVersion}" });
                 var captured = issue;
                 isp.Children.Add(new Button { Content = "Acknowledge (manager role required)", Height = 30 }.With(_ => _.Click += (_, _) =>
@@ -1076,7 +1185,8 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
 /// The ListBox shows these two concrete types so the DataTemplates match by DataType.</summary>
 public abstract class ListEntry;
 
-/// <summary>Section header row: label, "x of y started" count, chevron, indentation.</summary>
+/// <summary>Section header row: label, "x of y started" count, chevron, indentation. The
+/// label takes the row's area hue (v2 3D #5); HeaderBrush is set by the list engine.</summary>
 public sealed class ListHeaderEntry : ListEntry
 {
     public string Label { get; init; } = "";
@@ -1085,17 +1195,23 @@ public sealed class ListHeaderEntry : ListEntry
     public bool Collapsed { get; init; }
     public bool Collapsible { get; init; } = true;
     public bool Indented { get; init; }
+    public IBrush? HeaderBrush { get; init; }
 }
 
-/// <summary>Requirement leaf row: headline first (the display title), then status dot +
-/// word, then the reference code in mono. The item itself rides along for selection.</summary>
-public sealed class ListLeafEntry : ListEntry
+/// <summary>Requirement leaf row: headline first (the display title), then status dot + word,
+/// then the reference code in mono. The item itself rides along for selection. Selected
+/// raises change notifications so the 3px area-hue rail appears at click time.</summary>
+public sealed class ListLeafEntry : ListEntry, System.ComponentModel.INotifyPropertyChanged
 {
     public RequirementItem? Leaf { get; init; }
     public string Headline { get; init; } = "";
     public string StatusWord { get; init; } = "";
     public string RefCode { get; init; } = "";
     public IBrush DotBrush { get; init; } = Brushes.Transparent;
+
+    private bool _selected;
+    public bool Selected { get => _selected; set { if (_selected != value) { _selected = value; PropertyChanged?.Invoke(this, new(nameof(Selected))); } } }
+    public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
 }
 
 /// <summary>Left-list leaf model: everything the row renders plus readiness state for
@@ -1111,6 +1227,7 @@ public record RequirementItem
     public string Area { get; init; } = "";
     public string KindLabel { get; init; } = "";
     public string DomainLabel { get; init; } = "";
+    public string AreaHueKey { get; init; } = "Brush.Stone";
     public RequirementReadiness Readiness { get; init; }
     public string ReadinessWord { get; init; } = "";
     public string Tone { get; init; } = "";
@@ -1122,6 +1239,7 @@ public record RequirementItem
         Id = r.Id; RefKind = r.RefKind; Ref = r.Ref; Title = r.Title;
         DisplayTitleText = r.DisplayTitleText;
         Area = r.Area; KindLabel = r.KindLabel; DomainLabel = r.DomainLabel;
+        AreaHueKey = r.AreaHueKey;
         Readiness = r.Readiness;
         // Colour and word come from the same place: the readiness machine drives the tone,
         // the tone drives the dot; applicability overrides only for "does not apply".

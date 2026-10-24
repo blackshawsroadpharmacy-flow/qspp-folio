@@ -5,23 +5,17 @@
   <Grid ColumnDefinitions="408,Auto,*">
     <Border Grid.Column="0" BorderBrush="{DynamicResource Brush.Divider}" BorderThickness="0,0,1,0" Background="{DynamicResource Brush.Surface}">
       <DockPanel Margin="14,12,10,8">
-        <!-- Segmented view switcher (master plan §4): the corpus reads four different ways. -->
-        <WrapPanel x:Name="Segments" DockPanel.Dock="Top" Margin="0,0,0,8">
-          <Button x:Name="SegArea" Classes="seg" Content="By area" />
-          <Button x:Name="SegRemote" Classes="seg" Content="Remote round" />
-          <Button x:Name="SegHitlist" Classes="seg" Content="Readiness list" />
-          <Button x:Name="SegRules" Classes="seg" Content="Rules and terms" />
-        </WrapPanel>
-        <TextBox x:Name="FilterBox" DockPanel.Dock="Top" Watermark="Filter by title or reference" />
-        <Button x:Name="BulkAssign" DockPanel.Dock="Top" Margin="2,8,0,0"
-                Content="Assign unassigned to me" Height="28" HorizontalContentAlignment="Center"
-                HorizontalAlignment="Left" Background="{DynamicResource Brush.Sage}"
-                Foreground="{DynamicResource Brush.Green}" BorderThickness="0" />
+        <!-- List header (owner items 4/8): hue tile + word, actions tucked in the "…" menu.
+             Segmented control, filter and rows are hosted by x:Name panels the code fills. -->
+        <Grid x:Name="ListHeadHost" DockPanel.Dock="Top" Margin="2,0,2,6" />
+        <StackPanel x:Name="SegHost" DockPanel.Dock="Top" Margin="0,0,0,8" />
+        <TextBox x:Name="FilterBox" DockPanel.Dock="Top" PlaceholderText="Filter by title or reference" />
         <ListBox x:Name="ReqList" Classes="list" Margin="4,8,4,0" Background="Transparent">
           <ListBox.DataTemplates>
             <DataTemplate DataType="v:ListHeaderEntry">
               <Grid ColumnDefinitions="*,Auto" Margin="10,7,0,2">
-                <TextBlock Text="{Binding Label}" Classes="eyebrow" TextTrimming="CharacterEllipsis" Margin="0,0,4,0" />
+                <TextBlock Text="{Binding Label}" Classes="eyebrow" TextTrimming="CharacterEllipsis" Margin="0,0,4,0"
+                           Foreground="{Binding HeaderBrush, FallbackValue={DynamicResource Brush.Muted}}" />
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
                   <TextBlock Text="{Binding Count}" Classes="small" Foreground="{DynamicResource Brush.Muted}" />
                   <TextBlock Text="{Binding Chevron}" Classes="small" Foreground="{DynamicResource Brush.Muted}" />
@@ -29,15 +23,21 @@
               </Grid>
             </DataTemplate>
             <DataTemplate DataType="v:ListLeafEntry">
-              <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" Margin="3,3,0,3">
-                <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding Headline}"
-                           FontWeight="SemiBold" FontSize="13" TextWrapping="Wrap" MaxLines="2" />
-                <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" Spacing="6" Margin="0,2,0,0">
-                  <Ellipse Width="6" Height="6" Fill="{Binding DotBrush}" VerticalAlignment="Center" />
-                  <TextBlock Text="{Binding StatusWord}" Classes="small" Foreground="{DynamicResource Brush.Muted}" VerticalAlignment="Center" />
-                </StackPanel>
-                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding RefCode}" Classes="monoSm"
-                           Foreground="{DynamicResource Brush.Muted}" VerticalAlignment="Center" />
+              <Grid ColumnDefinitions="Auto,*">
+                <!-- Selection rail: 3px in the row's AREA hue, visible while selected (3D #5) -->
+                <Border Grid.RowSpan="2" Width="3" CornerRadius="1.5" Margin="3,0,7,0"
+                        Background="{Binding DotBrush, FallbackValue={DynamicResource Brush.Muted}}"
+                        IsVisible="{Binding Selected}" VerticalAlignment="Stretch" />
+                <Grid Grid.Column="1" ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" Margin="0,3,0,3">
+                  <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="{Binding Headline}"
+                             FontWeight="SemiBold" FontSize="13" TextWrapping="Wrap" MaxLines="2" />
+                  <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" Spacing="6" Margin="0,2,0,0">
+                    <Ellipse Width="6" Height="6" Fill="{Binding DotBrush}" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding StatusWord}" Classes="small" Foreground="{DynamicResource Brush.Muted}" VerticalAlignment="Center" />
+                  </StackPanel>
+                  <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding RefCode}" Classes="monoSm"
+                             Foreground="{DynamicResource Brush.Muted}" VerticalAlignment="Center" />
+                </Grid>
               </Grid>
             </DataTemplate>
           </ListBox.DataTemplates>

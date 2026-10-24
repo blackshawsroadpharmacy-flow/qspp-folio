@@ -20,10 +20,10 @@ public partial class SettingsView : UserControl
     private readonly DataGrid _users = new() { Height = 160, AutoGenerateColumns = false, IsReadOnly = true };
     private readonly TextBox _name = new();
     private readonly ComboBox _jur = new() { SelectedIndex = 0, MinWidth = 260, ItemsSource = new[] { "VIC · Australia/Melbourne", "NSW · Australia/Sydney", "QLD · Australia/Brisbane", "WA · Australia/Perth", "SA · Australia/Adelaide", "TAS · Australia/Hobart", "ACT · Australia/Sydney", "NT · Australia/Darwin" } };
-    private readonly CheckBox _complex = new() { Content = "Complex compounding" };
-    private readonly CheckBox _sterile = new() { Content = "Sterile compounding (cleanroom)" };
-    private readonly CheckBox _prescribing = new() { Content = "Prescribing by pharmacists" };
-    private readonly CheckBox _indirect = new() { Content = "Indirect supply (delivery / RACF / online)" };
+    private readonly ToggleSwitch _complex = new();
+    private readonly ToggleSwitch _sterile = new();
+    private readonly ToggleSwitch _prescribing = new();
+    private readonly ToggleSwitch _indirect = new();
     private readonly CalendarDatePicker _cycleStart = Ui.DateField();
     private readonly CalendarDatePicker _expiry = Ui.DateField();
     private readonly CalendarDatePicker _onsite = Ui.DateField();
@@ -66,8 +66,8 @@ public partial class SettingsView : UserControl
                 (Ui.OptionalLabel("Accreditation expiry", true), _expiry as Control),
                 (Ui.OptionalLabel("Onsite assessment date", true), _onsite as Control),
             },
-            footnote: "Leave dates blank if unknown — the manager will not invent a deadline; it lists obligations that do not depend on the missing date."),
-            new WrapPanel { Orientation = Orientation.Horizontal, Children = { _complex, _sterile, _prescribing, _indirect } },
+            footnote: "Leave dates blank if unknown; the manager will not invent a deadline; it lists obligations that do not depend on the missing date."),
+            SwitchRows(),
             Ui.BtnRow(SaveProfileButton()),
         } }));
 
@@ -103,7 +103,7 @@ public partial class SettingsView : UserControl
 
         // Data + integrity
         var data = new StackPanel { Spacing = 10 };
-        data.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap, Text = $"Database, attachments, rendered PDFs and backups live under: {AppData.Root}\nManaged attachments are content-addressed (sha256). The audit trail is append-only and hash-chained — tamper-EVIDENCE, not tamper-proofing: a machine administrator can still touch files." });
+        data.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap, Text = $"Database, attachments, rendered PDFs and backups live under: {AppData.Root}\nManaged attachments are content-addressed (sha256). The audit trail is append-only and hash-chained: tamper-EVIDENCE, not tamper-proofing: a machine administrator can still touch files." });
         var verify = new Button { Content = "Verify audit chain now", Classes = { "verify" } };
         verify.Click += (_, _) =>
         {
@@ -125,7 +125,7 @@ public partial class SettingsView : UserControl
 
         // Reference corpus
         var corpus = new StackPanel { Spacing = 8 };
-        corpus.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap, Text = $"Import summary is refreshed at startup: {App.Db.Requirements.Count()} requirements · {App.Db.SourceDocuments.Count()} source documents · {App.Db.InterpretationIssues.Count()} interpretation issues. Capacity-toolkit.pdf was rejected at import — it is an HTML page, not a PDF." });
+        corpus.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap, Text = $"Import summary is refreshed at startup: {App.Db.Requirements.Count()} requirements · {App.Db.SourceDocuments.Count()} source documents · {App.Db.InterpretationIssues.Count()} interpretation issues. Capacity-toolkit.pdf was rejected at import; it is an HTML page, not a PDF." });
         corpus.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap, Text = "Authentication cookies material (website-scrape/cookies.json, browser profiles) is deliberately kept out of the application database, backups, exports and source control." });
         sp.Children.Add(Ui.Section("Reference corpus", corpus));
 
@@ -139,15 +139,36 @@ public partial class SettingsView : UserControl
         var heavyInstalled = FolioHeavyOcr.LocateCli() is { };
         intel.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
             Text = heavyInstalled
-                ? "Heavy OCR tier available: MinerU 4 (standard, mineru-4-standard, 2.0 GB models, Apache-2.0) — opt-in in the Process and Sort dialog, works off the LOCAL loopback server, falls back to Apple Vision automatically when the server is off. Measured (24 GB Mac): slower (3–11 s/doc) but recovers TABLE STRUCTURE that flat OCR cannot. Start it with scripts/serve-mineru.sh when a batch needs it."
+                ? "Heavy OCR tier available: MinerU 4 (standard, mineru-4-standard, 2.0 GB models, Apache-2.0); opt-in in the Process and Sort dialog, works off the LOCAL loopback server, falls back to Apple Vision automatically when the server is off. Measured (24 GB Mac): slower (3–11 s/doc) but recovers TABLE STRUCTURE that flat OCR cannot. Start it with scripts/serve-mineru.sh when a batch needs it."
                 : "Heavy OCR tier (MinerU): not installed on this Mac. Run tools/ocr-heavy/setup-mineru.sh (setup) then models download (~2 GB, user-approved task). Optional; Apple Vision covers everything otherwise." });
         intel.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
             Text = $"Classification: deterministic matching against the live requirement text first (always authoritative); {stage2Line}" });
         intel.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
-            Text = "No document content or extracted text ever leaves this machine — no cloud OCR, no remote APIs, no telemetry. Model choices never mark evidence verified: human approval is the only review trust." });
+            Text = "No document content or extracted text ever leaves this machine: no cloud OCR, no remote APIs, no telemetry. Model choices never mark evidence verified: human approval is the only review trust." });
         sp.Children.Add(Ui.Section("Document intelligence (on-device)", intel));
 
         return new ScrollViewer { Content = sp };
+    }
+
+    /// <summary>Services as grouped rows with switches (owner brief): the old wrapped
+    /// checkbox row let long labels collide; each service gets its own row, switch right.</summary>
+    private Control SwitchRows()
+    {
+        var sp = new StackPanel { Spacing = 2 };
+        var switches = new[] { ("Complex compounding", _complex), ("Sterile compounding (cleanroom)", _sterile), ("Prescribing by pharmacists", _prescribing), ("Indirect supply (delivery / RACF / online)", _indirect) };
+        foreach (var (label, sw) in switches)
+        {
+            var g = new Avalonia.Controls.Grid { ColumnDefinitions = new Avalonia.Controls.ColumnDefinitions("*,Auto"), Margin = new(0, 2) };
+            g.Children.Add(new TextBlock { Text = label, VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center });
+            sw.OnContent = "";
+            sw.OffContent = "";
+            sw.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right;
+            sw.VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center;
+            g.Children.Add(sw);
+            Avalonia.Controls.Grid.SetColumn(sw, 1);
+            sp.Children.Add(g);
+        }
+        return sp;
     }
 
     private void Load()
@@ -185,11 +206,14 @@ public partial class SettingsView : UserControl
                 var provenance = new TextBlock
                 {
                     Classes = { "footnote" }, TextWrapping = Avalonia.Media.TextWrapping.Wrap,
-                    Text = (d.PlanningOnly ? "Planning only (sources disagree)" : d.Kind switch
+                    // Owner brief: the raw source string left the settings rows — the tone word
+                    // ("Planning only (sources disagree)" / confirmed / calculated) is what the
+                    // row needs to read honestly.
+                    Text = d.PlanningOnly ? "Planning only (sources disagree)" : d.Kind switch
                     {
                         DeadlineKind.ProviderConfirmed => "Confirmed by provider/program",
                         _ => "Calculated from recorded dates",
-                    }) + " · source " + d.Source,
+                    },
                 };
                 var right = new StackPanel { Spacing = 2 };
                 right.Children.Add(label);
@@ -236,7 +260,7 @@ public partial class SettingsView : UserControl
     // M7.3: owner resets a staff passphrase, prompt-driven like AddUser.
     private async void ResetStaffPassphrase()
     {
-        var userName = await Dialogs.Prompt(this, "Set/reset passphrase — account", "User name to reset (see the list above)");
+        var userName = await Dialogs.Prompt(this, "Set/reset passphrase: account", "User name to reset (see the list above)");
         if (string.IsNullOrWhiteSpace(userName)) return;
         var passphrase = await Dialogs.Prompt(this, $"Set a passphrase for '{userName.Trim()}'", "At least 8 characters");
         if (string.IsNullOrWhiteSpace(passphrase)) return;
@@ -247,12 +271,12 @@ public partial class SettingsView : UserControl
 
     private async void AddUser()
     {
-        var userName = await Dialogs.Prompt(this, "Add user — user name", "Login name");
-        var displayName = await Dialogs.Prompt(this, "Add user — full name", "Display name") ?? userName;
-        var roleRaw = await Dialogs.Prompt(this, "Add user — role", "OwnerAdmin, ManagerReviewer, Contributor or ReviewerReadOnly", "Contributor");
+        var userName = await Dialogs.Prompt(this, "Add user: user name", "Login name");
+        var displayName = await Dialogs.Prompt(this, "Add user: full name", "Display name") ?? userName;
+        var roleRaw = await Dialogs.Prompt(this, "Add user: role", "OwnerAdmin, ManagerReviewer, Contributor or ReviewerReadOnly", "Contributor");
         if (!Enum.TryParse<UserRole>(roleRaw, true, out var role))
         { _message.Text = "Role must be one of: OwnerAdmin, ManagerReviewer, Contributor, ReviewerReadOnly."; return; }
-        var passphrase = await Dialogs.Prompt(this, "Add user — passphrase", "At least 8 characters");
+        var passphrase = await Dialogs.Prompt(this, "Add user: passphrase", "At least 8 characters");
         if (string.IsNullOrWhiteSpace(passphrase)) return;
         var (result, _) = App.Auth.AddUser(App.Session?.DisplayName ?? "?", App.Session?.UserId ?? Guid.Empty, userName, displayName, role, passphrase);
         _message.Text = result.Ok ? $"User '{userName}' added with role {role}." : result.Error;
@@ -266,7 +290,7 @@ public partial class SettingsView : UserControl
         var (ok, zipPath, error, shaHead) = svc.CreateBackup(label);
         _message.Text = ok
             ? $"Backup written (zip): {zipPath}\nsha256 {shaHead}… (database at backup time). Restores validate every file hash before extracting anything."
-            : $"Backup failed: {error}. Nothing was corrupted — the live data was only read.";
+            : $"Backup failed: {error}. Nothing was corrupted; the live data was only read.";
         return;
     }
 
@@ -281,8 +305,8 @@ public partial class SettingsView : UserControl
         });
         if (files.Count == 0) return;
         var zipPath = files[0].Path.LocalPath;
-        var confirm = await Dialogs.Prompt(this, "Restore", $"Restore from {Path.GetFileName(zipPath)}?\nType RESTORE to continue. The app will close after a verified restore — the restored copy replaces the data on next launch.");
-        if (confirm != "RESTORE") { _message.Text = "Restore cancelled — nothing changed."; return; }
+        var confirm = await Dialogs.Prompt(this, "Restore", $"Restore from {Path.GetFileName(zipPath)}?\nType RESTORE to continue. The app will close after a verified restore; the restored copy replaces the data on next launch.");
+        if (confirm != "RESTORE") { _message.Text = "Restore cancelled; nothing changed."; return; }
         var svc = new QsppManager.Infrastructure.Backup.BackupService(App.Db, App.Store, AppData.BackupsDir);
         var restoreDir = AppData.RestoreStaging();
         var (ok, error, restoredDb, restoredFiles) = svc.Restore(zipPath, restoreDir);

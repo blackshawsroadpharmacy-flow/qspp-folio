@@ -12,7 +12,7 @@ public sealed class PreviewWindow : Window
 {
     public PreviewWindow(string pdfPath)
     {
-        Title = $"Print preview — {Path.GetFileName(pdfPath)}";
+        Title = $"Print preview · {Path.GetFileName(pdfPath)}";
         Width = 700; Height = 320;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
@@ -20,7 +20,7 @@ public sealed class PreviewWindow : Window
         {
             Classes = { "lead" },
             TextWrapping = TextWrapping.Wrap,
-            Text = "The preview opens the rendered PDF in your system viewer — this is the exact file the print job submits, so what you see is what will print. In-app page thumbnails arrive in Milestone 2 once the PDF renderer shares the app's bundled Skia version.",
+            Text = "The preview opens the rendered PDF in your system viewer; this is the exact file the print job submits, so what you see is what will print. In-app page thumbnails arrive in Milestone 2 once the PDF renderer shares the app's bundled Skia version.",
         };
         var open = new Button { Content = "Open PDF externally", Classes = { "primary" }, MinWidth = 170 };
         open.Click += (_, _) => Helpers.OpenWithSystemViewer(pdfPath);

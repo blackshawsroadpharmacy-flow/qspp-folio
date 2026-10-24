@@ -32,6 +32,10 @@ public class TodayViewModel(ShellViewModel shell, TodayView view) : ViewModelBas
     public string DeadlineTitle { get => _deadlineTitle; private set => SetProperty(ref _deadlineTitle, value); }
     private string _deadlineBody = "";
     public string DeadlineBody { get => _deadlineBody; private set => SetProperty(ref _deadlineBody, value); }
+    // Owner item 17: the hero consequence replaces the raw provenance body — the formatted
+    // source line plus one derived consequence ("Applies to 8CPA programs from 1 Jul 2027").
+    private string _deadlineConsequence = "";
+    public string DeadlineConsequence { get => _deadlineConsequence; private set => SetProperty(ref _deadlineConsequence, value); }
     private string _deadlineProvenance = "";
     public string DeadlineProvenance { get => _deadlineProvenance; private set => SetProperty(ref _deadlineProvenance, value); }
     private string _afterThis = "";
@@ -57,8 +61,10 @@ public class TodayViewModel(ShellViewModel shell, TodayView view) : ViewModelBas
     public ObservableCollection<LedgerRow> Bucket90 { get; } = [];
     public ObservableCollection<LedgerRow> BucketLater { get; } = [];
 
-    public record PositionRow(string Label, string Count, System.Windows.Input.ICommand Command);
-    public record MonthMark(int MonthIndex, double Fraction, string Shape, Guid RecordId, string CategoryKey, string Tooltip, bool Tall);
+    // Count + suffix + status brush: the figures render right-aligned in the exact
+    // Assessments stat style, hue when they need attention (owner item 16).
+    public record PositionRow(string Label, string Count, string Suffix, string CountBrush, System.Windows.Input.ICommand Command);
+    public record MonthMark(int MonthIndex, double Fraction, string Shape, Guid RecordId, string CategoryKey, string Tooltip, bool Tall, string Chip = "");
     public record LedgerRow(Guid RecordId, string Category, string CategoryKey, string Item, string Caption,
         string Action, string DateLabel, string DaysLabel, string Owner, string Chip, string ChipTone, bool Overdue);
     public record TaskRow(string Title, string MetaLine, string DueLabel, Guid Id);
@@ -126,6 +132,7 @@ public class TodayViewModel(ShellViewModel shell, TodayView view) : ViewModelBas
             DeadlineDate = f.Date;
             DeadlineTitle = ShortTitle(f);
             DeadlineBody = ShortBody(f);
+            DeadlineConsequence = ConsequenceLine(f);
             DeadlineProvenance = f.PlanningOnly ? "Planning only" : "Confirmed";
             var weeks = Math.Floor(tone.DaysRemaining / 7.0);
             var wd = TodayPlanning.WorkingDaysBetween(today, f.Date);
@@ -161,10 +168,14 @@ public class TodayViewModel(ShellViewModel shell, TodayView view) : ViewModelBas
         var issues = App.Workspace.Issues().Count(i => i.Status != "resolved");
         var round = App.Workspace.SurveillanceRound();
         Position.Clear();
-        Position.Add(new("Overdue tasks", overdueCount.ToString(), OpenTaskCommand));
-        Position.Add(new("Evidence awaiting review", App.Workspace.EvidenceAwaitingReview().Count.ToString(), OpenInboxCommand));
-        Position.Add(new("Manager-verified", $"{verified} of {total}", OpenVerifiedCommand));
-        Position.Add(new("Unresolved interpretations", issues.ToString(), OpenIssuesCommand));
+        Position.Add(new("Overdue tasks", overdueCount.ToString(), "",
+            overdueCount > 0 ? "Brush.Ochre" : "Brush.Muted", OpenTaskCommand));
+        Position.Add(new("Evidence awaiting review", App.Workspace.EvidenceAwaitingReview().Count.ToString(), "",
+            App.Workspace.EvidenceAwaitingReview().Count > 0 ? "Brush.Violet" : "Brush.Muted", OpenInboxCommand));
+        Position.Add(new("Manager-verified", verified.ToString(), $"of {total}",
+            verified > 0 ? "Brush.Green" : "Brush.Muted", OpenVerifiedCommand));
+        Position.Add(new("Unresolved interpretations", issues.ToString(), "",
+            issues > 0 ? "Brush.Ochre" : "Brush.Muted", OpenIssuesCommand));
         RoundLead = round.Items == 0 ? "" :
             $"{round.Items} requests: {round.WithEvidence} attached, {round.InProgress} in progress, {round.Verified} verified";
         OnPropertyChanged(nameof(RoundLead));
@@ -198,7 +209,7 @@ public class TodayViewModel(ShellViewModel shell, TodayView view) : ViewModelBas
             var dms = new DateOnly(d.Year, d.Month, 1);
             var frac = (d.DayNumber - dms.DayNumber + 0.5) / DateTime.DaysInMonth(d.Year, d.Month);
             Marks.Add(new(mIdx, frac, r.CategoryKey switch { "equipment" => "square", "people" => "circle", "documents" => "diamond", _ => "triangle" },
-                r.RecordId, r.CategoryKey, $"{r.Item} — {r.Action}, {d:dd MMM yyyy}", Tall: false));
+                r.RecordId, r.CategoryKey, $"{r.Item} · {r.Action}, {d:dd MMM yyyy}", Tall: false));
         }
         if (f is { } fp && !fp.PlanningOnly)
         {
@@ -207,7 +218,8 @@ public class TodayViewModel(ShellViewModel shell, TodayView view) : ViewModelBas
             {
                 var dms = new DateOnly(fp.Date.Year, fp.Date.Month, 1);
                 var frac = (fp.Date.DayNumber - dms.DayNumber + 0.5) / DateTime.DaysInMonth(fp.Date.Year, fp.Date.Month);
-                Marks.Add(new(mIdx, frac, "bar", Guid.Empty, "program", $"{ShortTitle(fp)} — deadline, {fp.Date:dd MMM yyyy}", Tall: true));
+                Marks.Add(new(mIdx, frac, "bar", Guid.Empty, "program", $"{ShortTitle(fp)} · deadline, {fp.Date:dd MMM yyyy}", Tall: true,
+                    Chip: $"{fp.Date:dd MMM} · {YearChipKind(fp)}"));
             }
         }
         OnPropertyChanged(nameof(Marks));
@@ -223,7 +235,7 @@ public class TodayViewModel(ShellViewModel shell, TodayView view) : ViewModelBas
                 t.Id));
         Inbox.Clear();
         foreach (var e in App.Workspace.EvidenceAwaitingReview())
-            Inbox.Add($"{e.EvidenceTitle} — {e.FileName} · review: {e.ReviewState}");
+            Inbox.Add($"{e.EvidenceTitle} · {e.FileName} · review: {e.ReviewState}");
 
         // ---------- activity ----------
         Activity.Clear();
@@ -307,7 +319,7 @@ public class TodayViewModel(ShellViewModel shell, TodayView view) : ViewModelBas
         if (cut > 0) s = s[..cut];
         cut = s.IndexOf("—");
         if (cut > 0) s = s[..cut];
-        if (s.StartsWith("T&C Clause 5c", StringComparison.Ordinal)) s = "T&C Clause 5c — annual attestation statement";
+        if (s.StartsWith("T&C Clause 5c", StringComparison.Ordinal)) s = "T&C Clause 5c: annual attestation statement";
         s = s.Trim().TrimEnd(',', '.', ';', ':').Trim();
         if (s.Length == 0) s = d.Source;
         return char.IsUpper(s[0]) ? s : char.ToUpperInvariant(s[0]) + s[1..];
@@ -328,10 +340,44 @@ public class TodayViewModel(ShellViewModel shell, TodayView view) : ViewModelBas
         var parts = new List<string>();
         if (parentheses.Length > 0) parts.Add(parentheses);
         if (tail.Length > 0) parts.Add(tail);
-        var body = string.Join(" — ", parts.Where(p => p.Length > 0));
+        var body = string.Join(" · ", parts.Where(p => p.Length > 0));
         if (body.Length == 0) body = d.Explanation;
         if (body.Length == 0) body = s;
         return char.IsUpper(body[0]) ? body : char.ToUpperInvariant(body[0]) + body[1..];
+    }
+
+    /// <summary>Owner item 17: one consequence line for the hero. The stored source tail is
+    /// a curated display rewrite where the record warrants one (same pattern as the T&C
+    /// rewrite in ShortTitle); otherwise the stored tail, sentence-cased. The stored
+    /// provenance string is never modified.</summary>
+    internal static string ConsequenceLine(DeadlineInfo d)
+    {
+        var s = d.Source;
+        var dash = s.LastIndexOf("— ");
+        var tail = dash >= 0 && dash + 2 < s.Length ? s[(dash + 2)..].Trim() : "";
+        if (tail.Length == 0) tail = d.Explanation.Length > 0 && d.Explanation != "Date confirmed by the assessment provider/program."
+            ? d.Explanation : "";
+        if (tail.Contains("applies from 1 Jul 2027 8CPA programs"))
+            tail = "Applies to 8CPA programs from 1 Jul 2027";
+        if (tail.Length == 0) return "";
+        return char.IsUpper(tail[0]) ? tail : char.ToUpperInvariant(tail[0]) + tail[1..];
+    }
+
+    /// <summary>Owner item 19: the short kind for the year-ahead chip. The PPA deadline reads
+    /// "PPA certificate"; other records fall back to their short title's first words.</summary>
+    internal static string YearChipKind(DeadlineInfo d)
+    {
+        var head = ShortTitle(d);
+        var role = head.IndexOf(':');
+        var kind = role > 0 ? head[..role].Trim() : FirstWords(head, 3);
+        return head.Contains("certificate", StringComparison.OrdinalIgnoreCase) && role >= 0
+            ? $"{kind} certificate" : kind;
+    }
+
+    private static string FirstWords(string s, int max)
+    {
+        var parts = s.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return string.Join(' ', parts.Take(Math.Min(max, parts.Length)));
     }
 
     // ---- activity sentences ----
@@ -354,7 +400,7 @@ public class TodayViewModel(ShellViewModel shell, TodayView view) : ViewModelBas
             var m = PathRx.Match(e.Details);
             var path = m.Success ? m.Groups[1].Value.Trim() : null;
             var line = Sentence(e);
-            yield return new($"{when:dd MMM h:mm tt} — {line}", $"{e.Action} \u00B7 {e.EntityType}{(m.Success ? "" : $": {e.Details}")}", path);
+            yield return new($"{when:dd MMM h:mm tt} · {line}", $"{e.Action} \u00B7 {e.EntityType}{(m.Success ? "" : $": {e.Details}")}", path);
         }
     }
 
@@ -384,8 +430,9 @@ public class TodayViewModel(ShellViewModel shell, TodayView view) : ViewModelBas
         return sb.ToString().ToLowerInvariant();
     }
     private Dictionary<Guid, string> RequirementTitleCache() =>
-        // Ledger labels read as jobs: code, then the display title (never source wording).
-        App.Workspace.RequirementRows(App.Session).ToDictionary(r => r.Id, r => $"{r.Ref} · {r.DisplayTitleText}");
+        // Ledger labels read as jobs (owner item 15): display title first, the code after,
+        // never source wording. The code stays same-weight inside muted ledger lines.
+        App.Workspace.RequirementRows(App.Session).ToDictionary(r => r.Id, r => $"{r.DisplayTitleText} · {r.Ref}");
 
     private static string ReqLabel(Dictionary<Guid, string> titles, Guid? reqId)
         => reqId.HasValue && titles.TryGetValue(reqId.Value, out var t) ? t : "no linked requirement";

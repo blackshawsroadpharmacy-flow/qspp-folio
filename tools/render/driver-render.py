@@ -26,7 +26,10 @@ def main() -> int:
     env = dict(os.environ)
     env.update({
         "QSPP_DATA_DIR": os.path.expanduser("~/.hermes/cache/scratch/qspp-render"),
-        "QSPP_DEMO": "1",
+        # QSPP_DEMO is deliberately NOT set: demo mode reads qspp-demo.db, which carries the
+        # imported corpus but no owner states, so every row rendered "No owner yet" while the
+        # real workspace showed "Owner: Hugh Nguyen". The populated scratch qspp.db mirrors
+        # production (all 470 owned by Hugh Nguyen); renders must show that truth (owner item 9),
         "PATH": os.path.expanduser("~/.dotnet:") + env.get("PATH", ""),
         "DOTNET_ROOT": os.path.expanduser("~/.dotnet"),
     })

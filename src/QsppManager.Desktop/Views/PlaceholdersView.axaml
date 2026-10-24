@@ -5,7 +5,7 @@
     <StackPanel Margin="32,28" Spacing="12" MaxWidth="760" HorizontalAlignment="Left">
       <TextBlock Classes="h1" Text="{Binding $parent[UserControl].((vm:PlaceholderModel)DataContext).Title}" />
       <TextBlock Classes="lead" Text="{Binding $parent[UserControl].((vm:PlaceholderModel)DataContext).Text}" TextWrapping="Wrap" />
-      <TextBlock Classes="small" Text="This destination is planned in docs/milestones.md — nothing is hidden behind it in Milestone 1." TextWrapping="Wrap" />
+      <TextBlock Classes="small" Text="This destination is planned in docs/milestones.md; nothing is hidden behind it in Milestone 1." TextWrapping="Wrap" />
     </StackPanel>
   </ScrollViewer>
 </UserControl>

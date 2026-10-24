@@ -206,14 +206,17 @@
       <FontFamily x:Key="Font.MonoMedium">avares://QsppManager.Desktop/Assets/Fonts/JetBrainsMono-Medium.ttf#JetBrains Mono Medium, SF Mono, Menlo, monospace</FontFamily>
       <FontFamily x:Key="Font.Brand">avares://QsppManager.Desktop/Assets/Fonts/HostGrotesk.ttf#Host Grotesk, SF Pro Text, Helvetica Neue</FontFamily>
       <!-- Editorial serif (3B v2): bundled Newsreader (SIL OFL), Display cut for the big
-           numerals and page titles. Lining + tabular digits are forced with lnum/tnum via
-           TextElement.FontFeatures in code (Georgia's old-style figures must not leak in
-           if the bundle is missing). -->
-      <FontFamily x:Key="Font.SerifDisplay">avares://QsppManager.Desktop/Assets/Fonts/Newsreader-Light.ttf#Newsreader Light, Newsreader Display, Newsreader, Georgia</FontFamily>
-      <FontFamily x:Key="Font.SerifDisplayLight">avares://QsppManager.Desktop/Assets/Fonts/Newsreader-Light.ttf#Newsreader Light, Newsreader Display Light, Newsreader Light, Newsreader, Georgia</FontFamily>
-      <FontFamily x:Key="Font.Serif">avares://QsppManager.Desktop/Assets/Fonts/Newsreader-Regular.ttf#Newsreader, Newsreader, Georgia, Hoefler Text, Times New Roman</FontFamily>
-      <FontFamily x:Key="Font.SerifMedium">avares://QsppManager.Desktop/Assets/Fonts/Newsreader-Medium.ttf#Newsreader Medium, Newsreader Medium, Newsreader, Georgia</FontFamily>
-      <FontFamily x:Key="Font.SerifItalic">avares://QsppManager.Desktop/Assets/Fonts/Newsreader-Italic.ttf#Newsreader Italic, Newsreader Italic, Newsreader, Georgia Italic, Georgia</FontFamily>
+           numerals and page titles. The files' internal family is "Newsreader 16pt 16pt"
+           (the opsz-16 export); every stack leads with that exact name — "Newsreader"
+           alone never matches and falls back to Georgia's text figures. Newsreader draws
+           lining, tabular figures by default (verified via fontTools); Georgia has no
+           lnum feature, so the trailing Georgia entry would leak text figures if it
+           ever resolved — which is why the bundle name leads every stack. -->
+      <FontFamily x:Key="Font.SerifDisplay">avares://QsppManager.Desktop/Assets/Fonts/Newsreader-Light.ttf#Newsreader 16pt 16pt Light, Newsreader Display, Newsreader, Georgia</FontFamily>
+      <FontFamily x:Key="Font.SerifDisplayLight">avares://QsppManager.Desktop/Assets/Fonts/Newsreader-Light.ttf#Newsreader 16pt 16pt Light, Newsreader Display Light, Newsreader Light, Newsreader, Georgia</FontFamily>
+      <FontFamily x:Key="Font.Serif">avares://QsppManager.Desktop/Assets/Fonts/Newsreader-Regular.ttf#Newsreader 16pt 16pt, Newsreader, Georgia, Hoefler Text, Times New Roman</FontFamily>
+      <FontFamily x:Key="Font.SerifMedium">avares://QsppManager.Desktop/Assets/Fonts/Newsreader-Medium.ttf#Newsreader 16pt 16pt Medium, Newsreader Medium, Newsreader, Georgia</FontFamily>
+      <FontFamily x:Key="Font.SerifItalic">avares://QsppManager.Desktop/Assets/Fonts/Newsreader-Italic.ttf#Newsreader 16pt 16pt, Newsreader Italic, Newsreader, Georgia Italic, Georgia</FontFamily>
 
       <!-- Fluent theme tab-header font: shrink from the 24px default (M7.2) -->
       <x:Double x:Key="TabItemHeaderFontSize">13.5</x:Double>
@@ -239,16 +242,12 @@
       <Setter Property="Foreground" Value="{DynamicResource Brush.Ink}" />
       <Setter Property="Background" Value="{DynamicResource Brush.Paper}" />
     </Style>
-    <!-- Every number in the app is lining + tabular (3B/3A): the global TextBlock default
-         carries lnum+tnum, so Georgia-style old-style figures can never leak in anywhere. -->
-    <Style Selector="TextBlock, SelectableTextBlock">
-      <Setter Property="FontFeatures">
-        <FontFeatureCollection>
-          <FontFeature Tag="lnum" />
-          <FontFeature Tag="tnum" />
-        </FontFeatureCollection>
-      </Setter>
-    </Style>
+    <!-- The old global lnum/tnum FontFeatures style was removed (proven a no-op: Newsreader
+         draws lining, tabular figures by default, and the whole "text figures" anomaly was
+         later root-caused to the global Button Height 26 shearing the tops off 28pt serif
+         digits, not to any font-feature resolution). Keep it removed: a bare feature tag
+         defaults to value 0, which is feature OFF, and a mis-typed collection silently
+         disables shaping (that trap was observed during the removal test). -->
 
     <!-- ========== Type system v2 (phase 3 brief 3C, DD-43): every neighbouring pair of
          levels differs in at least two of family, size, weight, colour. Roles: serif
@@ -259,8 +258,8 @@
     <Style Selector="TextBlock.h1, TextBlock.titleLarge, TextBlock.serifTitle"><Setter Property="FontFamily" Value="{StaticResource Font.Serif}" /><Setter Property="FontSize" Value="30" /><Setter Property="FontWeight" Value="Regular" /><Setter Property="LineHeight" Value="36" /><Setter Property="LetterSpacing" Value="-0.2" /><Setter Property="TextWrapping" Value="Wrap" /></Style>
     <!-- title.detail: serif 22/28 (alias title2) -->
     <Style Selector="TextBlock.title2, TextBlock.titleDetail"><Setter Property="FontFamily" Value="{StaticResource Font.Serif}" /><Setter Property="FontSize" Value="22" /><Setter Property="FontWeight" Value="Regular" /><Setter Property="LineHeight" Value="28" /><Setter Property="TextWrapping" Value="Wrap" /></Style>
-    <!-- stat: serif 28/32, lining + tabular digits (features applied in code: Ui.Lining) -->
-    <Style Selector="TextBlock.stat"><Setter Property="FontFamily" Value="{StaticResource Font.Serif}" /><Setter Property="FontSize" Value="28" /><Setter Property="FontWeight" Value="Regular" /><Setter Property="LineHeight" Value="32" /></Style>
+    <!-- stat: serif 28/32; Newsreader's own lining + tabular figures (no FontFeatures needed) -->
+    <Style Selector="TextBlock.stat"><Setter Property="FontFamily" Value="{StaticResource Font.Serif}" /><Setter Property="FontSize" Value="28" /><Setter Property="FontWeight" Value="Regular" /></Style>
     <Style Selector="TextBlock.serifCount"><Setter Property="FontFamily" Value="{StaticResource Font.Serif}" /><Setter Property="FontSize" Value="17" /></Style>
     <!-- title.section: sans Display cut 17/22 Semibold (aliases h2, titleSection) -->
     <Style Selector="TextBlock.h2, TextBlock.titleSection"><Setter Property="FontFamily" Value="{StaticResource Font.SansDisplay}" /><Setter Property="FontSize" Value="17" /><Setter Property="LineHeight" Value="22" /><Setter Property="FontWeight" Value="SemiBold" /><Setter Property="LetterSpacing" Value="-0.1" /><Setter Property="TextWrapping" Value="Wrap" /></Style>
@@ -291,7 +290,10 @@
 
     <!-- Buttons: rounded, compact Mac push buttons.
          Metrics per the premium-polish brief: 26pt control (28 primary), 13pt text,
-         radius 6, 12pt horizontal padding. -->
+         radius 6, 12pt horizontal padding. NOTE: Height is a hard pin of this global
+         style — Button.ledger overrides it with NaN on purpose (28pt stat digits do not
+         fit a 26pt box and the template shears their tops off); do not drop that
+         override. -->
     <Style Selector="Button">
       <Setter Property="CornerRadius" Value="6" />
       <Setter Property="Height" Value="26" />
@@ -405,6 +407,36 @@
     <Style Selector="Button.seg.on:pressed /template/ ContentPresenter#PART_ContentPresenter">
       <Setter Property="Background" Value="{DynamicResource Brush.SelBg}" />
     </Style>
+    <!-- segcell: a cell INSIDE a joined segmented control (owner item 7) — no own border or
+         fill; the surrounding Border draws the outline and hairline separators sit between
+         cells. Selected = SelBg fill + Ink text, same vocabulary as the pills. -->
+    <Style Selector="Button.segcell">
+      <Setter Property="Height" Value="24" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="FontWeight" Value="Medium" />
+      <Setter Property="Padding" Value="9,0" />
+      <Setter Property="CornerRadius" Value="4.5" />
+      <Setter Property="Margin" Value="0" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.Muted}" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.segcell:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource Brush.HoverTint}" />
+    </Style>
+    <Style Selector="Button.segcell.on">
+      <Setter Property="Background" Value="{DynamicResource Brush.SelBg}" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.Ink}" />
+    </Style>
+    <Style Selector="Button.segcell.on:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource Brush.SelBg}" />
+    </Style>
+    <Style Selector="Button.segcell.on:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource Brush.SelBg}" />
+    </Style>
 
     <!-- 3F: the toolbar filter field (Mac search look: sage fill, no border, radius 7) -->
     <Style Selector="TextBox.searchMac">
@@ -444,6 +476,7 @@
     <Style Selector="TextBlock.serifCount"><Setter Property="FontFamily" Value="{StaticResource Font.Serif}" /><Setter Property="FontSize" Value="17" /></Style>
     <Style Selector="TextBlock.monoDate"><Setter Property="FontFamily" Value="{StaticResource Font.Mono}" /><Setter Property="FontSize" Value="12.5" /><Setter Property="Foreground" Value="{DynamicResource Brush.Ink}" /></Style>
     <Style Selector="Button.ledger">
+      <Setter Property="Height" Value="NaN" />
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderBrush" Value="Transparent" />
       <Setter Property="BorderThickness" Value="0" />
@@ -523,7 +556,12 @@
       <Setter Property="Foreground" Value="{DynamicResource Brush.Ink}" />
     </Style>
     <!-- Sidebar icon hue per destination (3D #1): the icon always wears its hue; the
-         selected row re-inks the icon to 100% opacity and takes the hue tint as fill. -->
+         selected row re-inks the icon to 100% opacity and takes the hue tint as fill.
+         Base rule first (Ink, 85%) so glyph rows WITHOUT a hue class (none today) and
+         the code-built sidebar get a defined brush; inline brushes are banned on these
+         glyphs — an inline value outranks these setters and greys every icon again. -->
+    <Style Selector="Button.navRow local|LucideGlyph"><Setter Property="GlyphBrush" Value="{DynamicResource Brush.Ink}" /><Setter Property="Opacity" Value="0.85" /></Style>
+    <Style Selector="Button.navRow.sel local|LucideGlyph"><Setter Property="Opacity" Value="1" /></Style>
     <Style Selector="Button.navRow.hueOchre local|LucideGlyph"><Setter Property="GlyphBrush" Value="{DynamicResource Brush.Ochre}" /><Setter Property="Opacity" Value="0.85" /></Style>
     <Style Selector="Button.navRow.hueForest local|LucideGlyph"><Setter Property="GlyphBrush" Value="{DynamicResource Brush.Green}" /><Setter Property="Opacity" Value="0.85" /></Style>
     <Style Selector="Button.navRow.hueTeal local|LucideGlyph"><Setter Property="GlyphBrush" Value="{DynamicResource Brush.Teal}" /><Setter Property="Opacity" Value="0.85" /></Style>

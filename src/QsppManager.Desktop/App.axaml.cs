@@ -197,7 +197,9 @@ public partial class App : Avalonia.Application
                 };
                 if (HueClass(item.Page) is { } hc && hc != "") b.Classes.Add(hc);  // sidebar icon hue (3D)
                 var g = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), ColumnSpacing = 10 };
-                g.Children.Add(new LucideGlyph { Glyph = item.Icon, GlyphSize = 16, GlyphBrush = Helpers.Brush("Brush.Ink"), StrokeThickness = 1.5 });
+                // No inline GlyphBrush: the navRow hue styles (App.axaml) must govern — the
+                // destination hue at 85% when unselected, 100% with its tint when selected.
+                g.Children.Add(new LucideGlyph { Glyph = item.Icon, GlyphSize = 16, StrokeThickness = 1.5 });
                 g.Children.Add(new TextBlock { Text = item.Label });
                 var label = (TextBlock)g.Children[1];
                 Grid.SetColumn(label, 1);

@@ -78,7 +78,7 @@ public sealed class ScheduleDialog : RegisterDialogBase
             Ui.FormField("FIRST DUE", _anchor),
         } },
         new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
-            Text = "Occurrence dates keep the anchor day through shorter months (31 Jan monthly → 28/29 Feb → 31 Mar). The task is assigned to you; reassign in Tasks. Generation is idempotent — reopening the app never duplicates." },
+            Text = "Occurrence dates keep the anchor day through shorter months (31 Jan monthly → 28/29 Feb → 31 Mar). The task is assigned to you; reassign in Tasks. Generation is idempotent: reopening the app never duplicates." },
     } };
 
     protected override bool OnSave(TextBlock message)
@@ -133,7 +133,7 @@ public sealed class IncidentDialog : RegisterDialogBase
 
     protected override bool OnSave(TextBlock message)
     {
-        if (string.IsNullOrWhiteSpace(_desc.Text)) { message.Text = "Describe the incident — the register is the evidence that reporting happened."; return false; }
+        if (string.IsNullOrWhiteSpace(_desc.Text)) { message.Text = "Describe the incident; the register is the evidence that reporting happened."; return false; }
         if (_date.SelectedDate is { } dt) Date = DateOnly.FromDateTime(dt.DateTime);
         Severity = _severity.Text ?? "";
         Description = _desc.Text;
@@ -173,7 +173,7 @@ public sealed class PotencyDialog : RegisterDialogBase
         } },
         Ui.FormField("OUTCOME / ACTION", _outcome),
         new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
-            Text = "Add staff first under People & training. The cadence interpretation stays open (ISSUE-POTENCY): the app tracks per-person coverage — two different drugs across two different dosage forms per year is the conservative planning reading, not a settled rule." },
+            Text = "Add staff first under People & training. The cadence interpretation stays open (ISSUE-POTENCY): the app tracks per-person coverage; two different drugs across two different dosage forms per year is the conservative planning reading, not a settled rule." },
     } };
 
     protected override bool OnSave(TextBlock message)
@@ -181,7 +181,7 @@ public sealed class PotencyDialog : RegisterDialogBase
         var staff = App.Workspace.Staff().ToList();
         _staff.ItemsSource = staff.Select(s => s.Name).ToList();
         if (_staff.SelectedIndex < 0 && staff.Count > 0) _staff.SelectedIndex = 0;
-        if (_staff.SelectedIndex < 0) { message.Text = "No staff recorded yet — add people under People & training first."; return false; }
+        if (_staff.SelectedIndex < 0) { message.Text = "No staff recorded yet; add people under People & training first."; return false; }
         if (string.IsNullOrWhiteSpace(_drug.Text) || string.IsNullOrWhiteSpace(_form.Text))
         { message.Text = "Record WHICH drug and WHICH dosage form were tested."; return false; }
         StaffId = staff[_staff.SelectedIndex].Id;

@@ -26,7 +26,8 @@ public sealed record DisplayTitle(
     string Area,
     string DomainLabel,
     string KindLabel,
-    string SourceTitle)
+    string SourceTitle,
+    string AreaHueKey)
 {
     /// <summary>True when the title still reads like a planning artefact
     /// ("Hit-List #1 P1", "UAG 1.1 section 1.1 … — quoted subclause …"). Obligations and
@@ -59,7 +60,7 @@ public static class RequirementDisplay
                 basis = DisplayTitleBasis.Editorial;
             }
             result.Add(new DisplayTitle(
-                r.Id.ToString(), r.Ref, title, basis, Area(r), DomainLabel(r), KindLabel(r), r.Title));
+                r.Id.ToString(), r.Ref, title, basis, Area(r), DomainLabel(r), KindLabel(r), r.Title, AreaHueKey(r)));
         }
         return result;
     }
@@ -306,6 +307,24 @@ public static class RequirementDisplay
         _ => "Program",
     };
 
+    /// <summary>The requirement's AREA hue (v2 3D "requirement areas" table): the four guide
+    /// domains carry teal/clay/berry/umber; rules, terms, policies and obligations are Stone;
+    /// the remote round and the readiness list are Ink. Returned as a brush key resolved by
+    /// the views (Ui.Br), never a hex.</summary>
+    public static string AreaHueKey(Requirement r) => r.RefKind switch
+    {
+        RefKind.Rule or RefKind.Tc or RefKind.Policy or RefKind.Obligation => "Brush.Stone",
+        RefKind.Hitlist or RefKind.Surveillance => "Brush.Ink",
+        _ => r.Domain switch
+        {
+            DomainPart.Domain1 => "Brush.Teal",
+            DomainPart.Domain2 => "Brush.Clay",
+            DomainPart.Domain3 => "Brush.Berry",
+            DomainPart.Domain4 => "Brush.Umber",
+            _ => "Brush.Stone",
+        },
+    };
+
     /// <summary>Kind label with QSPP acronyms expanded for a reader who is not
     /// steeped in the documents (owner brief §4).</summary>
     public static string KindLabel(Requirement r) => r.RefKind switch
@@ -317,9 +336,23 @@ public static class RequirementDisplay
         RefKind.Tc => "Terms and conditions",
         RefKind.Policy => "Policy",
         RefKind.Obligation => "Obligation",
-        RefKind.Hitlist => "Readiness hit list",
+        RefKind.Hitlist => "Readiness list",
         RefKind.Surveillance => "Remote assessment",
         _ => "Requirement",
+    };
+
+    /// <summary>The four Requirements list segments partition the corpus: they must cover
+    /// every row exactly once (owner brief item 6; tested to sum to the seed total with no
+    /// overlap). 0 By area carries the guide's standard-side kinds; 1 the remote round;
+    /// 2 the readiness hitlist; 3 rules, terms, policies and obligations. An unmapped kind
+    /// falls into By area, where the partition-count test surfaces it.</summary>
+    public static int SegmentIndex(RefKind kind) => kind switch
+    {
+        RefKind.Std or RefKind.Uag or RefKind.UagKeyTask => 0,
+        RefKind.Surveillance => 1,
+        RefKind.Hitlist => 2,
+        RefKind.Rule or RefKind.Tc or RefKind.Policy or RefKind.Obligation => 3,
+        _ => 0,
     };
 }
 
@@ -333,7 +366,7 @@ public static class AcronymMap
         ["T&C"] = "Terms and Conditions",
         ["REM"] = "Remote assessment",
         ["SURVEILLANCE"] = "Remote assessment",
-        ["HITLIST"] = "Readiness hit list",
+        ["HITLIST"] = "Readiness list",
         ["P1"] = "Priority 1",
         ["P2"] = "Priority 2",
         ["P3"] = "Priority 3",

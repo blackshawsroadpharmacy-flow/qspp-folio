@@ -518,7 +518,7 @@ public partial class MainWindow : Window
         var stack = new StackPanel { Margin = new Thickness(24) };
         stack.Children.Add(header);
         stack.Children.Add(Ui.InfoLine("Data folder", AppData.Root));
-        stack.Children.Add(Ui.InfoLine("Sources pack", SeedImporter.PackRoot() ?? "(pack not found — set it in Settings)"));
+        stack.Children.Add(Ui.InfoLine("Sources pack", SeedImporter.PackRoot() ?? "(pack not found, set it in Settings)"));
         stack.Children.Add(new TextBlock
         {
             Text = "Offline-first. No cloud upload. Audit history is append-only.",

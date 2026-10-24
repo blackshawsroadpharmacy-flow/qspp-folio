@@ -170,7 +170,7 @@ public sealed class EvidenceDialog : Window
                 new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Spacing = 8, Children = { cancel, save } },
             },
         };
-        _message.Text = "Uploading a file never sets compliance. Patient-identifying content must be removed from the document itself — not hidden behind a drawn black box from an unverified tool.";
+        _message.Text = "Uploading a file never sets compliance. Patient-identifying content must be removed from the document itself, not hidden behind a drawn black box from an unverified tool.";
     }
 
     public bool Confirmed => _tcs.Task.Status == TaskStatus.RanToCompletion && _tcs.Task.Result;

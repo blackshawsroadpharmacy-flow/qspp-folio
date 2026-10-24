@@ -156,7 +156,7 @@ public class DisplayTitlesTests
     [Fact]
     public void KindLabels_expandAcronyms()
     {
-        Assert.Equal("Readiness hit list", RequirementDisplay.KindLabel(Req(RefKind.Hitlist, "Hit-List #1 P1")));
+        Assert.Equal("Readiness list", RequirementDisplay.KindLabel(Req(RefKind.Hitlist, "Hit-List #1 P1")));
         Assert.Equal("Program rule", RequirementDisplay.KindLabel(Req(RefKind.Rule, "Rule 1 — Pharmacy Conduct")));
         Assert.Equal("Key task", RequirementDisplay.KindLabel(Req(RefKind.UagKeyTask, "x")));
     }

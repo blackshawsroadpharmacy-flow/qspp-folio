@@ -188,7 +188,7 @@ public class ShellViewModel : ViewModelBase
 
     public bool SignedIn { get; private set; }
     public string SessionLabel { get; private set; } = "";
-    public string DataViewLabel { get; private set; } = App.DemoMode ? "DEMO DATA — fictional pharmacy" : "Production data";
+    public string DataViewLabel { get; private set; } = App.DemoMode ? "DEMO DATA · fictional pharmacy" : "Production data";
 
     // Command palette
     public string SearchText { get => _searchText; set { if (SetProperty(ref _searchText, value)) RunSearch(); } }

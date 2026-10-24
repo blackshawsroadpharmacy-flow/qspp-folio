@@ -15,7 +15,6 @@ def main() -> int:
     env = dict(os.environ)
     env.update({
         "QSPP_DATA_DIR": os.path.expanduser("~/.hermes/cache/scratch/qspp-render"),
-        "QSPP_DEMO": "1",
         "PATH": os.path.expanduser("~/.dotnet:") + env.get("PATH", ""),
         "DOTNET_ROOT": os.path.expanduser("~/.dotnet"),
         "DOTNET_gcServer": "0",

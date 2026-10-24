@@ -32,3 +32,6 @@ Contents/Resources/
 
 # Vendored pack (large PDFs, untracked by intent; bundled into the .app at packaging)
 vendor/
+
+.font-backups-*/
+assets/fonts/.font-backups*/

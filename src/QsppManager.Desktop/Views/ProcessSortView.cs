@@ -81,7 +81,7 @@ public partial class ProcessSortDialog : Window
         Ui.Ax(_engineChoice, "OCR engine", "Heavy tier needs the local server running: scripts/serve-mineru.sh. Everything stays on this Mac either way.");
 
         var approveBtn = Ui.PrimaryBtn("Approve selected…", axHelpText: "Correct or accept destinations for the selected file");
-        _bulkApprove = Ui.PrimaryBtn("Approve proposed…", axHelpText: "Attach every clear proposal to its requirement — a human pressed the button once for the batch");
+        _bulkApprove = Ui.PrimaryBtn("Approve proposed…", axHelpText: "Attach every clear proposal to its requirement; a human pressed the button once for the batch");
         var actionRow = Ui.Row(8,
             Ui.PrimaryBtn("Scan folder", axHelpText: "Count supported files and show what will happen"),
             Ui.PrimaryBtn("Process and Sort", axHelpText: "Extract, classify and prepare destinations"),
@@ -113,7 +113,7 @@ public partial class ProcessSortDialog : Window
         _grid.Columns.Add(new DataGridTextColumn { Header = "File", Binding = new Avalonia.Data.Binding("File"), Width = new DataGridLength(340) });
         _grid.Columns.Add(new DataGridTextColumn { Header = "State", Binding = new Avalonia.Data.Binding("State"), Width = new DataGridLength(140) });
         _grid.Columns.Add(new DataGridTextColumn { Header = "Detail", Binding = new Avalonia.Data.Binding("Detail"), Width = new DataGridLength(500) });
-        Ui.Ax(_grid, "Per-file progress", "One failed file never stops the batch — correct and retry after the run");
+        Ui.Ax(_grid, "Per-file progress", "One failed file never stops the batch; correct and retry after the run");
         _grid.ItemsSource = _rows;
         sp.Children.Add(_grid);
 
@@ -133,7 +133,7 @@ public partial class ProcessSortDialog : Window
         {
             _batchIds.Add(b.Id);
             var tail = string.Join('/', b.SourceDirectory.Split('/', StringSplitOptions.RemoveEmptyEntries).TakeLast(2));
-            _batchPicker.Items.Add($"{b.StartedAtUtc:dd MMM HH:mm} — {b.State} — {b.ScannedCount} scanned, {b.SkippedCount} skipped — …{tail}");
+            _batchPicker.Items.Add($"{b.StartedAtUtc:dd MMM HH:mm} · {b.State} · {b.ScannedCount} scanned, {b.SkippedCount} skipped · …{tail}");
         }
         if (_batchIds.Count > 0 && _batchId == null) _batchPicker.SelectedIndex = 0;
     }
@@ -161,19 +161,19 @@ public partial class ProcessSortDialog : Window
         var batchId = _batchId.Value;
         var session = App.Session!;
         Say("Approving every clear proposal…");
-        _working = true; BusyOn("Attaching clear proposals — each one imports and links through the normal pipeline…");
+        _working = true; BusyOn("Attaching clear proposals; each one imports and links through the normal pipeline…");
         var result = await Task.Run(() => App.Folio.ApproveProposed(batchId, session));
         _working = false; BusyOff();
         await ReloadHistory();
         if (result.approved == 0 && result.failed == 0)
-            Say("No clear proposals here yet — process the batch first, or approve the remaining files one at a time.");
+            Say("No clear proposals here yet; process the batch first, or approve the remaining files one at a time.");
         else if (result.approved == 0)
             Say($"Nothing approved: {result.firstError}");
         else
         {
             var inReview = _rows.Count(r => r.State is "Proposed" or "MultipleCandidates" or "SensitiveHold"
                 or "NeedsOcr" or "Unreadable" or "Pending" or "Processing" or "Abstained" or "Duplicate");
-            Say($"Approved {result.approved} — imported and attached to their proposed requirements (evidence kinds guessed from file names; correct any in the evidence detail)."
+            Say($"Approved {result.approved}; imported and attached to their proposed requirements (evidence kinds guessed from file names; correct any in the evidence detail)."
                 + (result.failed > 0 ? $" Failures: {result.firstError} " : "")
                 + (inReview > 0 ? $" {inReview} still need your review (multiple, sensitive, unclear)." : "")
                 + " Press Open Requirements → to see the attachments on each requirement.");
@@ -191,8 +191,8 @@ public partial class ProcessSortDialog : Window
     private async Task ScanAsync()
     {
         if (string.IsNullOrWhiteSpace(_sourceDir)) { Say("Choose a documents folder first."); return; }
-        if (string.IsNullOrWhiteSpace(_outputDir)) { Say("Choose an output folder first — never the source folder."); return; }
-        if (_working) { Say("Already working — press Cancel run to stop."); return; }
+        if (string.IsNullOrWhiteSpace(_outputDir)) { Say("Choose an output folder first; never the source folder."); return; }
+        if (_working) { Say("Already working. Press Cancel run to stop."); return; }
         _working = true; BusyOn("Scanning the folder… hashing every file to recognise unchanged content next time.");
         var (res, id) = (await Task.Run(() => App.Folio.ScanAndQueue(App.Session!, _sourceDir, _outputDir)));
         _working = false; BusyOff();
@@ -201,13 +201,13 @@ public partial class ProcessSortDialog : Window
         await LoadBatchList();
         if (_batchIds.Contains(_batchId.Value)) _batchPicker.SelectedIndex = _batchIds.IndexOf(_batchId.Value);
         await ReloadHistory();
-        Say("Scan complete. Press Process and Sort when ready — processing is cancellable and resumable.");
+        Say("Scan complete. Press Process and Sort when ready; processing is cancellable and resumable.");
     }
 
     private async Task ProcessAsync()
     {
         if (_batchId == null) { Say("Scan a folder first."); return; }
-        if (_working) { Say("Already working — press Cancel run to stop."); return; }
+        if (_working) { Say("Already working. Press Cancel run to stop."); return; }
         _cts = new CancellationTokenSource();
         _working = true;
         var total = _rows.Count;
@@ -221,7 +221,7 @@ public partial class ProcessSortDialog : Window
             var progress = new Progress<(string relPath, string state)>(t => Dispatcher.UIThread.Post(() =>
             {
                 done++;
-                BusyText($"Processing {done} of {total} — {t.relPath}");
+                BusyText($"Processing {done} of {total} · {t.relPath}");
                 var r = _rows.FirstOrDefault(x => x.File == t.relPath);
                 if (r != null)
                 {
@@ -258,7 +258,7 @@ public partial class ProcessSortDialog : Window
         });
     }
 
-    private void CancelRun() { _cts?.Cancel(); Say("Cancel requested — finishing the current file. Already-processed files keep their state."); }
+    private void CancelRun() { _cts?.Cancel(); Say("Cancel requested; finishing the current file. Already-processed files keep their state."); }
 
     private async Task ApproveSelectedAsync()
     {
@@ -267,12 +267,12 @@ public partial class ProcessSortDialog : Window
         var dlg = new FolioApproveDialog(row.ItemId);
         await dlg.ShowDialog(App.Main!);
         await ReloadHistory();
-        if (dlg.Approved) Say("Approved — links are created as proposed, exactly like a manual attach; review stays with the manager.");
+        if (dlg.Approved) Say("Approved; links are created as proposed, exactly like a manual attach; review stays with the manager.");
     }
 
     private async Task PublishAsync()
     {
-        if (_batchId == null) { Say("Nothing to publish yet — scan, then process, then approve files."); return; }
+        if (_batchId == null) { Say("Nothing to publish yet; scan, then process, then approve files."); return; }
         var (res, manifest) = App.Folio.PublishFolio(_batchId.Value, App.Session!);
         Say(res.Ok ? $"Folio published. Manifest: {manifest}" : res.Error);
         await ReloadHistory();
@@ -302,7 +302,7 @@ public partial class ProcessSortDialog : Window
             var sens = batch.Items.Count(i => i.State == FolioItemState.SensitiveHold);
             var ocr = batch.Items.Count(i => i.State == FolioItemState.NeedsOcr);
             var done = batch.Items.Count(i => i.State is FolioItemState.Approved or FolioItemState.Published);
-            _summary.Text = $"Batch {batch.State}: {done}/{batch.Items.Count} attached so far. Queue: {props} clear proposals — {mult} multiple choice — {sens} sensitive — {ocr} awaiting OCR. Skipped at scan: {batch.SkippedCount}." + (props > 0 ? " Approve the clear proposals to attach them, then review the rest one by one." : "");
+            _summary.Text = $"Batch {batch.State}: {done}/{batch.Items.Count} attached so far. Queue: {props} clear proposals · {mult} multiple choice · {sens} sensitive · {ocr} awaiting OCR. Skipped at scan: {batch.SkippedCount}." + (props > 0 ? " Approve the clear proposals to attach them, then review the rest one by one." : "");
             _bulkApprove.Content = props > 0 ? $"Approve {props} proposed…" : "Approve proposed…";
         });
         await Task.CompletedTask;
@@ -376,7 +376,7 @@ public partial class FolioApproveDialog : Window
 
         _list.ItemsSource = _candidates;
         _list.DisplayMemberBinding = new Avalonia.Data.Binding("Label");
-        Ui.Ax(_list, "Requirement destinations", "Select one or more — tick as many as the document supports");
+        Ui.Ax(_list, "Requirement destinations", "Select one or more; tick as many as the document supports");
         sp.Children.Add(_list);
         sp.Children.Add(new TextBlock
         {
@@ -385,7 +385,7 @@ public partial class FolioApproveDialog : Window
         });
 
         sp.Children.Add(Ui.FormField("Evidence title", _title));
-        sp.Children.Add(Ui.FormField("Kind — PolicyOrSop, Certificate, Record, Register, TrainingRecord, PhotoOrScan, Other", _kind));
+        sp.Children.Add(Ui.FormField("Kind (PolicyOrSop, Certificate, Record, Register, TrainingRecord, PhotoOrScan, Other)", _kind));
         sp.Children.Add(_expiryLine);
         sp.Children.Add(_patient);
         sp.Children.Add(Ui.FormField("Redaction attestation", _attestation));
@@ -412,7 +412,7 @@ public partial class FolioApproveDialog : Window
         var status = guess.Status(DateOnly.FromDateTime(DateTime.Today));
         _expiryLine.Text = $"Expiry detected in the document: {guess.ExpiresOn:dd MMM yyyy}"
             + (status.Length > 0 ? $" ({status})" : "")
-            + $". It will be recorded on the attached evidence as its end date — correct it in Documents if the document says otherwise. From: {guess.Hint}";
+            + $". It will be recorded on the attached evidence as its end date; correct it in Documents if the document says otherwise. From: {guess.Hint}";
         _expiryLine.IsVisible = true;
     }
 
@@ -451,7 +451,7 @@ public partial class FolioApproveDialog : Window
             c.Title.Contains(q, StringComparison.OrdinalIgnoreCase)).ToList();
         foreach (var c in filtered.Take(120))
             _candidates.Add(new PickRow(c.Id, c.Ref, c.RefKind, c.Title, $"{c.Ref}  {c.Title}   [{c.RefKind}]"));
-        if (filtered.Count > 120) _candidates.Add(new PickRow(Guid.Empty, "…", "…", $"{filtered.Count - 120} more — narrow the search", $"{filtered.Count - 120} more — narrow the search"));
+        if (filtered.Count > 120) _candidates.Add(new PickRow(Guid.Empty, "…", "…", $"{filtered.Count - 120} more, narrow the search", $"{filtered.Count - 120} more, narrow the search"));
     }
 
     private void ApproveNow()

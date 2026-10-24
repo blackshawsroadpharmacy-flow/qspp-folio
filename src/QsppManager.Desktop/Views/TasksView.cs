@@ -1,110 +1,177 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Avalonia.Controls.Templates;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
-using Avalonia.Media;
 using QsppManager.Desktop.ViewModels;
 using QsppManager.Domain.Entities;
 
 namespace QsppManager.Desktop.Views;
 
-/// <summary>Open tasks with completion flow. Recurring schedules arrive in Milestone 3
-/// (durable definitions; missed occurrences stay visible; no duplicate creation on reopen).</summary>
+/// <summary>Open tasks with a tick-to-complete flow (§5): a joined segmented filter, "New task"
+/// as a quiet + in the toolbar, the empty state top-aligned under it. Recurring schedules live
+/// in Registers; missed occurrences stay visible here until done.</summary>
 public partial class TasksView : UserControl, IPageSearchFocus
 {
-    private readonly ComboBox _filter = new() { SelectedIndex = 0, MinWidth = 180, ItemsSource = new[] { "All open", "Overdue", "Due next 7 days", "No due date" } };
-    private readonly DataGrid _grid = new() { Height = 420, AutoGenerateColumns = false, IsReadOnly = true };
+    private static readonly string[] _filterLabels = ["All open", "Overdue", "Due next 7 days", "No due date"];
+
+    private readonly DataGrid _grid = new() { AutoGenerateColumns = false, IsReadOnly = true };
     private readonly NoticeHost _resultBar = new();
-    private TableHost _tasksHost = null!;
+    private readonly List<Button> _filterButtons = [];
+    private Control _emptyState = null!;
+    private int _filter;
 
     public TasksView(ShellViewModel shell)
     {
-        _filter.SelectionChanged += (_, _) => Load();
         Content = Build(shell);
+        SetFilter(0);
         Load();
     }
 
     private Control Build(ShellViewModel shell)
     {
-        var sp = new StackPanel { Margin = new(28, 24), Spacing = 14, MaxWidth = 1040, HorizontalAlignment = HorizontalAlignment.Left };
+        var sp = new StackPanel { Margin = new(28, 24), Spacing = 12, MaxWidth = 1040, HorizontalAlignment = HorizontalAlignment.Left };
         sp.Children.Add(Ui.PageTitle(ViewModels.ShellPage.Tasks, "One-off work and recurring occurrences, with owners and due dates.", "Missed occurrences stay open (overdue) until done; completing one records who and when. Schedules live in Registers."));
 
-        Ui.Ax(_filter, "Task filter", "Choose which open tasks are listed");
-        var row = Ui.Row(10, _filter,
-            PrimaryBtn("New task", "Create a one-off task or a recurring schedule occurrence",
-                (_, _) => new TaskDialog(this, null).ShowDialog(App.Main)),
-            Btn("Complete selected", "Record the selected task as completed", (_, _) =>
-            {
-                if (_grid.SelectedItem is not null && _grid.SelectedItem.GetType().GetProperty("Id") is { } p && p.GetValue(_grid.SelectedItem) is Guid id)
-                    new CompleteTaskDialog(this, id).ShowDialog(App.Main);
-                                else _resultBar.Show(NoticeTone.Info, "Select a task.");
-                Load();
-            }));
-        sp.Children.Add(row);
+        // One toolbar row (§5): the segmented filter left, "New task" as a quiet + right.
+        var toolbar = new Avalonia.Controls.Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
+        var filterHost = new Border
+        {
+            CornerRadius = new(6),
+            BorderBrush = Ui.Br("Brush.ControlBorder"),
+            BorderThickness = new(1),
+            Background = Ui.Br("Brush.Surface"),
+            Padding = new(2, 2),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        var filterRow = new StackPanel { Orientation = Orientation.Horizontal };
+        for (var i = 0; i < _filterLabels.Length; i++)
+        {
+            if (i > 0)
+                filterRow.Children.Add(new Border { Width = 1, Margin = new(1, 5), VerticalAlignment = VerticalAlignment.Stretch, Background = Ui.Br("Brush.Divider") });
+            var index = i;
+            var b = new Button { Height = 24, FontSize = 12, FontWeight = Avalonia.Media.FontWeight.Medium, Padding = new(9, 0), Content = _filterLabels[i] };
+            b.Classes.Add("segcell");
+            b.Click += (_, _) => { SetFilter(index); Load(); };
+            _filterButtons.Add(b);
+            filterRow.Children.Add(b);
+        }
+        filterHost.Child = filterRow;
+        toolbar.Children.Add(filterHost);
+        var newBtn = Btn("+ New task", "Create a one-off task or a recurring schedule occurrence",
+            (_, _) => new TaskDialog(this, null).ShowDialog(App.Main), "ghost");
+        Avalonia.Controls.Grid.SetColumn(newBtn, 1);
+        toolbar.Children.Add(newBtn);
+        sp.Children.Add(toolbar);
 
         _grid.Columns.Add(new DataGridTextColumn { Header = "Title", Binding = new Avalonia.Data.Binding("Title"), Width = new DataGridLength(3, DataGridLengthUnitType.Star) });
-        _grid.Columns.Add(new DataGridTextColumn { Header = "Priority", Binding = new Avalonia.Data.Binding("Priority"), Width = new DataGridLength(90) });
-        _grid.Columns.Add(new DataGridTextColumn { Header = "Due", Binding = new Avalonia.Data.Binding("DueLabel"), Width = new DataGridLength(130) });
+        _grid.Columns.Add(new DataGridTextColumn { Header = "Priority", Binding = new Avalonia.Data.Binding("Priority"), Width = new DataGridLength(80) });
+        _grid.Columns.Add(new DataGridTextColumn { Header = "Due", Binding = new Avalonia.Data.Binding("DueLabel"), Width = new DataGridLength(150) });
         _grid.Columns.Add(new DataGridTextColumn { Header = "Owner", Binding = new Avalonia.Data.Binding("Owner"), Width = new DataGridLength(1, DataGridLengthUnitType.Star) });
-        _grid.Columns.Add(Ui.MonoCol("Requirement", "ReqRef", 120));
-        _grid.Columns.Add(new DataGridTextColumn { Header = "Details", Binding = new Avalonia.Data.Binding("Details"), Width = new DataGridLength(2, DataGridLengthUnitType.Star) });
-        Ui.Ax(_grid, "Open tasks", "Select a task to complete it");
-        _tasksHost = Host(_grid, 420, "list-checks", "No open tasks in this view", "Try All open, or create a task with the New task button.", "Brush.Clay");
-        sp.Children.Add(_tasksHost.Panel);
-        sp.Children.Add(_standingLine);   // 3E #3: standing info inline, never a banner
+        _grid.Columns.Add(Ui.MonoCol("Requirement", "ReqRef", 110));
+        _grid.Columns.Add(new DataGridTemplateColumn
+        {
+            Header = "Done",
+            Width = new DataGridLength(54),
+            CellTemplate = new FuncDataTemplate<object>((_, _) => BuildTickCell(), true),
+        });
+        Ui.Ax(_grid, "Open tasks", "Tick a row to record it as completed");
 
+        // The empty state sits top-left directly under the toolbar — no tall void above or
+        // below it (owner brief, Tasks); the grid sizes to its content up to a page-length cap.
+        var listScroll = new ScrollViewer { Content = _grid, MaxHeight = 560, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
+        _emptyState = Ui.EmptyState("list-checks", "No open tasks in this view", "Try All open, or create a task with the + New task button.", null, "Brush.Clay");
+        _emptyState.IsVisible = false;
+        var listHost = new Panel();
+        listHost.Children.Add(listScroll);
+        listHost.Children.Add(_emptyState);
+        sp.Children.Add(listHost);
         sp.Children.Add(_resultBar);
         return new ScrollViewer { Content = sp };
     }
 
+    /// <summary>The per-row completion tick (§5): ticking opens the completion record (who,
+    /// when and the note); cancelling leaves the task open. The checkbox is an action, not
+    /// state — the refreshed list is the state.</summary>
+    private Control BuildTickCell()
+    {
+        var cb = new CheckBox { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        // Avalonia CheckBox carries no WPF-style Checked event: watch IsCheckedProperty, and
+        // react only to true so the programmatic reset does not re-trigger.
+        cb.PropertyChanged += (_, e) =>
+        {
+            if (e.Property != ToggleButton.IsCheckedProperty || e.NewValue is not true) return;
+            if (cb.DataContext is not TaskUiRow row || row.Id == Guid.Empty) { cb.IsChecked = null; return; }
+            _ = CompleteFromTick(cb, row.Id);
+        };
+        return cb;
+    }
+
+    private async Task CompleteFromTick(CheckBox cb, Guid id)
+    {
+        try
+        {
+            await new CompleteTaskDialog(this, id).ShowDialog(App.Main!);
+        }
+        finally
+        {
+            cb.IsChecked = false;
+            Load();
+        }
+    }
+
     private void Load()
     {
+        if (_grid.Columns.Count == 0) return;
         var today = DateOnly.FromDateTime(DateTime.Today);
         var users = App.Auth.ListUsers().ToDictionary(u => u.Id, u => u.DisplayName);
         var reqs = App.Workspace.RequirementRows(App.Session).ToDictionary(r => r.Id, r => r.Ref);
         var tasks = App.Workspace.OpenTasks();
-        tasks = _filter.SelectedIndex switch
+        tasks = _filter switch
         {
             1 => tasks.Where(t => t.DueDate is { } d && d < today).ToList(),
             2 => tasks.Where(t => t.DueDate is { } d && d >= today && d < today.AddDays(7)).ToList(),
             3 => tasks.Where(t => t.DueDate == null).ToList(),
             _ => tasks,
         };
-        _grid.ItemsSource = tasks.Select(t => new
-        {
-            Title = t.Title + (t.RecurrenceDefId != null ? " (recurring)" : ""),
-            Priority = t.Priority.ToString(),
-            DueLabel = t.OccurrenceDate.HasValue && t.DueDate != t.OccurrenceDate
+        _grid.ItemsSource = tasks.Select(t => new TaskUiRow(
+            t.Title + (t.RecurrenceDefId != null ? " (recurring)" : ""),
+            t.Priority.ToString(),
+            t.OccurrenceDate.HasValue && t.DueDate != t.OccurrenceDate
                 ? $"{t.DueDate:dd MMM yyyy} (for {t.OccurrenceDate:dd MMM})"
                 : t.DueDate?.ToString("dd MMM yyyy") ?? "no due date",
-            Owner = users.GetValueOrDefault(t.AssignedToUserId, "?"),
-            ReqRef = t.RequirementId.HasValue && reqs.TryGetValue(t.RequirementId.Value, out var r) ? r : "",
+            users.GetValueOrDefault(t.AssignedToUserId, "?"),
+            t.RequirementId.HasValue && reqs.TryGetValue(t.RequirementId.Value, out var r) ? r : "",
             t.Details,
-            t.Id,
-        }).ToList();
-        _tasksHost.Refresh(tasks.Count);
-        // 3E #3: standing information is an inline callout, not a permanent banner.
-        _standingLine.Text = $"{tasks.Count} shown. Completing a task records who completed it and when — that record is the evidence of the action.";
+            t.Id)).ToList();
+        var count = tasks.Count;
+        _grid.IsVisible = count > 0;
+        _emptyState.IsVisible = count == 0;
     }
 
-    private readonly TextBlock _standingLine = new()
+    private void SetFilter(int i)
     {
-        Classes = { "callout" }, TextWrapping = TextWrapping.Wrap,
-        Text = "All open tasks shown. Completing a task records who completed it and when — that record is the evidence of the action.",
-    };
+        _filter = i;
+        for (var k = 0; k < _filterButtons.Count; k++)
+        {
+            if (k == _filter) _filterButtons[k].Classes.Add("on"); else _filterButtons[k].Classes.Remove("on");
+        }
+    }
 
-    /// <summary>⌘F hook: the page's filter is a preset ComboBox, so toolbar text maps
-    /// onto the existing presets rather than introducing free-text filtering.</summary>
-    public void FocusSearch() { _filter.Focus(); }
+    /// <summary>⌘F hook: focus the first filter cell; toolbar text maps onto the presets.</summary>
+    public void FocusSearch() { if (_filterButtons.Count > 0) _filterButtons[0].Focus(); }
     public void SetFilter(string text)
     {
         var t = text.Trim().ToLowerInvariant();
-        _filter.SelectedIndex =
+        SetFilter(
             t.Length == 0 || t.Contains("all") ? 0 :
             t.Contains("overdue") ? 1 :
             t.Contains("no due") ? 3 :
             t.Contains("next") || t.Contains("7 days") ? 2 :
-            0;
+            0);
+        Load();
     }
 
     public record TaskUiRow(string Title, string Priority, string DueLabel, string Owner, string ReqRef, string Details, Guid Id);
@@ -117,26 +184,5 @@ public partial class TasksView : UserControl, IPageSearchFocus
         Ui.Ax(b, label, axHelp);
         b.Click += onClick;
         return b;
-    }
-    private static Button PrimaryBtn(string label, string axHelp, EventHandler<RoutedEventArgs> onClick) => Btn(label, axHelp, onClick, "primary");
-
-    /// <summary>Table with an in-place empty state; the visible child tracks the row count.</summary>
-    private static TableHost Host(Control table, double minHeight, string icon, string title, string hint, string hue = "Brush.Stone")
-    {
-        var empty = Ui.EmptyState(icon, title, hint, null, hue);
-        empty.IsVisible = false;
-        var panel = new Panel { MinHeight = minHeight };
-        panel.Children.Add(table);
-        panel.Children.Add(empty);
-        return new TableHost(table, empty, panel);
-    }
-
-    private sealed record TableHost(Control Table, Control Empty, Panel Panel)
-    {
-        public void Refresh(int rowCount)
-        {
-            Table.IsVisible = rowCount > 0;
-            Empty.IsVisible = rowCount == 0;
-        }
     }
 }

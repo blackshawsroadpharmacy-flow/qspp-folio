@@ -148,11 +148,11 @@ public class CorpusSearch(QsppDbContext db) : ICorpusIndexer
         Seed.DisplayTitleSources.ResolveAll(requirements)
             .ToDictionary(t => Guid.Parse(t.Id), t => t.Title);
 
-    /// <summary>Human-readable requirement label: the code, then the display title when one
-    /// exists (official heading otherwise). Search still MATCHES on wording and codes.</summary>
-    private static string RequirementLabel(Requirement r, string refTxt, IReadOnlyDictionary<Guid, string> titles) =>
-        (string.IsNullOrEmpty(refTxt) ? "" : refTxt + " · ")
-        + (titles.TryGetValue(r.Id, out var t) ? t : r.Title);
+    /// <summary>Requirement label enrichment (owner item 15): the display title leads and
+    /// the code moves to RefCode so views can set it muted mono AFTER the title — no
+    /// visible label starts with a code. Search still MATCHES on wording and codes.</summary>
+    private static SearchResultRow EnrichLabel(SearchResultRow r, Requirement req, IReadOnlyDictionary<Guid, string> titles) =>
+        r with { Title = titles.TryGetValue(req.Id, out var t) ? t : req.Title, RefCode = req.Ref };
 
     private static bool IsRequirementKind(string kind) => kind is
         "Std" or "Uag" or "UagKeyTask" or "Rule" or "Tc" or "Policy" or "Obligation" or "Hitlist" or "Surveillance";
@@ -203,7 +203,7 @@ public class CorpusSearch(QsppDbContext db) : ICorpusIndexer
         // wording so search continues to match the source text).
         var byId = requirements.ToDictionary(r => r.Id);
         rows = rows.Select(r => IsRequirementKind(r.Kind) && byId.TryGetValue(r.Id, out var req)
-            ? r with { Title = RequirementLabel(req, req.Ref, titles) }
+            ? EnrichLabel(r, req, titles)
             : r).ToList();
         return rows;
     }
@@ -225,8 +225,9 @@ public class CorpusSearch(QsppDbContext db) : ICorpusIndexer
             .Take(cap)
             .AsEnumerable()
             .Select(r => new SearchResultRow(
-                EnumTitle(r.RefKind), RequirementLabel(r, r.Ref, titles),
-                Snippet(r.PlainSummary, r.WordingExcerpt, text), r.Id, MetaRequirement(r))));
+                EnumTitle(r.RefKind),
+                titles.TryGetValue(r.Id, out var t) ? t : r.Title,
+                Snippet(r.PlainSummary, r.WordingExcerpt, text), r.Id, MetaRequirement(r), r.Ref)));
 
         rows.AddRange(db.EvidenceItems.AsNoTracking()
             .Where(e => EF.Functions.Like(e.Title, like) || EF.Functions.Like(e.FileName, like))

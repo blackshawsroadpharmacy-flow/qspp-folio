@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -13,11 +14,52 @@ namespace QsppManager.Desktop.Views;
 /// fact-sheet rules, and version-tied policy acknowledgements.</summary>
 public partial class PeopleView : UserControl
 {
-    private readonly DataGrid _staff = new() { Height = 220, AutoGenerateColumns = false, IsReadOnly = true, RowHeight = 34 };
-    private readonly DataGrid _acks = new() { Height = 180, AutoGenerateColumns = false, IsReadOnly = true, RowHeight = 34 };
+    private readonly DataGrid _staff = new() { AutoGenerateColumns = false, IsReadOnly = true, RowHeight = 34 };
+    private readonly DataGrid _acks = new() { AutoGenerateColumns = false, IsReadOnly = true, RowHeight = 34 };
     private readonly NoticeHost _resultBar = new();
-    private TableHost _staffHost = null!;
-    private TableHost _acksHost = null!;
+    private OneLineHost _staffHost = null!;
+    private OneLineHost _acksHost = null!;
+
+    /// <summary>Grid host (§5): content-height grid under a cap, a one-line empty state, no
+    /// fixed-height void around either.</summary>
+    private sealed record OneLineHost(Control Scroll, Control Empty, Panel Panel)
+    {
+        public void Refresh(int rowCount)
+        {
+            Scroll.IsVisible = rowCount > 0;
+            Empty.IsVisible = rowCount == 0;
+        }
+    }
+
+    private static OneLineHost Host(DataGrid grid, string line)
+    {
+        var empty = new StackPanel
+        {
+            Orientation = Orientation.Horizontal, Spacing = 8, Margin = new(4, 6), IsVisible = false,
+            Children =
+            {
+                new Avalonia.Controls.Shapes.Ellipse { Width = 6, Height = 6, Fill = Ui.Br("Brush.Muted"), VerticalAlignment = VerticalAlignment.Center },
+                new TextBlock { Classes = { "small" }, Foreground = Ui.Br("Brush.Muted"), Text = line, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center },
+            },
+        };
+        var scroll = new ScrollViewer { Content = grid, MaxHeight = 420, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
+        var panel = new Panel();
+        panel.Children.Add(scroll);
+        panel.Children.Add(empty);
+        return new OneLineHost(scroll, empty, panel);
+    }
+
+    private static StackPanel Strip(params Control[] actions)
+    {
+        var wrap = new WrapPanel { Orientation = Orientation.Horizontal };
+        foreach (var a in actions)
+        {
+            a.Margin = new(0, 0, 8, 0);
+            a.VerticalAlignment = VerticalAlignment.Center;
+            wrap.Children.Add(a);
+        }
+        return new StackPanel { Children = { wrap }, IsVisible = false };
+    }
 
     public PeopleView()
     {
@@ -30,34 +72,30 @@ public partial class PeopleView : UserControl
         var sp = new StackPanel { Margin = new(28, 24), Spacing = 12, MaxWidth = 1040, HorizontalAlignment = HorizontalAlignment.Left };
         sp.Children.Add(Ui.PageTitle(ViewModels.ShellPage.People, "The staff register and each person's Schedule 2/3 training position.", "Initial training is due within six months of first supply; refresher runs on the anniversary of the last completed training (initial or refresher). Acknowledgements are recorded per policy VERSION."));
 
-        sp.Children.Add(new TextBlock { Text = "Staff & S2/S3 training", Classes = { "h3" }, Margin = new(0, 8, 0, 0) });
         _staff.Columns.Add(new DataGridTextColumn { Header = "Name", Binding = new Avalonia.Data.Binding("Name"), Width = new DataGridLength(200) });
         _staff.Columns.Add(new DataGridTextColumn { Header = "Role", Binding = new Avalonia.Data.Binding("Role"), Width = new DataGridLength(150) });
         _staff.Columns.Add(new DataGridTextColumn { Header = "First supply", Binding = new Avalonia.Data.Binding("FirstSupply"), Width = new DataGridLength(110) });
         _staff.Columns.Add(new DataGridTextColumn { Header = "Initial status", Binding = new Avalonia.Data.Binding("InitialStatus"), Width = new DataGridLength(280) });
         _staff.Columns.Add(new DataGridTextColumn { Header = "Refresher status", Binding = new Avalonia.Data.Binding("RefresherStatus"), Width = new DataGridLength(300) });
         Ui.Ax(_staff, "Staff members", "Select a staff member to record training or acknowledgements");
-        _staffHost = Host(_staff, 220, "users", "No staff recorded", "Add the pharmacy team so each person's Schedule 2/3 training position can be tracked.", "Brush.Berry");
-        sp.Children.Add(_staffHost.Panel);
-        var row = Ui.Row(8,
-            PrimaryBtn("Add staff member…", "Add a staff member to the register (app users are managed elsewhere)",
-                async (_, _) => await AddStaffAsync()),
+        _staffHost = Host(_staff, "No staff recorded yet. Add staff member… starts the register.");
+        var staffStrip = Strip(
             Btn("Record training…", "Record Schedule 2/3 training for the selected staff member",
                 async (_, _) => await RecordTrainingAsync()));
-        sp.Children.Add(row);
+        _staff.SelectionChanged += (_, _) => staffStrip.IsVisible = _staff.SelectedItem is not null;
+        var staffTrailing = Btn("Add staff member…", "Add a staff member to the register (app users are managed elsewhere)",
+            async (_, _) => await AddStaffAsync());
+        sp.Children.Add(Ui.Section("Staff & S2/S3 training", Ui.Col(8, _staffHost.Panel, staffStrip), staffTrailing));
 
-        sp.Children.Add(new TextBlock { Text = "Policy acknowledgements", Classes = { "h3" }, Margin = new(0, 8, 0, 0) });
         _acks.Columns.Add(new DataGridTextColumn { Header = "Staff", Binding = new Avalonia.Data.Binding("Staff"), Width = new DataGridLength(200) });
         _acks.Columns.Add(new DataGridTextColumn { Header = "Policy", Binding = new Avalonia.Data.Binding("Policy"), Width = new DataGridLength(340) });
         _acks.Columns.Add(new DataGridTextColumn { Header = "Version", Binding = new Avalonia.Data.Binding("Version"), Width = new DataGridLength(120) });
         _acks.Columns.Add(new DataGridTextColumn { Header = "Acknowledged", Binding = new Avalonia.Data.Binding("On"), Width = new DataGridLength(140) });
         Ui.Ax(_acks, "Policy acknowledgements", "Version-tied acknowledgements of pharmacy policies");
-        _acksHost = Host(_acks, 180, "shield-check", "No acknowledgements recorded", "Record the policy and its version as each document is read and agreed.", "Brush.Berry");
-        sp.Children.Add(_acksHost.Panel);
-        var row2 = Ui.Row(8,
-            PrimaryBtn("Record acknowledgement…", "Record a version-tied policy acknowledgement for the selected staff member",
-                async (_, _) => await AckAsync()));
-        sp.Children.Add(row2);
+        _acksHost = Host(_acks, "No acknowledgements recorded. Record acknowledgement… ties each policy version to a person.");
+        var ackBtn = Btn("Record acknowledgement…", "Record a version-tied policy acknowledgement for the selected staff member",
+            async (_, _) => await AckAsync());
+        sp.Children.Add(Ui.Section("Policy acknowledgements", Ui.Col(8, _acksHost.Panel), ackBtn));
 
         sp.Children.Add(_resultBar);
         return new ScrollViewer { Content = sp };
@@ -109,7 +147,7 @@ public partial class PeopleView : UserControl
         var policy = await Dialogs.Prompt(this, "Record acknowledgement", "Policy name (e.g. QSPP Assessments Policy)");
         if (string.IsNullOrWhiteSpace(policy)) return;
         var version = await Dialogs.Prompt(this, "Record acknowledgement", "Policy version (from the document itself)");
-                if (string.IsNullOrWhiteSpace(version)) { _resultBar.Show(NoticeTone.Info, "The version matters — acknowledgement without a version can't be checked later."); return; }
+                if (string.IsNullOrWhiteSpace(version)) { _resultBar.Show(NoticeTone.Info, "The version matters; acknowledgement without a version can't be checked later."); return; }
         var res = App.Workspace.AcknowledgePolicy(row.Id, policy, version, null, App.Session!);
                 _resultBar.Show(res.Ok, "Acknowledgement recorded against that policy version.", res.Error);
         Load();

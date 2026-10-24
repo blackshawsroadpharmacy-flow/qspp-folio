@@ -31,7 +31,6 @@ public class TodayScreen
     private TextBlock _heroDaysWord = null!;
     private TextBlock _heroDateLine = null!;
     private TextBlock _heroTitle = null!;
-    private TextBlock _heroBody = null!;
     private TextBlock _heroProvenance = null!;
     private TextBlock _heroConsequence = null!;
     private Border _planTag = null!;
@@ -158,7 +157,6 @@ public class TodayScreen
 
         _heroDateLine = new TextBlock { Classes = { "heroDate" }, Margin = new(0, 14, 0, 0) };
         _heroTitle = new TextBlock { Classes = { "heroTitle" }, TextWrapping = TextWrapping.Wrap, Margin = new(0, 2, 0, 0) };
-        _heroBody = new TextBlock { Classes = { "heroMeta" }, TextWrapping = TextWrapping.Wrap };
 
         _run = new RunLine { Height = 26, Margin = new(0, 12, 4, 2) };   // labels under the line (3F #8)
 
@@ -181,7 +179,6 @@ public class TodayScreen
         body.Children.Add(numeralRow);
         body.Children.Add(_heroDateLine);
         body.Children.Add(_heroTitle);
-        body.Children.Add(_heroBody);
         body.Children.Add(_run);
         body.Children.Add(provRow);
         body.Children.Add(_heroConsequence);   // 3F #8: the consequence on its own line
@@ -251,10 +248,12 @@ public class TodayScreen
         _positionPanel = new StackPanel { Spacing = 0 };
         p.Children.Add(_positionPanel);
 
+
+
         p.Children.Add(new Border { Height = 1, Background = TodayInk.Br("Brush.Divider"), Margin = new(0, 14, 0, 12) });
         p.Children.Add(new TextBlock { Classes = { "eyebrow" }, Text = "SURVEILLANCE ROUND \u00B7 QCPP PORTAL" });
         _roundLead = new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap, Margin = new(0, 8, 0, 0) };
-        _roundBarHost = new Panel { Height = 3, Margin = new(0, 8, 0, 2) };
+        _roundBarHost = new Panel { Height = 6, Margin = new(0, 8, 0, 2) };
         _roundNext = new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap, Margin = new(0, 6, 0, 0) };
         p.Children.Add(_roundLead);
         p.Children.Add(BuildRoundLegend());
@@ -266,9 +265,6 @@ public class TodayScreen
     private static Control BuildRoundLegend()
     {
         var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, VerticalAlignment = VerticalAlignment.Center };
-        var green = TodayInk.Br("Brush.Green");
-        var tint = TodayInk.Br("Brush.SelBg");
-        var ink = TodayInk.Br("Brush.Ink");
         void Item(string text, IBrush chip)
         {
             row.Children.Add(new StackPanel
@@ -277,14 +273,16 @@ public class TodayScreen
                 Spacing = 5,
                 Children =
                 {
-                    new Border { Width = 12, Height = 3, CornerRadius = new(1), Background = chip, VerticalAlignment = VerticalAlignment.Center },
+                    // Same rounded 6pt cell as the bar segments (owner items 18/5): a status
+                    // hue that reads in dark mode instead of the near-invisible tint.
+                    new Border { Width = 12, Height = 6, CornerRadius = new(3), Background = chip, VerticalAlignment = VerticalAlignment.Center },
                     new TextBlock { Text = text, FontSize = 10.5, Foreground = TodayInk.Br("Brush.Muted"), VerticalAlignment = VerticalAlignment.Center },
                 },
             });
         }
-        Item("with evidence", green);
-        Item("awaiting evidence", tint);
-        Item("verified", ink);
+        Item("with evidence", TodayInk.Br("Brush.Green"));
+        Item("awaiting evidence", TodayInk.Br("Brush.Ochre"));
+        Item("verified", TodayInk.Br("Brush.Ink"));
         return row;
     }
 
@@ -464,9 +462,8 @@ public class TodayScreen
             };
             _heroDateLine.Text = vm.DeadlineFullDate;
             _heroTitle.Text = vm.DeadlineTitle;
-            _heroBody.Text = vm.DeadlineBody;
             _heroProvenance.Text = ProvenanceLine(f);   // 3F #8 display formatter
-            _heroConsequence.Text = f.Explanation;
+            _heroConsequence.Text = vm.DeadlineConsequence;
             _planTag.IsVisible = f.PlanningOnly;
             _afterLine.Text = vm.AfterThis;
             Ui.Ax(_heroFull, vm.HeroAutomationName, "Opens the Assessments page");
@@ -486,14 +483,15 @@ public class TodayScreen
         // Position rows
         _positionPanel.Children.Clear();
         foreach (var row in vm.Position)
-            _positionPanel.Children.Add(LeaderRow.Build(row.Label, row.Count, row.Command, row.Label == "Overdue tasks" && row.Count != "0"));
+            _positionPanel.Children.Add(LeaderRow.Build(row.Label, row.Count, row.Suffix, row.Command, row.CountBrush,
+                row.Label == "Overdue tasks" && row.Count != "0"));
         var (items, withEvidence, inProgress, verified) = vm.RoundCounts;
         _roundLead.Text = vm.RoundLead;
         _roundNext.Text = vm.RoundNextEvent;
         _roundBarHost.Children.Clear();
         var hasBar = items > 0;
         _roundBarHost.IsVisible = hasBar;   // 3F #8: no orphan dash when the round is empty
-        _roundBarHost.Height = hasBar ? 3 : 0;
+        _roundBarHost.Height = hasBar ? 6 : 0;
         _roundBarHost.Margin = hasBar ? new(0, 8, 0, 2) : new(0);
         if (hasBar) _roundBarHost.Children.Add(SegmentedBar.Build(items, withEvidence, inProgress, verified));
 

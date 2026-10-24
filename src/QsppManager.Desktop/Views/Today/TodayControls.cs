@@ -164,19 +164,24 @@ public class YearAheadStrip : Control
         }
 
         // Marks: shape encodes category, colour secondary; the featured deadline is a tall bar.
-        // 3F #8: a LONE mark gets a text label so it never floats unexplained.
+        // Owner item 19: the lone mark gets a short CHIP beside it on Paper ("30 Jun · PPA
+        // certificate") instead of a sentence crossing the month gridlines.
         var loneMark = Marks.Count == 1 ? Marks[0] : null;
         foreach (var mark in Marks)
         {
+            var (x, y) = MarkPoint(mark);
             if (loneMark == mark)
             {
-                var loneFt = new FormattedText(mark.Tooltip, au, FlowDirection.LeftToRight,
-                    new Typeface(new FontFamily(Ui.FontFamilies.Ui)), 10, muted);
-                var (lx, ly) = MarkPoint(mark);
-                var lxClamped = lx + 8 + loneFt.Width <= Bounds.Width ? lx + 8 : Math.Max(2, lx - 8 - loneFt.Width);
-                ctx.DrawText(loneFt, new(lxClamped, ly + 14));
+                var chipText = mark.Chip.Length > 0 ? mark.Chip : mark.Tooltip;
+                var chipFt = new FormattedText(chipText, au, FlowDirection.LeftToRight,
+                    new Typeface(new FontFamily(Ui.FontFamilies.Ui)), 10, ink);
+                const double chipPadX = 7, chipPadY = 3;
+                var chipW = chipFt.Width + chipPadX * 2;
+                var chipX = x + 8 + chipW <= Bounds.Width ? x + 8 : Math.Max(2, x - 8 - chipW);
+                var chipY = y + 16;
+                ctx.DrawRectangle(TodayInk.Br("Brush.Paper").ToImmutable(), hairline, new Rect(chipX, chipY, chipW, chipFt.Height + chipPadY * 2), 4, 4);
+                ctx.DrawText(chipFt, new(chipX + chipPadX, chipY + chipPadY));
             }
-            var (x, y) = MarkPoint(mark);
             var b = mark.Tall ? 34 : 12;
             if (mark.Shape == "bar")
                 ctx.DrawRectangle(ink, null, new Rect(x - 1.5, y, 3, b));
@@ -219,24 +224,28 @@ public class YearAheadStrip : Control
     }
 }
 
-/// <summary>Segmented 1px bar for portal request counts (surveillance round). Each segment
-/// also labelled in words beside the bar and in the row lead.</summary>
+/// <summary>Owner item 18: the surveillance round draws an actual segmented bar — rounded
+/// cells in STATUS hues (green = with evidence, ochre = awaiting evidence/in progress, ink =
+/// verified) — and the legend swatches use those exact hues, so "awaiting evidence" stops
+/// being an invisible tint (owner item 5 too). No orphan dash: zero-height when the round
+/// is empty (3F #8).</summary>
 public static class SegmentedBar
 {
     public static Control Build(int items, int withEvidence, int inProgress, int verified)
     {
-        var bar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Height = 1, VerticalAlignment = VerticalAlignment.Center };
+        var bar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Height = 6, VerticalAlignment = VerticalAlignment.Center };
         var total = Math.Max(1, items);
         var green = TodayInk.Br("Brush.Green").ToImmutable();
-        var tint = TodayInk.Br("Brush.SelBg").ToImmutable();
-        void Add(int count, bool filled)
+        var ochre = TodayInk.Br("Brush.Ochre").ToImmutable();
+        var ink = TodayInk.Br("Brush.Ink").ToImmutable();
+        void Add(int count, IBrush chip)
         {
             if (count <= 0) return;
-            bar.Children.Add(new Border { Width = 26.0 * count / total, Height = 1, Background = filled ? green : tint });
+            bar.Children.Add(new Border { Width = 26.0 * count / total, Height = 6, CornerRadius = new(3), Background = chip });
         }
-        Add(withEvidence, true);
-        Add(inProgress, false);
-        Add(verified, false);
+        Add(withEvidence, green);    // attached
+        Add(inProgress, ochre);      // awaiting evidence / in progress
+        Add(verified, ink);          // verified
         var wrap = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, VerticalAlignment = VerticalAlignment.Center };
         wrap.Children.Add(bar);
         return wrap;
@@ -248,7 +257,14 @@ public static class SegmentedBar
 /// one button that opens the filtered records.</summary>
 public static class LeaderRow
 {
-    public static Control Build(string label, string count, System.Windows.Input.ICommand command, bool emphasized = false)
+    /// <summary>Leader-dot ledger row factory (the accreditation position block, owner item
+    /// 16). Label left in 14pt, a hairline running out to the count, the count right-aligned
+    /// in exactly the Assessments stat style (bundled Newsreader via the `stat` class). A
+    /// small suffix ("of 470") rides the same baseline, and the figure takes the row's status
+    /// hue or muted when quiet (3D #7). The `ledger` class must keep Height unset: the global
+    /// Button style pins Height 26, which sheared the top off the 28pt lining figures
+    /// (rendered "U"/"()" forms until the override existed).</summary>
+    public static Control Build(string label, string count, string suffix, System.Windows.Input.ICommand command, string brushKey, bool emphasized = false)
     {
         var b = new Button
         {
@@ -257,10 +273,9 @@ public static class LeaderRow
             Background = null,
             BorderThickness = new(0),
             CornerRadius = new(4),
-            Height = 34,
         };
         b.Classes.Add("ledger");
-        var grid = new Avalonia.Controls.Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"), VerticalAlignment = VerticalAlignment.Center };
+        var grid = new Avalonia.Controls.Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto,Auto"), VerticalAlignment = VerticalAlignment.Center };
         var lbl = new TextBlock { Text = label, FontSize = 14, VerticalAlignment = VerticalAlignment.Center };
         if (emphasized) lbl.FontWeight = FontWeight.Medium;
         grid.Children.Add(lbl);
@@ -269,11 +284,18 @@ public static class LeaderRow
         grid.Children.Add(dots);
         var cnt = new TextBlock
         {
-            Text = count, FontSize = 17, TextAlignment = TextAlignment.Right,
+            Classes = { "stat" },
+            Text = count, Foreground = TodayInk.Br(brushKey),
+            TextAlignment = TextAlignment.Right, VerticalAlignment = VerticalAlignment.Center,
         };
-        cnt.FontFamily = new FontFamily(Ui.FontFamilies.Serif);
         Avalonia.Controls.Grid.SetColumn(cnt, 2);
         grid.Children.Add(cnt);
+        if (suffix.Length > 0)
+        {
+            var suf = new TextBlock { Classes = { "small" }, Text = suffix, Foreground = TodayInk.Br("Brush.Muted"), VerticalAlignment = VerticalAlignment.Bottom, Margin = new(5, 0, 0, 2) };
+            Avalonia.Controls.Grid.SetColumn(suf, 3);
+            grid.Children.Add(suf);
+        }
         b.Content = grid;
         b.Command = command;
         Ui.Ax(b, label);

@@ -67,7 +67,6 @@
                                 AutomationProperties.AutomationId="NavItem">
                           <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
                             <local:LucideGlyph Glyph="{Binding Icon}" GlyphSize="16"
-                                               GlyphBrush="{DynamicResource Brush.Ink}"
                                                StrokeThickness="1.5"/>
                             <TextBlock Grid.Column="1" Text="{Binding Label}"
                                        VerticalAlignment="Center"
@@ -104,7 +103,6 @@
                   AutomationProperties.AutomationId="NavSettings">
             <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
               <local:LucideGlyph Glyph="settings" GlyphSize="16"
-                                 GlyphBrush="{DynamicResource Brush.Ink}"
                                  StrokeThickness="1.5"/>
               <TextBlock Grid.Column="1" Text="Settings" VerticalAlignment="Center"
                          IsVisible="{Binding SidebarExpanded}"/>

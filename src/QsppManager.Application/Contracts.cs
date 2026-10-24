@@ -33,7 +33,8 @@ public record RequirementRow(
     string DisplayTitleText,
     string Area,
     string KindLabel,
-    string DomainLabel);
+    string DomainLabel,
+    string AreaHueKey);
 
 public record RequirementDetail(
     Requirement Requirement,
@@ -76,7 +77,7 @@ public record TodayBriefing(
     int RequirementsNotStarted,
     List<AuditEvent> RecentWork);
 
-public record SearchResultRow(string Kind, string Title, string Excerpt, Guid Id, string Meta);
+public record SearchResultRow(string Kind, string Title, string Excerpt, Guid Id, string Meta, string RefCode = "");
 
 /// <summary>Real counts powering the guided journey — never percentages presented as progress.</summary>
 public record JourneySnapshot(

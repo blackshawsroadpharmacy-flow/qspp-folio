@@ -32,20 +32,22 @@ public interface IPagePrintRequest { void OpenPrintRequest(); }
 /// pages on Helpers.ThemeChanged.</summary>
 public static class Ui
 {
-    /// <summary>ShellPage → (eyebrow, icon, hue-name) per the v2 destination table (3D).</summary>
+    /// <summary>ShellPage → (sidebar group, icon, hue-name) per the v2 destination table (3D).
+    /// The eyebrow is the SIDEBAR GROUP (Prepare / Operate / Assess) so the two always name
+    /// the same thing; Settings carries no eyebrow (owner brief item 2).</summary>
     public static readonly System.Collections.Generic.Dictionary<ViewModels.ShellPage, (string Eyebrow, string Icon, string HueBrush, string TileBrush)> HueTable =
         new()
         {
-            { ViewModels.ShellPage.Today,       ("Focus",    "house",          "Brush.Ochre",    "Brush.OchreTint"    ) },
+            { ViewModels.ShellPage.Today,       ("Prepare",  "house",          "Brush.Ochre",    "Brush.OchreTint"    ) },
             { ViewModels.ShellPage.Requirements,("Prepare",  "list-checks",    "Brush.Green",    "Brush.SelBg"        ) },
-            { ViewModels.ShellPage.Documents,   ("Evidence", "files",          "Brush.Teal",     "Brush.TealTint"     ) },
-            { ViewModels.ShellPage.Tasks,       ("Plan",     "calendar-days",  "Brush.Clay",     "Brush.ClayTint"     ) },
-            { ViewModels.ShellPage.Registers,   ("Govern",   "clipboard-list", "Brush.Umber",    "Brush.UmberTint"    ) },
-            { ViewModels.ShellPage.People,      ("People",   "users",      "Brush.Berry",    "Brush.BerryTint"    ) },
+            { ViewModels.ShellPage.Documents,   ("Prepare",  "files",          "Brush.Teal",     "Brush.TealTint"     ) },
+            { ViewModels.ShellPage.Tasks,       ("Prepare",  "calendar-days",  "Brush.Clay",     "Brush.ClayTint"     ) },
+            { ViewModels.ShellPage.Registers,   ("Operate",  "clipboard-list", "Brush.Umber",    "Brush.UmberTint"    ) },
+            { ViewModels.ShellPage.People,      ("Operate",  "users",      "Brush.Berry",    "Brush.BerryTint"    ) },
             { ViewModels.ShellPage.Assessments, ("Assess",   "clipboard-check", "Brush.Violet", "Brush.VioletTint") },
-            { ViewModels.ShellPage.Library,     ("Library",  "book-open",  "Brush.Ink",      "Brush.SelBg"        ) },
-            { ViewModels.ShellPage.PrintCentre, ("Print",    "printer",    "Brush.Stone",    "Brush.StoneTint"    ) },
-            { ViewModels.ShellPage.Settings,    ("Setup",    "settings",   "Brush.Stone",    "Brush.StoneTint"    ) },
+            { ViewModels.ShellPage.Library,     ("Assess",   "book-open",  "Brush.Ink",      "Brush.SelBg"        ) },
+            { ViewModels.ShellPage.PrintCentre, ("Operate",  "printer",    "Brush.Stone",    "Brush.StoneTint"    ) },
+            { ViewModels.ShellPage.Settings,    ("",         "settings",   "Brush.Stone",    "Brush.StoneTint"    ) },
         };
 
     /// <summary>Standard page header for a destination: hue tile + eyebrow above the serif
@@ -82,61 +84,48 @@ public static class Ui
     public static Control Footnote(string t) => new TextBlock { Classes = { "footnote" }, Text = t };
 
     // ---------- page header (premium-polish 3.9) ----------
-    /// <summary>Page header v2 (3D #2): 32pt rounded tile with the destination icon in its
-    /// hue, the page eyebrow in the hue above the serif title, then one short callout lead
-    /// (90 characters at most) and the ⓘ popover. One tile per page (v2 brief).</summary>
+    /// <summary>Page header v3 (owner brief items 1-2): the 20pt hue tile sits INLINE at the
+    /// start of the eyebrow row (12pt icon), followed by the sidebar-group eyebrow in the hue
+    /// and the ⓘ popover — the serif title, lead and all page content then share ONE left
+    /// edge (the old tile-left layout gave the page two left edges).</summary>
     public static Control PageHeader(string title, string lead, string? explainer = null,
         ViewModels.ShellPage? page = null)
     {
         var spage = page ?? default;
         var hasTile = page is { } p2 && HueTable.ContainsKey(p2);
-        var row = new AvaloniaGrid
-        {
-            ColumnDefinitions = new ColumnDefinitions(hasTile ? "Auto,*,Auto" : "*,Auto"),
-            ColumnSpacing = 12,
-        };
-        var textCol = new StackPanel { Spacing = 6 };
-        Control? infoButton = null;   // built later when an explainer exists
+        var col = new StackPanel { Spacing = 6 };
+        Control? infoButton = null;
         if (hasTile)
         {
-            // Destination tile + hue eyebrow (3D places 1-2), one tile per page.
             var h = HueTable[spage];
-            var eyebrowRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-            var eyebrow = new TextBlock
+            var eyebrowRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, VerticalAlignment = VerticalAlignment.Center };
+            var tile = new Border
             {
-                Classes = { "eyebrow" },
-                Text = h.Eyebrow.ToUpperInvariant(),
-                Foreground = Br(h.HueBrush),
+                Width = 20, Height = 20, CornerRadius = new(6),
+                Background = Br(h.TileBrush),
+                Child = Lucide(h.Icon, 12, Br(h.HueBrush), center: true),
                 VerticalAlignment = VerticalAlignment.Center,
             };
-            eyebrowRow.Children.Add(eyebrow);
+            eyebrowRow.Children.Add(tile);
+            if (h.Eyebrow.Length > 0)
+                eyebrowRow.Children.Add(new TextBlock
+                {
+                    Classes = { "eyebrow" },
+                    Text = h.Eyebrow.ToUpperInvariant(),
+                    Foreground = Br(h.HueBrush),
+                    VerticalAlignment = VerticalAlignment.Center,
+                });
             infoButton = new Button
             {
                 Classes = { "ghost" }, Width = 22, Height = 22, Padding = new(0),
-                VerticalAlignment = VerticalAlignment.Center, Margin = new(0, 2, 0, 0),
+                VerticalAlignment = VerticalAlignment.Center, Margin = new(0, 1, 0, 0),
             };
             eyebrowRow.Children.Add(infoButton);
-            textCol.Children.Add(eyebrowRow);
+            col.Children.Add(eyebrowRow);
         }
-        textCol.Children.Add(new TextBlock { Classes = { "titleLarge" }, Text = title });
+        col.Children.Add(new TextBlock { Classes = { "titleLarge" }, Text = title });
         if (!string.IsNullOrWhiteSpace(lead))
-            textCol.Children.Add(new TextBlock { Classes = { "callout" }, Text = lead, TextWrapping = TextWrapping.Wrap });
-        var textColumn = hasTile ? 1 : 0;
-        AvaloniaGrid.SetColumn(textCol, textColumn);
-        row.Children.Add(textCol);
-        if (hasTile)
-        {
-            var h = HueTable[spage];
-            var tile = new Border
-            {
-                Width = 32, Height = 32, CornerRadius = new(8),
-                Background = Br(h.TileBrush),
-                Child = Lucide(h.Icon, 16, Br(h.HueBrush), center: true),
-                VerticalAlignment = VerticalAlignment.Top,
-            };
-            AvaloniaGrid.SetColumn(tile, 0);
-            row.Children.Insert(0, tile);
-        }
+            col.Children.Add(new TextBlock { Classes = { "callout" }, Text = lead, TextWrapping = TextWrapping.Wrap });
 
         if (!string.IsNullOrWhiteSpace(explainer))
         {
@@ -166,13 +155,70 @@ public static class Ui
             button.Click += (_, _) => { if (popup is { } p) p.IsOpen = !p.IsOpen; };
             if (infoButton is null)
             {
-                // No tile: ⓘ rides the trailing grid column after the title text.
-                AvaloniaGrid.SetColumn(button, 1);
-                row.Children.Add(button);
+                // No tile: ⓘ rides its own quiet row above the title so the left edge stays put.
+                var infoRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+                infoRow.Children.Add(button);
+                ((StackPanel)col).Children.Insert(0, infoRow);
             }
-            // With a tile the ⓘ already sits beside the eyebrow; nothing else to do.
         }
-        return row;
+        return col;
+    }
+
+    // ---------- text disclosure (owner item 11 / plan §5) ----------
+    /// <summary>A text disclosure like macOS list rows: a quiet text button with a chevron
+    /// that reveals its content inline. No expander box, nothing that looks like a
+    /// combobox. Source details, Recent activity and collapsed corpus links use it.</summary>
+    public static Control TextDisclosure(string header, Control content, bool startOpen = false)
+    {
+        var toggle = new Button
+        {
+            Classes = { "ghost" }, Padding = new(0), Height = 24,
+            HorizontalAlignment = HorizontalAlignment.Left,
+        };
+        var label = new TextBlock
+        {
+            Classes = { "small" }, Text = header,
+            Foreground = Br("Brush.Muted"), VerticalAlignment = VerticalAlignment.Center,
+        };
+        var chevron = new Avalonia.Controls.Shapes.Path
+        {
+            Stroke = Br("Brush.Muted"), StrokeThickness = 1.5,
+            Data = Avalonia.Media.Geometry.Parse("M 4,7 L 8,11 L 12,7"),
+            Width = 14, Height = 12, VerticalAlignment = VerticalAlignment.Center,
+        };
+        void Sync()
+        {
+            // Open points down (the row reads "open to more"); closed points up — the
+            // Today activity disclosure used the same convention first.
+            chevron.Data = content.IsVisible
+                ? Avalonia.Media.Geometry.Parse("M 4,7 L 8,11 L 12,7")
+                : Avalonia.Media.Geometry.Parse("M 4,11 L 8,7 L 12,11");
+            toggle.Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 5, Children = { label, chevron } };
+        }
+        toggle.Click += (_, _) => { content.IsVisible = !content.IsVisible; Sync(); };
+        content.IsVisible = startOpen;
+        Sync();
+        return new StackPanel { Spacing = 4, Children = { toggle, content } };
+    }
+
+    // ---------- ref-trailing requirement label (owner item 15) ----------
+    /// <summary>Picker-style requirement label: the display title first, the code trailing
+    /// in muted mono. No visible label starts with a code. PrintCentre picker uses it.</summary>
+    public static Control RequirementLabel(string title, string code)
+    {
+        var sp = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+        sp.Children.Add(new TextBlock
+        {
+            Text = title, TextTrimming = TextTrimming.CharacterEllipsis,
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        if (!string.IsNullOrEmpty(code))
+            sp.Children.Add(new TextBlock
+            {
+                Text = code, Classes = { "monoSm" }, Foreground = Br("Brush.Muted"),
+                VerticalAlignment = VerticalAlignment.Center,
+            });
+        return sp;
     }
 
     // ---------- quiet ⓘ popover (PageHeader pattern, extracted) ----------

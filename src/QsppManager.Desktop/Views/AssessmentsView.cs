@@ -19,7 +19,7 @@ public partial class AssessmentsView : UserControl
     public AssessmentsView(ShellViewModel shell)
     {
         var sp = new StackPanel { Margin = new(32, 28), Spacing = 14, MaxWidth = 1040, HorizontalAlignment = HorizontalAlignment.Left };
-        sp.Children.Add(Ui.PageTitle(ViewModels.ShellPage.Assessments, "The preparation journey from first reading to the cycle's end.", "QSPP accreditation is awarded by the Guild's assessment process — this screen helps you arrive ready and keep the records that show it. Counts are live database values; what to do next is stated plainly."));
+        sp.Children.Add(Ui.PageTitle(ViewModels.ShellPage.Assessments, "The preparation journey from first reading to the cycle's end.", "QSPP accreditation is awarded by the Guild's assessment process; this screen helps you arrive ready and keep the records that show it. Counts are live database values; what to do next is stated plainly."));
         sp.Children.Add(_resultBar);
 
         Refresh(sp, shell);
@@ -32,7 +32,7 @@ public partial class AssessmentsView : UserControl
     {
         var body = new StackPanel { Spacing = 10 };
         body.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
-            Text = "Record each planned assessment and the outcome when it actually arrives — an outcome can never be marked received without the report or letter reference. Findings carry corrective actions; a finding cannot close empty." });
+            Text = "Record each planned assessment and the outcome when it actually arrives; an outcome can never be marked received without the report or letter reference. Findings carry corrective actions; a finding cannot close empty." });
         _events.Columns.Add(Ui.Col("Kind", "Kind", 130));
         _events.Columns.Add(Ui.Col("Date", "Date", 110));
         _events.Columns.Add(Ui.Col("State", "State", 140));
@@ -65,7 +65,7 @@ public partial class AssessmentsView : UserControl
                                 if (_events.SelectedItem is not EvRow r) { _resultBar.Show(NoticeTone.Info, "Select an event first."); return; }
                 var refText = await Dialogs.Prompt(this, "Outcome received", "Report or letter reference (required)");
                 var res = App.Workspace.SetAssessmentEventState(r.Id, "OutcomeReceived", refText ?? "", App.Session!);
-                                _resultBar.Show(res.Ok, "Outcome recorded with its reference — the closure evidence the program expects.", res.Error);
+                                _resultBar.Show(res.Ok, "Outcome recorded with its reference, the closure evidence the program expects.", res.Error);
                 LoadEvents();
             }));
         body.Children.Add(evRow);
@@ -85,9 +85,9 @@ public partial class AssessmentsView : UserControl
                 var desc = await Dialogs.Prompt(this, "Record finding", "What was found");
                 if (string.IsNullOrWhiteSpace(desc)) return;
                 var reqRef = await Dialogs.Prompt(this, "Record finding", "Related requirement ref (optional, e.g. 2.2.3.8)") ?? "";
-                var sev = await Dialogs.Prompt(this, "Record finding", "Severity (free text — the program defines no taxonomy)") ?? "";
+                var sev = await Dialogs.Prompt(this, "Record finding", "Severity (free text; the program defines no taxonomy)") ?? "";
                 var res = App.Workspace.AddFinding(ev.Id, reqRef, desc, sev, App.Session!.UserId, App.Session);
-                                _resultBar.Show(res.Ok, "Finding recorded — it stays open until a corrective action closes it.", res.Error);
+                                _resultBar.Show(res.Ok, "Finding recorded; it stays open until a corrective action closes it.", res.Error);
                 LoadEvents();
             }),
             Ui.Btn("Close finding…").With(b => b.Click += async (_, _) =>
@@ -104,7 +104,7 @@ public partial class AssessmentsView : UserControl
         // ---- assessor pack ----
         var pack = new StackPanel { Spacing = 10 };
         pack.Children.Add(new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap,
-            Text = "One checklist per manager-verified/applicable requirement plus the verified evidence that passes the redaction review, with a tamper-evident manifest (per-file sha256). Patient-data evidence without a redaction attestation is excluded and the exclusion is recorded in the manifest — decide with the manager whether to redact and re-import instead." });
+            Text = "One checklist per manager-verified/applicable requirement plus the verified evidence that passes the redaction review, with a tamper-evident manifest (per-file sha256). Patient-data evidence without a redaction attestation is excluded and the exclusion is recorded in the manifest; decide with the manager whether to redact and re-import instead." });
         pack.Children.Add(Ui.PrimaryBtn("Export assessor pack…", minWidth: 200).With(b => b.Click += async (_, _) =>
         {
             var label = await Dialogs.Prompt(this, "Assessor pack", "Label for this export (optional)") ?? "";
@@ -157,12 +157,12 @@ public partial class AssessmentsView : UserControl
 
         Phase(sp, shell, 1, "Understand the program", j.RequirementsTotal > 0,
             $"The corpus holds {j.RequirementsTotal} verified records from the Standard, UAG, Program Rules, T&Cs, policies and the readiness hitlist. {j.TotalIssues} interpretation questions are tracked; {j.UnresolvedIssues} remain open and {j.AcknowledgedIssues} are acknowledged.",
-            "Read the Knowledge Hub and the UAG. Where sources disagree, the app uses the conservative reading for planning — settle them in the Library with a recorded resolution.",
+            "Read the Knowledge Hub and the UAG. Where sources disagree, the app uses the conservative reading for planning; settle them in the Library with a recorded resolution.",
             ("Open Library", ShellPage.Library));
 
         Phase(sp, shell, 2, "Decide applicability", j.ApplicabilityDecided >= j.RequirementsTotal,
             $"{j.ApplicabilityDecided} of {j.RequirementsTotal} requirements have a recorded applicability decision (with the reason you gave).",
-            "Work through Requirements and set Applicable / Not applicable with a reason for each — future staff and assessors will rely on it.",
+            "Work through Requirements and set Applicable / Not applicable with a reason for each; future staff and assessors will rely on it.",
             ("Open Requirements", ShellPage.Requirements));
 
         Phase(sp, shell, 3, "Assign owners", j.OwnedCount >= j.ApplicabilityDecided && j.ApplicabilityDecided > 0,
@@ -171,7 +171,7 @@ public partial class AssessmentsView : UserControl
             ("Open Requirements", ShellPage.Requirements));
 
         Phase(sp, shell, 4, "Gather evidence", j.ManagerVerified > 0 && j.EvidenceAwaitingReview == 0,
-            $"{j.RequirementsWithEvidence} requirements currently have at least one active or proposed evidence link. {j.EvidenceAwaitingReview} evidence items are waiting for review — manager verification is what activates links.",
+            $"{j.RequirementsWithEvidence} requirements currently have at least one active or proposed evidence link. {j.EvidenceAwaitingReview} evidence items are waiting for review; manager verification is what activates links.",
             "Attach documents in Evidence & documents, link each to the requirement it supports, and let the manager verify them.",
             ("Open Evidence & documents", ShellPage.Documents));
 
@@ -182,7 +182,7 @@ public partial class AssessmentsView : UserControl
 
         if (noOnsite)
             Phase(sp, shell, 6, "Book the onsite assessment", false,
-                "No assessment date recorded yet. Book with the assessment services provider (EY), then record the date under Settings — the app derives the conservative cancellation cutoff (10 business days, planning-only while the sources disagree).",
+                "No assessment date recorded yet. Book with the assessment services provider (EY), then record the date under Settings; the app derives the conservative cancellation cutoff (10 business days, planning-only while the sources disagree).",
                 "After booking, enter the date in Settings; deadlines appears on Today immediately.",
                 ("Open Settings", ShellPage.Settings));
         else
@@ -203,7 +203,7 @@ public partial class AssessmentsView : UserControl
                 ("Open Today", ShellPage.Today));
 
         sp.Children.Add(new TextBlock { Classes = { "small" }, Margin = new(0, 8, 0, 0), TextWrapping = TextWrapping.Wrap,
-            Text = "Counts are live database queries — they never claim more than recorded, and the app never claims to award accreditation." });
+            Text = "Counts are live database queries; they never claim more than recorded, and the app never claims to award accreditation." });
     }
 
     /// <summary>Stat count for the metrics row (3C stat + 3D #7 meaning hue; "none" mutes).</summary>
@@ -275,12 +275,27 @@ public partial class AssessmentsView : UserControl
 
         var fact = new TextBlock { Text = status, TextWrapping = TextWrapping.Wrap, Classes = { "body" } };
         var adviceText = new TextBlock { Text = advice, TextWrapping = TextWrapping.Wrap, Classes = { "callout" }, IsVisible = false };
+        // Owner brief: the repeated "More" links become a chevron on each row (same
+        // convention as Ui.TextDisclosure — open points down, closed points up).
+        var chev = new Avalonia.Controls.Shapes.Path
+        {
+            Stroke = Ui.Br("Brush.Muted"), StrokeThickness = 1.5,
+            Data = Avalonia.Media.Geometry.Parse("M 4,11 L 8,7 L 12,11"),
+            Width = 14, Height = 12, VerticalAlignment = VerticalAlignment.Center,
+        };
         var more = new Avalonia.Controls.Button
         {
-            Classes = { "ghost" }, Padding = new(0), Height = 20,
-            Content = new TextBlock { Text = "More", Classes = { "callout" }, Foreground = Ui.Br("Brush.Green") },
+            Classes = { "ghost" }, Padding = new(0), Height = 22,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Content = chev,
         };
-        more.Click += (_, _) => adviceText.IsVisible = !adviceText.IsVisible;
+        more.Click += (_, _) =>
+        {
+            adviceText.IsVisible = !adviceText.IsVisible;
+            chev.Data = adviceText.IsVisible
+                ? Avalonia.Media.Geometry.Parse("M 4,7 L 8,11 L 12,7")
+                : Avalonia.Media.Geometry.Parse("M 4,11 L 8,7 L 12,11");
+        };
         var link = new Avalonia.Controls.Button
         {
             Classes = { "ghost" }, Padding = new(0), Height = 24,

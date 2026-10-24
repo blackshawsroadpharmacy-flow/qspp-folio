@@ -45,11 +45,11 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
         foreach (var x in q)
         {
             var t = titles[x.r.Id.ToString()];
-            if (x.state == null) rows.Add(new RequirementRow(x.r.Id, x.r.RefKind, x.r.Ref, x.r.Title, x.r.Domain, Applicability.Unknown, RequirementReadiness.NotStarted, "", true, "", x.EvidenceCount, x.OpenTasks, t.Title, t.Area, t.KindLabel, t.DomainLabel));
+            if (x.state == null) rows.Add(new RequirementRow(x.r.Id, x.r.RefKind, x.r.Ref, x.r.Title, x.r.Domain, Applicability.Unknown, RequirementReadiness.NotStarted, "", true, "", x.EvidenceCount, x.OpenTasks, t.Title, t.Area, t.KindLabel, t.DomainLabel, t.AreaHueKey));
             else rows.Add(new RequirementRow(x.r.Id, x.r.RefKind, x.r.Ref, x.r.Title, x.r.Domain,
                 x.state.Applicability, x.state.Readiness,
                 x.state.OwnerUnassigned ? "" : users.GetValueOrDefault(x.state.OwnerUserId, "(unknown)"),
-                x.state.OwnerUnassigned, x.state.NextAction, x.EvidenceCount, x.OpenTasks, t.Title, t.Area, t.KindLabel, t.DomainLabel));
+                x.state.OwnerUnassigned, x.state.NextAction, x.EvidenceCount, x.OpenTasks, t.Title, t.Area, t.KindLabel, t.DomainLabel, t.AreaHueKey));
         }
         _ = session; // reviewer read-only still sees the tree; restricted content filters arrive in M4
         return rows;

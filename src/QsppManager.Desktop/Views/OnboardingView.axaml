@@ -21,7 +21,7 @@
               <ComboBoxItem>SA · Australia/Adelaide</ComboBoxItem>
             </ComboBox>
           </StackPanel>
-          <TextBlock Classes="small" Text="Accreditation dates can stay unknown — decide later; the program will create a follow-up task instead of guessing." TextWrapping="Wrap" />
+          <TextBlock Classes="small" Text="Accreditation dates can stay unknown, decide later; the program will create a follow-up task instead of guessing." TextWrapping="Wrap" />
         </StackPanel>
       </Border>
       <Border Classes="card" Margin="0,6,0,0" Padding="20">
