@@ -6,7 +6,7 @@
              xmlns:local="clr-namespace:QsppManager.Desktop"
              mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="800"
              x:Class="QsppManager.Desktop.MainWindow"
-             Title="QSPP Manager"
+             Title="QSPP Folio"
              Width="1280" Height="800" MinWidth="940" MinHeight="580"
              ExtendClientAreaToDecorationsHint="True"
              ExtendClientAreaTitleBarHeightHint="-1"
@@ -38,10 +38,10 @@
       <!-- One window, one surface: opaque sidebar paper; no acrylic (3.1). -->
       <Grid RowDefinitions="Auto,*,Auto">
         <StackPanel x:Name="SidebarHeader" Margin="18,40,16,4" Height="54" IsVisible="{Binding SidebarExpanded}">
-          <!-- 3F #2: identical block everywhere — up to two lines, then 'QSPP Manager' underneath. -->
+          <!-- 3F #2: identical block everywhere — up to two lines, then 'QSPP Folio' underneath. -->
           <TextBlock Classes="headline" Text="{Binding PharmacyName}" TextWrapping="Wrap" MaxLines="2"
                      VerticalAlignment="Top"/>
-          <TextBlock Classes="footnote" Text="QSPP Manager"/>
+          <TextBlock Classes="footnote" Text="QSPP Folio"/>
         </StackPanel>
 
         <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Disabled">   <!-- 3F #2: Disabled, not Hidden — Hidden grants infinite width, so the header name never wraps -->

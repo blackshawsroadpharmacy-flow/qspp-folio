@@ -48,7 +48,7 @@ public partial class App : Avalonia.Application
             // XAML attachment is ignored by the 12.1.4 mac exporter while a window-level
             // NativeMenu is present, so build the app menu in code BEFORE platform setup.
             var menu = new NativeMenu();
-            menu.Items.Add(WithGesture("About QSPP Manager", null, MenuAbout));
+            menu.Items.Add(WithGesture("About QSPP Folio", null, MenuAbout));
             menu.Items.Add(new NativeMenuItemSeparator());
             menu.Items.Add(WithGesture("Settings…", new Avalonia.Input.KeyGesture(Avalonia.Input.Key.OemComma, Avalonia.Input.KeyModifiers.Meta), MenuSettings));
             // Hide/Show All/Quit are appended automatically by Avalonia's standard app-menu block.
@@ -253,7 +253,7 @@ public partial class App : Avalonia.Application
             }
 
             // 3F #2: identical header block on the code-built window — two lines, untrimmed
-            // (Avalonia renders trimming as one line), then 'QSPP Manager' beneath, fixed height.
+            // (Avalonia renders trimming as one line), then 'QSPP Folio' beneath, fixed height.
             var sidebarHeader = new StackPanel { Margin = new(18, 40, 16, 4), Height = 54 };
             sidebarHeader.Children.Add(new TextBlock
             {
@@ -261,7 +261,7 @@ public partial class App : Avalonia.Application
                 TextWrapping = TextWrapping.Wrap, MaxLines = 2,
                 VerticalAlignment = VerticalAlignment.Top,
             });
-            sidebarHeader.Children.Add(new TextBlock { Classes = { "footnote" }, Text = "QSPP Manager" });
+            sidebarHeader.Children.Add(new TextBlock { Classes = { "footnote" }, Text = "QSPP Folio" });
 
             var groupPanel = new StackPanel { Margin = new(8, 6, 8, 8) };
             foreach (var group in shell.NavGroups)

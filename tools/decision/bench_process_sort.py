@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stage-2 accuracy harness for the QSPP Manager 'Process and Sort' pipeline.
+"""Stage-2 accuracy harness for the QSPP Folio 'Process and Sort' pipeline.
 
 Runs the PINNED local checkpoint (laya-typed-decisions via laya-apple serve on
 loopback:8642) over labeled pharmacy-document cases adapted from the app's test

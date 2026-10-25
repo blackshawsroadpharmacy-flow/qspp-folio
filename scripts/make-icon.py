@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the Hugh's QSPP Manager macOS app icon from the client avatar logo.
+"""Generate the Hugh's QSPP Folio macOS app icon from the client avatar logo.
 
 Deep-green rounded square (brand #23614D) with the pharmacist avatar in a
 cream disc — the avatar's green shirt sits nearly on the brand tone, so the

@@ -10,7 +10,7 @@
             <Image Source="avares://QsppManager.Desktop/Assets/Art/QsppManager-1024.png" Stretch="UniformToFill" />
           </Border>
           <StackPanel VerticalAlignment="Center" Spacing="1">
-            <TextBlock Classes="h2" FontSize="20">QSPP Manager</TextBlock>
+            <TextBlock Classes="h2" FontSize="20">QSPP Folio</TextBlock>
             <TextBlock x:Name="PharmacyLine" Classes="small" Text="" />
           </StackPanel>
         </StackPanel>

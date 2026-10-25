@@ -300,7 +300,7 @@ public partial class SettingsView : UserControl
         if (tl == null) return;
         var files = await tl.StorageProvider.OpenFilePickerAsync(new Avalonia.Platform.Storage.FilePickerOpenOptions
         {
-            AllowMultiple = false, Title = "Choose a QSPP Manager backup (.zip)",
+            AllowMultiple = false, Title = "Choose a QSPP Folio backup (.zip)",
             FileTypeFilter = [new Avalonia.Platform.Storage.FilePickerFileType("QSPP backup") { Patterns = ["*.zip"] }],
         });
         if (files.Count == 0) return;

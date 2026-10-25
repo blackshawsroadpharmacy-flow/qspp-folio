@@ -1,4 +1,4 @@
-// qspp-ocr — local Apple Vision OCR worker for the QSPP Manager "Process and Sort" pipeline.
+// qspp-ocr — local Apple Vision OCR worker for the QSPP Folio "Process and Sort" pipeline.
 //
 // Usage: qspp-ocr <file> [--page N] [--dpi 200]
 //   <file>   a PDF (all pages, or just --page N) or a single image (png/jpg/jpeg/tiff/heic/bmp)

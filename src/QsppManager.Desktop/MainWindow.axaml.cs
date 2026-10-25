@@ -473,7 +473,7 @@ public partial class MainWindow : Window
     {
         var win = new Window
         {
-            Title = "About QSPP Manager",
+            Title = "About QSPP Folio",
             Width = 480,
             SizeToContent = SizeToContent.Height,
             SystemDecorations = Avalonia.Controls.WindowDecorations.Full,
@@ -498,7 +498,7 @@ public partial class MainWindow : Window
         var headerText = new StackPanel { VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center };
         headerText.Children.Add(new TextBlock
         {
-            Text = "QSPP Manager",
+            Text = "QSPP Folio",
             FontWeight = FontWeight.SemiBold,
             FontSize = 21,
             Margin = new Thickness(0, 0, 0, 4),
@@ -524,7 +524,7 @@ public partial class MainWindow : Window
         });
         stack.Children.Add(new TextBlock
         {
-            Text = "QSPP Manager is an offline compliance workspace for the Victorian Quality Service Pharmacy Program (QSPP). Program documents belong to the Pharmacy Guild of Australia; requirements shown here are working aids, not the source text.",
+            Text = "QSPP Folio is an offline compliance workspace for the Victorian Quality Service Pharmacy Program (QSPP). Program documents belong to the Pharmacy Guild of Australia; requirements shown here are working aids, not the source text.",
             FontSize = 11.5, Foreground = Helpers.Brush("Brush.Muted"),
             Margin = new Thickness(0, 8, 0, 16), TextWrapping = TextWrapping.Wrap,
         });

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Hugh's QSPP Manager development environment setup (user-local, no sudo).
+# Hugh's QSPP Folio development environment setup (user-local, no sudo).
 set -uo pipefail
 LOG=/home/vpnhugh/.hermes/cache/scratch/qspp-setup.log
 echo "== setup start $(date -Is) ==" >> "$LOG"

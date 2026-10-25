@@ -301,7 +301,7 @@ public class ShellViewModel : ViewModelBase
             ShellPage.Tasks => "Tasks & calendar",
             ShellPage.People => "People & training",
             ShellPage.PrintCentre => "Print centre",
-            _ => NavItems.FirstOrDefault(n => n.Page == page)?.Label ?? "QSPP Manager",
+            _ => NavItems.FirstOrDefault(n => n.Page == page)?.Label ?? "QSPP Folio",
         };
         OnPropertyChanged(nameof(PageTitle));
     }

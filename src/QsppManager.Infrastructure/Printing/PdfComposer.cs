@@ -78,7 +78,7 @@ public class PdfComposer(string fontsDirectory)
                         r.RelativeItem().Column(c =>
                         {
                             c.Item().Text(m.PharmacyName).FontSize(15).SemiBold();
-                            c.Item().Text("Requirement checklist — QSPP Manager").FontSize(9).FontColor(Muted);
+                            c.Item().Text("Requirement checklist — QSPP Folio").FontSize(9).FontColor(Muted);
                         });
                         r.AutoItem().AlignRight().Column(c2 =>
                         {
@@ -195,7 +195,7 @@ public class PdfComposer(string fontsDirectory)
 
                 page.Footer().Row(r =>
                 {
-                    r.RelativeItem().Text($"QSPP Manager · Requirement checklist · {m.RequirementRef} · Printing a document does not approve it. Draft/superseded status must remain visible.").FontSize(8).FontColor(Muted);
+                    r.RelativeItem().Text($"QSPP Folio · Requirement checklist · {m.RequirementRef} · Printing a document does not approve it. Draft/superseded status must remain visible.").FontSize(8).FontColor(Muted);
                     r.AutoItem().Text(t =>
                     {
                         t.Span("Page ").FontSize(8).FontColor(Muted);
@@ -263,7 +263,7 @@ public class PdfComposer(string fontsDirectory)
                         r.RelativeItem().Column(c =>
                         {
                             c.Item().Text(m.PharmacyName).FontSize(15).SemiBold();
-                            c.Item().Text("Remote assessment response pack — QSPP Manager").FontSize(9).FontColor(Muted);
+                            c.Item().Text("Remote assessment response pack — QSPP Folio").FontSize(9).FontColor(Muted);
                         });
                         r.AutoItem().AlignRight().Text($"Printed {m.PrintedAtUtc:dd MMM yyyy}").FontColor(Muted).FontSize(9);
                     });
@@ -363,7 +363,7 @@ public class PdfComposer(string fontsDirectory)
 
                 page.Footer().Row(r =>
                 {
-                    r.RelativeItem().Text("QSPP Manager · Remote assessment response pack · Printing a document does not approve it. Draft/superseded status remains visible.")
+                    r.RelativeItem().Text("QSPP Folio · Remote assessment response pack · Printing a document does not approve it. Draft/superseded status remains visible.")
                         .FontSize(8).FontColor(Muted);
                     r.AutoItem().Text(t =>
                     {

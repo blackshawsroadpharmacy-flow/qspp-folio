@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Build the QSPP Manager macOS .app bundle (osx-arm64, self-contained).
-# Output: <repo>/dist/QSPP Manager.app
+# Build the QSPP Folio macOS .app bundle (osx-arm64, self-contained).
+# Output: <repo>/dist/QSPP Folio.app
 #
 # Run from the repo root:  scripts/package-app.sh
 # Optional env:
@@ -10,7 +10,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 ROOT="$(pwd)"
-APP_NAME="QSPP Manager"
+APP_NAME="QSPP Folio"
 DIST="$ROOT/dist"
 CONTENTS="$DIST/$APP_NAME.app/Contents"
 PLIST_BUDDY="/usr/libexec/PlistBuddy"
@@ -19,13 +19,15 @@ echo "→ dotnet publish (osx-arm64, self-contained)"
 export PATH="$HOME/.dotnet:$PATH" DOTNET_ROOT="$HOME/.dotnet"
 dotnet publish src/QsppManager.Desktop/QsppManager.Desktop.csproj \
   -c Release -r osx-arm64 --self-contained true \
-  -p:PublishSingleFile=false -p:PublishTrimmed=false -o "$DIST/payload" --nologo
+  -p:PublishSingleFile=false -p:PublishTrimmed=false \
+  -p:DebugType=none -p:DebugSymbols=false -p:PathMap="$ROOT=/q" -o "$DIST/payload" --nologo
 
 echo "→ assembling bundle"
 rm -rf "$DIST/$APP_NAME.app"
 mkdir -p "$CONTENTS/MacOS" "$CONTENTS/Resources"
 cp -R "$DIST/payload/" "$CONTENTS/MacOS/"
 rm -rf "$DIST/payload"
+find "$CONTENTS/MacOS" -name "*.pdb" -delete
 chmod +x "$CONTENTS/MacOS/QsppManager.Desktop"
 
 cp assets/art/QsppManager.icns "$CONTENTS/Resources/"
@@ -65,9 +67,9 @@ cat > "$CONTENTS/Info.plist" <<'PLIST'
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleName</key><string>QSPP Manager</string>
-    <key>CFBundleDisplayName</key><string>QSPP Manager</string>
-    <key>CFBundleIdentifier</key><string>com.qsppmanager.app</string>
+    <key>CFBundleName</key><string>QSPP Folio</string>
+    <key>CFBundleDisplayName</key><string>QSPP Folio</string>
+    <key>CFBundleIdentifier</key><string>com.qsppfolio.app</string>
     <key>CFBundleVersion</key><string>1.0.0</string>
     <key>CFBundleShortVersionString</key><string>1.0.0</string>
     <key>CFBundlePackageType</key><string>APPL</string>
@@ -77,7 +79,7 @@ cat > "$CONTENTS/Info.plist" <<'PLIST'
     <key>LSArchitecturePriority</key>
     <array><string>arm64</string></array>
     <key>NSHighResolutionCapable</key><true/>
-    <key>NSHumanReadableCopyright</key><string>© 2026 QSPP Manager</string>
+    <key>NSHumanReadableCopyright</key><string>© 2026 QSPP Folio</string>
     <key>NSPrincipalClass</key><string>NSApplication</string>
 </dict>
 </plist>

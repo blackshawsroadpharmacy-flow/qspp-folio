@@ -72,7 +72,7 @@ internal static class Program
         }
         catch (Exception ex)
         {
-            bootstrap.Fatal(ex, "QSPP Manager terminated unexpectedly");
+            bootstrap.Fatal(ex, "QSPP Folio terminated unexpectedly");
             throw;
         }
         finally
