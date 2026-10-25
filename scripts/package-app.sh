@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Build the Hugh's QSPP Manager macOS .app bundle (osx-arm64, self-contained).
-# Output: <repo>/dist/Hugh's QSPP Manager.app
+# Build the QSPP Manager macOS .app bundle (osx-arm64, self-contained).
+# Output: <repo>/dist/QSPP Manager.app
 #
 # Run from the repo root:  scripts/package-app.sh
 # Optional env:
@@ -10,7 +10,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 ROOT="$(pwd)"
-APP_NAME="Hugh's QSPP Manager"
+APP_NAME="QSPP Manager"
 DIST="$ROOT/dist"
 CONTENTS="$DIST/$APP_NAME.app/Contents"
 PLIST_BUDDY="/usr/libexec/PlistBuddy"
@@ -65,9 +65,9 @@ cat > "$CONTENTS/Info.plist" <<'PLIST'
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleName</key><string>Hugh's QSPP Manager</string>
-    <key>CFBundleDisplayName</key><string>Hugh's QSPP Manager</string>
-    <key>CFBundleIdentifier</key><string>au.com.burkeroadpharmacy.qsppmanager</string>
+    <key>CFBundleName</key><string>QSPP Manager</string>
+    <key>CFBundleDisplayName</key><string>QSPP Manager</string>
+    <key>CFBundleIdentifier</key><string>com.qsppmanager.app</string>
     <key>CFBundleVersion</key><string>1.0.0</string>
     <key>CFBundleShortVersionString</key><string>1.0.0</string>
     <key>CFBundlePackageType</key><string>APPL</string>
@@ -77,7 +77,7 @@ cat > "$CONTENTS/Info.plist" <<'PLIST'
     <key>LSArchitecturePriority</key>
     <array><string>arm64</string></array>
     <key>NSHighResolutionCapable</key><true/>
-    <key>NSHumanReadableCopyright</key><string>© 2026 Burke Road Compounding Pharmacy</string>
+    <key>NSHumanReadableCopyright</key><string>© 2026 QSPP Manager</string>
     <key>NSPrincipalClass</key><string>NSApplication</string>
 </dict>
 </plist>

@@ -284,14 +284,8 @@ public partial class MainWindow : Window
 
     private void BuildNativeMenu()
     {
-        var appMenu = new NativeMenu();
-        appMenu.Items.Add(Mi("About QSPP Manager", ShowAbout));
-        appMenu.Items.Add(Sep());
-        appMenu.Items.Add(Mi("Settings…", Key.OemComma, KeyModifiers.Meta, () => _shell.Navigate(ShellPage.Settings)));
-        appMenu.Items.Add(Sep());
-        appMenu.Items.Add(Mi("Hide QSPP Manager", Key.H, KeyModifiers.Meta, Hide));
-        appMenu.Items.Add(Sep());
-        appMenu.Items.Add(Mi("Quit QSPP Manager", Key.Q, KeyModifiers.Meta, ShutdownApp));
+        // The bold macOS app menu is the Application-level NativeMenu (App.axaml);
+        // its Click handlers route into the window via App.
 
         var fileMenu = new NativeMenu();
         fileMenu.Items.Add(Mi("Print…", Key.P, KeyModifiers.Meta, _shell.RequestPrint));
@@ -341,8 +335,7 @@ public partial class MainWindow : Window
         helpMenu.Items.Add(Sep());
         helpMenu.Items.Add(Mi("Go to Library", () => _shell.Navigate(ShellPage.Library)));
 
-        var root = new NativeMenu();
-        root.Items.Add(new NativeMenuItem("QSPP Manager") { Menu = appMenu });
+        var root = new NativeMenu(); // app items live in the Application-level menu above
         root.Items.Add(new NativeMenuItem("File") { Menu = fileMenu });
         root.Items.Add(new NativeMenuItem("Edit") { Menu = editMenu });
         root.Items.Add(new NativeMenuItem("View") { Menu = viewMenu });
@@ -464,6 +457,9 @@ public partial class MainWindow : Window
             desktop.Shutdown();
     }
 
+    /// <summary>Route for the Application-level app menu (Settings…).</summary>
+    internal void OpenSettings() => _shell.Navigate(ShellPage.Settings);
+
     // ==================== about ====================
 
     /// <summary>Decode an embedded (avares://) image asset, downscaled to `width` px.</summary>
@@ -473,7 +469,7 @@ public partial class MainWindow : Window
         return Avalonia.Media.Imaging.Bitmap.DecodeToWidth(s, width);
     }
 
-    private void ShowAbout()
+    internal void ShowAbout()
     {
         var win = new Window
         {

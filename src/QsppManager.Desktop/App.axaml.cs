@@ -39,7 +39,32 @@ public partial class App : Avalonia.Application
     public static bool DemoMode { get; private set; }
     public static AppConfig Config { get; private set; } = new();
 
-    public override void Initialize() => AvaloniaXamlLoader.Load(this);
+    public override void Initialize()
+    {
+        AvaloniaXamlLoader.Load(this);
+        if (OperatingSystem.IsMacOS())
+        {
+            // The bold macOS app menu is exported from the Application-level NativeMenu.
+            // XAML attachment is ignored by the 12.1.4 mac exporter while a window-level
+            // NativeMenu is present, so build the app menu in code BEFORE platform setup.
+            var menu = new NativeMenu();
+            menu.Items.Add(WithGesture("About QSPP Manager", null, MenuAbout));
+            menu.Items.Add(new NativeMenuItemSeparator());
+            menu.Items.Add(WithGesture("Settings…", new Avalonia.Input.KeyGesture(Avalonia.Input.Key.OemComma, Avalonia.Input.KeyModifiers.Meta), MenuSettings));
+            // Hide/Show All/Quit are appended automatically by Avalonia's standard app-menu block.
+            NativeMenu.SetMenu(this, menu);
+        }
+    }
+
+    private static NativeMenuItem WithGesture(string header, Avalonia.Input.KeyGesture? gesture, System.EventHandler e)
+    {
+        var mi = new NativeMenuItem(header);
+        if (gesture is { } g) { mi.Gesture = g; }
+        mi.Click += e;
+        return mi;
+    }
+
+    private void MenuAbout(object? sender, EventArgs e) => (Main as MainWindow)?.ShowAbout();
 
     public override void OnFrameworkInitializationCompleted()
     {
@@ -150,6 +175,16 @@ public partial class App : Avalonia.Application
         base.OnFrameworkInitializationCompleted();
     }
 
+    // ==================== app menu (Application-level NativeMenu, macOS bold menu) ====================
+
+    private void MenuSettings(object? sender, EventArgs e) => (Main as MainWindow)?.OpenSettings();
+
+    private void MenuQuit(object? sender, EventArgs e)
+    {
+        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            desktop.Shutdown();
+    }
+
     /// <summary>Off-screen render of a signed-in shell screen (the 10 destinations): the
     /// same chrome as MainWindow.axaml (sidebar, toolbar, page host, text-scale wrapper)
     /// composed in code, without window behaviours. The page is built exactly as the app
@@ -218,7 +253,7 @@ public partial class App : Avalonia.Application
             }
 
             // 3F #2: identical header block on the code-built window — two lines, untrimmed
-            // (Avalonia renders trimming as one line), then 'QSPP Folio' beneath, fixed height.
+            // (Avalonia renders trimming as one line), then 'QSPP Manager' beneath, fixed height.
             var sidebarHeader = new StackPanel { Margin = new(18, 40, 16, 4), Height = 54 };
             sidebarHeader.Children.Add(new TextBlock
             {
@@ -226,7 +261,7 @@ public partial class App : Avalonia.Application
                 TextWrapping = TextWrapping.Wrap, MaxLines = 2,
                 VerticalAlignment = VerticalAlignment.Top,
             });
-            sidebarHeader.Children.Add(new TextBlock { Classes = { "footnote" }, Text = "QSPP Folio" });
+            sidebarHeader.Children.Add(new TextBlock { Classes = { "footnote" }, Text = "QSPP Manager" });
 
             var groupPanel = new StackPanel { Margin = new(8, 6, 8, 8) };
             foreach (var group in shell.NavGroups)
