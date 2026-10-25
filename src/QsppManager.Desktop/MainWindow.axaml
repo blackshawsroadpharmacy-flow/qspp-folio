@@ -6,7 +6,7 @@
              xmlns:local="clr-namespace:QsppManager.Desktop"
              mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="800"
              x:Class="QsppManager.Desktop.MainWindow"
-             Title="Hugh's QSPP Manager"
+             Title="QSPP Manager"
              Width="1280" Height="800" MinWidth="940" MinHeight="580"
              ExtendClientAreaToDecorationsHint="True"
              ExtendClientAreaTitleBarHeightHint="-1"

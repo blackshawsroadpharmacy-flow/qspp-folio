@@ -125,7 +125,7 @@ public class ShellViewModel : ViewModelBase
         get
         {
             try { return App.Workspace.EnsurePharmacy().Name; }
-            catch { return "Burke Road Compounding"; }
+            catch { return "Your pharmacy"; }
         }
     }
 
@@ -301,7 +301,7 @@ public class ShellViewModel : ViewModelBase
             ShellPage.Tasks => "Tasks & calendar",
             ShellPage.People => "People & training",
             ShellPage.PrintCentre => "Print centre",
-            _ => NavItems.FirstOrDefault(n => n.Page == page)?.Label ?? "Hugh's QSPP Manager",
+            _ => NavItems.FirstOrDefault(n => n.Page == page)?.Label ?? "QSPP Manager",
         };
         OnPropertyChanged(nameof(PageTitle));
     }

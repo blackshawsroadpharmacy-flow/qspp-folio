@@ -91,7 +91,7 @@ public class BackupService(QsppDbContext db, AttachmentStore store, string backu
             Directory.CreateDirectory(targetDir);
             using var archive = ZipFile.OpenRead(zipPath);
             var manifestEntry = archive.GetEntry("manifest.json");
-            if (manifestEntry == null) return (false, "Not a Hugh's QSPP Manager backup (missing manifest.json).", "", 0);
+            if (manifestEntry == null) return (false, "Not a QSPP Manager backup (missing manifest.json).", "", 0);
 
             string manifestJson;
             using (var reader = new StreamReader(manifestEntry.Open())) manifestJson = reader.ReadToEnd();

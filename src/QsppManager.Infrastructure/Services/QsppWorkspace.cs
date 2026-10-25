@@ -19,7 +19,7 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
     {
         var ph = db.Pharmacies.FirstOrDefault(p => p.IsDemo == demo);
         if (ph != null) return ph;
-        var ph2 = new Pharmacy { Name = demo ? "DEMO ONLY — Example Lane Pharmacy" : "Burke Road Compounding", Jurisdiction = "VIC", TimeZoneId = "Australia/Melbourne", IsDemo = demo };
+        var ph2 = new Pharmacy { Name = demo ? "DEMO ONLY — Example Lane Pharmacy" : "Your pharmacy", Jurisdiction = "VIC", TimeZoneId = "Australia/Melbourne", IsDemo = demo };
         db.Pharmacies.Add(ph2);
         db.SaveChanges();
         return ph2;

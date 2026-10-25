@@ -5,13 +5,13 @@
     <Border Classes="card" MaxWidth="430" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="32,30" BoxShadow="0 2 14 0 #16000000">
       <StackPanel Spacing="12">
         <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center" Margin="0,0,0,2">
-          <!-- Avatar mark: rounded crop of the client logo, thin brand-green keyline. -->
+          <!-- Product mark: the neutral QsppManager app icon, thin brand-green keyline. -->
           <Border Width="44" Height="44" CornerRadius="22" ClipToBounds="True" BorderBrush="{DynamicResource Brush.Green}" BorderThickness="2">
-            <Image Source="avares://QsppManager.Desktop/Assets/Art/HughLogo.png" Stretch="UniformToFill" />
+            <Image Source="avares://QsppManager.Desktop/Assets/Art/QsppManager-1024.png" Stretch="UniformToFill" />
           </Border>
           <StackPanel VerticalAlignment="Center" Spacing="1">
-            <TextBlock Classes="h2" FontSize="20">Hugh's QSPP Manager</TextBlock>
-            <TextBlock Classes="small" Text="Burke Road Compounding Pharmacy" />
+            <TextBlock Classes="h2" FontSize="20">QSPP Manager</TextBlock>
+            <TextBlock x:Name="PharmacyLine" Classes="small" Text="" />
           </StackPanel>
         </StackPanel>
 

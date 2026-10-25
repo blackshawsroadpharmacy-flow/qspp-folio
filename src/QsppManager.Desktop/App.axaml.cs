@@ -169,7 +169,7 @@ public partial class App : Avalonia.Application
 
         try
         {
-            App.Session = new UserSession(Guid.Empty, "owner", "Hugh Nguyen", UserRole.OwnerAdmin);  // matches production Users.DisplayName → chip initials "HN"
+            App.Session = new UserSession(Guid.Empty, "owner", "Jordan Vella", UserRole.OwnerAdmin);  // neutral render persona: chip/greeting must never bake in a real person
             App.Config.SidebarCollapsed = false;   // renders show the expanded sidebar, deterministic
             var shell = new ShellViewModel();
             shell.SignIn(App.Session);             // lands on Today; recurring occurrences generated (scratch DB)
@@ -378,7 +378,12 @@ public partial class App : Avalonia.Application
     {
         var window = new Window
         {
-            Title = "Today offscreen render",
+            Title = Program.RenderPage switch
+            {
+                ShellPage.Onboarding => "Onboarding offscreen render",
+                ShellPage.Login => "Login offscreen render",
+                _ => "Today offscreen render",
+            },
             Width = Program.RenderWidth,
             Height = Program.RenderHeight,
             ShowActivated = false,
@@ -387,17 +392,31 @@ public partial class App : Avalonia.Application
         };
 
         TodayScreen? screen = null;
+        Control? root = null;
         try
         {
-            App.Session = new UserSession(Guid.Empty, "owner", "Hugh Nguyen", UserRole.OwnerAdmin);  // matches production Users.DisplayName → chip initials "HN"
-            var vm = new TodayViewModel(new ShellViewModel(), null!);
-            screen = new TodayScreen(vm);
-            vm.Refresh();
-            screen.PostRefresh(vm);
+            App.Session = new UserSession(Guid.Empty, "owner", "Jordan Vella", UserRole.OwnerAdmin);  // neutral render persona: chip/greeting must never bake in a real person
+            var shell = new ShellViewModel();
+            if (Program.RenderPage is ShellPage.Onboarding or ShellPage.Login)
+            {
+                // First-run surfaces: build the real views exactly as ShellViewModel.Navigate
+                // does, so first-run renders match what a real user sees on a fresh data dir.
+                root = Program.RenderPage == ShellPage.Onboarding
+                    ? new OnboardingView(shell)
+                    : new LoginView(shell);
+            }
+            else
+            {
+                var vm = new TodayViewModel(shell, null!);
+                screen = new TodayScreen(vm);
+                vm.Refresh();
+                screen.PostRefresh(vm);
+                root = screen.Root;
+            }
             window.Content = new Border
             {
                 Background = Helpers.Brush("Brush.Paper") ?? Avalonia.Media.Brushes.White,
-                Child = screen.Root,
+                Child = root,
             };
         }
         catch (Exception ex)
@@ -411,12 +430,12 @@ public partial class App : Avalonia.Application
         kick.Tick += (_, _) =>
         {
             kick.Stop();
-            if (screen is null) { window.Close(); return; }
+            if (root is null) { window.Close(); return; }
             if (Program.Hold)
             {
                 // Hold open for an external OS capture (screencapture -l); the process is
                 // killed from outside. Log the window dimensions once for the record.
-                Log.Information("Offscreen hold: content {C} root {R}", window.Content is Border b2 ? b2.Bounds.Size : default, screen.Root.Bounds.Size);
+                Log.Information("Offscreen hold: content {C} root {R}", window.Content is Border b2 ? b2.Bounds.Size : default, root.Bounds.Size);
                 return;
             }
             try
@@ -426,7 +445,6 @@ public partial class App : Avalonia.Application
                 var content = (Border)window.Content!;
                 content.Background = Helpers.Brush("Brush.Paper");
                 window.UpdateLayout();
-                var root = screen.Root;
                 Log.Information("Offscreen bounds: window content {Content} root {Root}", content.Bounds.Size, root.Bounds.Size);
                 root.InvalidateVisual();
                 var scale = window.RenderScaling;

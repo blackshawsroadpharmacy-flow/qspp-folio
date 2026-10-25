@@ -13,6 +13,7 @@ public partial class LoginView : UserControl
     {
         InitializeComponent();
         _shell = shell;
+        PharmacyLine.Text = shell.PharmacyName;   // DB-backed profile name, never a hardcoded pharmacy
         LoginBtn.Click += OnLogin;
         ForgotBtn.Click += (_, _) => EnterResetMode();
         BackBtn.Click += (_, _) => ExitResetMode();

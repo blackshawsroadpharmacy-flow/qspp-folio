@@ -25,8 +25,8 @@ public class SeedImporter(QsppDbContext db, AttachmentStore store, AuditService 
     /// (SeedImporter.PackRootOverride); 3. a vendored copy at &lt;repo&gt;/vendor/qspp-pack
     /// (portable handoff / dev builds); 4. a pack bundled inside the macOS .app
     /// (Contents/Resources/qspp-pack) or beside the executable (&lt;exe&gt;/pack/qspp-pack for
-    /// portable Linux layouts); 5. the original path on the authoring machine, kept last
-    /// for Linux continuity — it only exists on the Linux box this app was built on.</summary>
+    /// portable Linux layouts). If none resolve, PackRoot() returns null and Settings
+    /// asks for the pack location.</summary>
     public static string? PackRootOverride { get; set; }
 
     private static string ResolvePackRoot()
@@ -47,7 +47,7 @@ public class SeedImporter(QsppDbContext db, AttachmentStore store, AuditService 
         // portable layout: pack sits beside the executable
         var besideExe = Path.Combine(AppContext.BaseDirectory, "pack", "qspp-pack");
         if (Directory.Exists(Path.Combine(besideExe, "website-scrape", "downloads"))) return besideExe;
-        return "/home/vpnhugh/Projects/qspp-pack";
+        return null;
     }
 
     private static string PackRootValue => ResolvePackRoot();

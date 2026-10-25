@@ -16,7 +16,17 @@ namespace QsppManager.Desktop.ViewModels;
 /// from stored facts only: no invented dates, no percentages, no compliance score.</summary>
 public class TodayViewModel(ShellViewModel shell, TodayView view) : ViewModelBase
 {
-    public string Greeting => $"Good {(DateTime.Now.Hour < 12 ? "morning" : DateTime.Now.Hour < 17 ? "afternoon" : "evening")}, Hugh";
+    public string Greeting
+    {
+        get
+        {
+            var when = DateTime.Now.Hour < 12 ? "morning" : DateTime.Now.Hour < 17 ? "afternoon" : "evening";
+            var first = App.Session?.DisplayName?
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .FirstOrDefault() ?? "";
+            return first.Length == 0 ? $"Good {when}" : $"Good {when}, {first}";   // signed-in owner's given name; production-neutral
+        }
+    }
 
     private string _eyebrow = "";
     public string Eyebrow { get => _eyebrow; private set => SetProperty(ref _eyebrow, value); }

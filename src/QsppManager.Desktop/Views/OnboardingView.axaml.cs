@@ -20,8 +20,14 @@ public partial class OnboardingView : UserControl
     private void OnCreate(object? sender, RoutedEventArgs e)
     {
         Message.Text = "";
+        var pharmacyName = PharmacyName.Text?.Trim();
         var userName = UserName.Text?.Trim();
         var passphrase = Passphrase.Text ?? "";
+        if (string.IsNullOrWhiteSpace(pharmacyName))
+        {
+            Message.Text = "A pharmacy name is required.";
+            return;
+        }
         if (string.IsNullOrWhiteSpace(userName) || string.IsNullOrWhiteSpace(passphrase))
         {
             Message.Text = "A user name and passphrase are required.";
@@ -34,7 +40,7 @@ public partial class OnboardingView : UserControl
             return;
         }
         var ph = App.Workspace.EnsurePharmacy();
-        ph.Name = string.IsNullOrWhiteSpace(PharmacyName.Text) ? ph.Name : PharmacyName.Text.Trim();
+        ph.Name = pharmacyName;
         if (Jur.SelectedItem is ComboBoxItem { Content: string s })
         {
             var parts = s.Split('·');

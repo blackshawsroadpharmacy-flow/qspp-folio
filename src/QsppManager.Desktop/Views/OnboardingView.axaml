@@ -3,13 +3,13 @@
     x:Class="QsppManager.Desktop.Views.OnboardingView">
   <ScrollViewer>
     <StackPanel Margin="40,36" Spacing="12" MaxWidth="640" HorizontalAlignment="Left">
-      <TextBlock Classes="h1">Welcome to Hugh's QSPP Manager</TextBlock>
+      <TextBlock Classes="h1">Welcome to QSPP Manager</TextBlock>
       <TextBlock Classes="lead" TextWrapping="Wrap">Set up your pharmacy profile and the first Owner / Admin account. Everything stays on this computer: the reference corpus sits beside the program, and your records live in the application data folder.</TextBlock>
       <Border Classes="card" Margin="0,14,0,0" Padding="20">
         <StackPanel Spacing="12">
           <StackPanel Spacing="6">
             <TextBlock Classes="label">PHARMACY</TextBlock>
-            <TextBox x:Name="PharmacyName" Text="Burke Road Compounding" />
+            <TextBox x:Name="PharmacyName" Watermark="Your pharmacy's trading name" />
           </StackPanel>
           <StackPanel Spacing="6">
             <TextBlock Classes="label">JURISDICTION · TIME ZONE</TextBlock>
@@ -43,7 +43,7 @@
           <Button x:Name="CreateBtn" Classes="primary" HorizontalAlignment="Left" Content="Create account and continue" Height="40" Margin="0,4,0,0" />
         </StackPanel>
       </Border>
-      <TextBlock Classes="small" TextWrapping="Wrap" Margin="0,12,0,0">Hugh's QSPP Manager does not award accreditation and is not an official program system. Program requirements live in the packed source documents; the Library lists every imported version.</TextBlock>
+      <TextBlock Classes="small" TextWrapping="Wrap" Margin="0,12,0,0">QSPP Manager does not award accreditation and is not an official program system. Program requirements live in the packed source documents; the Library lists every imported version.</TextBlock>
     </StackPanel>
   </ScrollViewer>
 </UserControl>

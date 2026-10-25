@@ -25,9 +25,8 @@ public sealed class FolioOcr(string helperPath) : FolioOcrEngine
         var candidates = new[]
         {
             Environment.GetEnvironmentVariable("QSPP_OCR_HELPER"),
-            // packaged app: qspp-ocr sits beside the app binary
+            // packaged app: qspp-ocr sits beside the app binary, whatever the .app is named
             Path.Combine(AppContext.BaseDirectory, "qspp-ocr"),
-            "/Applications/Hugh's QSPP Manager.app/Contents/MacOS/qspp-ocr",
         };
         foreach (var c in candidates.Where(c => !string.IsNullOrEmpty(c)))
         {
