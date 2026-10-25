@@ -60,6 +60,14 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
             else if (ReqList.SelectedItem is ListHeaderEntry head)
                 ToggleSection(head.Label);
         };
+        // Band items opt out of the leaf selection/hover chrome: the generator's prepared
+        // event (Avalonia 12) carries the container + item index, so the .band class is
+        // applied whenever a container is prepared, either direction (recycling safe).
+        ReqList.ContainerPrepared += (_, e) =>
+        {
+            if (e.Container is Control container)
+                ApplyBandClass(container, e.Index < _entries.Count ? _entries[e.Index] : null);
+        };
         LoadList();
         // First impression: the readiness list opens, so the page reads like a list of jobs,
         // and its first job is already selected so the detail side shows real work.
@@ -105,15 +113,22 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
         };
         ToolTip.SetTip(more, "List actions");
         more.Flyout = flyout;
-        ListHeadHost.Children.Add(tile);
-        ListHeadHost.Children.Add(new TextBlock
+        var title = new TextBlock
         {
             Classes = { "headline" }, Text = "Requirements",
             VerticalAlignment = VerticalAlignment.Center,
-        });
+        };
+        ListHeadHost.Children.Add(tile);
+        ListHeadHost.Children.Add(title);
         ListHeadHost.Children.Add(_listCount);
         ListHeadHost.Children.Add(more);
+        // Columns: tile 0, word 1 (8pt off the tile), count 2, "…" 3 (6pt gap). The tile
+        // used to sit in column 0 unassigned, overlapping the word (owner fix pass item 1).
+        Grid.SetColumn(tile, 0);
+        Grid.SetColumn(title, 1);
+        title.Margin = new(8, 0, 0, 0);
         Grid.SetColumn(_listCount, 2);
+        _listCount.Margin = new(0, 0, 6, 0);
         Grid.SetColumn(more, 3);
         ListHeadHost.ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto,Auto");
     }
@@ -149,6 +164,13 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
         }
         host.Child = row;
         SegHost.Children.Add(host);
+    }
+
+    /// <summary>Band chrome classification for prepared containers (see the ctor).</summary>
+    private static void ApplyBandClass(Control container, object? item)
+    {
+        if (item is ListHeaderEntry) container.Classes.Add("band");
+        else container.Classes.Remove("band");
     }
 
     private void AssignAllOwnersToMe()
@@ -247,9 +269,33 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
         if (_segment == 1) return ["Remote round"];
         if (_segment == 2) return ["Readiness list"];
         if (_segment == 3)
-            return [i.KindLabel];
+            return [SectionLabel(i.KindLabel)];
         return [i.DomainLabel, $"{i.DomainLabel} · {i.Area}"];
     }
+
+    /// <summary>Plural band label for the Rules and terms segment (owner band spec): the
+    /// kind labels inside this segment read as band titles only in plural.</summary>
+    internal static string SectionLabel(string kind) => kind switch
+    {
+        "Program rule" => "Program rules",
+        "Terms and conditions" => "Terms and conditions",
+        "Policy" => "Policies",
+        "Obligation" => "Obligations",
+        _ => kind,
+    };
+
+    /// <summary>Band + pill tokens for a group hue (DD-28: colour only via tokens). Rules,
+    /// terms, policies and obligations band on Stone; guide domains ride their area hue;
+    /// the remote round and readiness list band on Ink with the neutral Sage pill.</summary>
+    private static (string Band, string Pill) BandTokens(string hue) => hue switch
+    {
+        "Brush.Ink" => ("Brush.BandInk", "Brush.Sage"),
+        "Brush.Teal" => ("Brush.BandTeal", "Brush.TealTint"),
+        "Brush.Clay" => ("Brush.BandClay", "Brush.ClayTint"),
+        "Brush.Berry" => ("Brush.BandBerry", "Brush.BerryTint"),
+        "Brush.Umber" => ("Brush.BandUmber", "Brush.UmberTint"),
+        _ => ("Brush.BandStone", "Brush.StoneTint"),
+    };
 
     private void RefillList()
     {
@@ -267,16 +313,18 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
                 foreach (var dLabel in domains)
                 {
                     var domain = dLabel;
-                    AddHeader(domain, seg0.Where(i => i.DomainLabel == domain).ToList(), indent: false);
+                    AddHeader(domain, seg0.Where(i => i.DomainLabel == domain).ToList(),
+                        seg0.First(i => i.DomainLabel == domain).AreaHueKey);
                     if (_collapsedSections.Contains(domain)) continue;
                     var areaMembers = seg0.Where(i => i.DomainLabel == domain);
                     var areas = areaMembers.Select(i => i.Area).Distinct().ToList();
                     foreach (var area in areas)
                     {
                         var key = $"{domain} · {area}";
-                        AddHeader(key, seg0.Where(i => i.DomainLabel == domain && i.Area == area).ToList(), indent: true);
+                        AddHeader(key, seg0.Where(i => i.DomainLabel == domain && i.Area == area).ToList(),
+                            seg0.First(i => i.DomainLabel == domain && i.Area == area).AreaHueKey);
                         if (_collapsedSections.Contains(key)) continue;
-                        foreach (var i in seg0.Where(i => i.DomainLabel == domain && i.Area == area).OrderBy(SortRef))
+                        foreach (var i in seg0.Where(i => i.DomainLabel == domain && i.Area == area).OrderBy(i => i.Ref, RefOrder.Comparer))
                             AddLeaf(i);
                     }
                 }
@@ -284,17 +332,17 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
             }
             case 1:
             {
-                AddHeader("Remote round", _items.Where(i => i.RefKind == RefKind.Surveillance).ToList(), indent: false, Ui.Br("Brush.Ink"));
+                AddHeader("Remote round", _items.Where(i => i.RefKind == RefKind.Surveillance).ToList(), "Brush.Ink");
                 if (!_collapsedSections.Contains("Remote round"))
-                    foreach (var i in _items.Where(i => i.RefKind == RefKind.Surveillance).OrderBy(SortRef))
+                    foreach (var i in _items.Where(i => i.RefKind == RefKind.Surveillance).OrderBy(i => i.Ref, RefOrder.Comparer))
                         AddLeaf(i);
                 break;
             }
             case 2:
             {
-                AddHeader("Readiness list", _items.Where(i => i.RefKind == RefKind.Hitlist).ToList(), indent: false, Ui.Br("Brush.Ink"));
+                AddHeader("Readiness list", _items.Where(i => i.RefKind == RefKind.Hitlist).ToList(), "Brush.Ink");
                 if (!_collapsedSections.Contains("Readiness list"))
-                    foreach (var i in _items.Where(i => i.RefKind == RefKind.Hitlist).OrderBy(SortRef))
+                    foreach (var i in _items.Where(i => i.RefKind == RefKind.Hitlist).OrderBy(i => i.Ref, RefOrder.Comparer))
                         AddLeaf(i);
                 break;
             }
@@ -305,10 +353,9 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
                 var kinds = rules.Select(i => i.KindLabel).Distinct().ToList();
                 foreach (var kind in kinds)
                 {
-                    var k = kind;
-                    AddHeader(k, rules.Where(i => i.KindLabel == k).ToList(), indent: false, Ui.Br("Brush.Stone"));
-                    if (_collapsedSections.Contains(k)) continue;
-                    foreach (var i in rules.Where(i => i.KindLabel == k).OrderBy(SortRef))
+                    AddHeader(SectionLabel(kind), rules.Where(i => i.KindLabel == kind).ToList(), "Brush.Stone");
+                    if (_collapsedSections.Contains(SectionLabel(kind))) continue;
+                    foreach (var i in rules.Where(i => i.KindLabel == kind).OrderBy(i => i.Ref, RefOrder.Comparer))
                         AddLeaf(i);
                 }
                 break;
@@ -317,7 +364,7 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
         if (_items.Count == 0)
             _entries.Add(new ListHeaderEntry
             {
-                Label = "No requirements match this filter", Count = "", Collapsible = false, Chevron = "",
+                Label = "No requirements match this filter", Count = "", Collapsible = false,
             });
         ReqList.ItemsSource = _entries;
         if (previous != null && _selectedItem?.Id == previous.Id)
@@ -327,16 +374,20 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
         }
         return;
 
-        void AddHeader(string label, List<RequirementItem> members, bool indent, IBrush? brush = null)
+        void AddHeader(string label, List<RequirementItem> members, string hueKey)
         {
             var started = members.Count(m => m.Readiness is not RequirementReadiness.NotStarted);
+            var (bandKey, pillKey) = BandTokens(hueKey);
             _entries.Add(new ListHeaderEntry
             {
-                Label = label, Indented = indent, Collapsible = true,
+                Label = label, Collapsible = true,
                 Collapsed = _collapsedSections.Contains(label),
-                Chevron = _collapsedSections.Contains(label) ? "▸" : "▾",
                 Count = members.Count == 0 ? "" : $"{started} of {members.Count} started",
-                HeaderBrush = brush,
+                CountShort = members.Count == 0 ? "" : $"{started} / {members.Count}",
+                HeaderBrush = Ui.Br(hueKey),
+                BandBrush = Ui.Br(bandKey),
+                PillBrush = Ui.Br(pillKey),
+                Gap = _entries.OfType<ListHeaderEntry>().Any(),  // 8pt above every band except the first
             });
         }
 
@@ -351,16 +402,6 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
                 DotBrush = Ui.Br(i.AreaHueKey),
             });
         }
-    }
-
-    /// <summary>Natural reference order: leading dotted digits sort numerically per part
-    /// ("Rule 10" after "Rule 9"); anything else falls back to the plain string.</summary>
-    private static string SortRef(RequirementItem i)
-    {
-        var head = new string(i.Ref.TakeWhile(c => char.IsDigit(c) || c == '.').ToArray());
-        if (head.Length == 0) return "z|" + i.Ref;
-        var padded = string.Join(".", head.Split('.').Select(p => p.Length == 0 ? "0" : p.PadLeft(3, '0')));
-        return $"{padded}|{i.Ref}";
     }
 
     private void ToggleSection(string label)
@@ -504,9 +545,17 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
     {
         var t = d.Display;
         var sp = new StackPanel { Spacing = 5 };
+        // Rules anchor to their own source heading ("Rule 10 — QSPP Assessor" reads
+        // "PROGRAM RULE · QSPP ASSESSOR"); their pseudo-area "Program rules" only duplicated
+        // the kind label, so it drops out (owner fix pass item 4).
+        var eyebrow = t.KindLabel == "Program rule"
+            ? HeadingSuffix(t.SourceTitle) is { Length: > 0 } heading
+                ? $"{t.KindLabel} · {heading}"
+                : t.KindLabel
+            : $"{t.KindLabel} · {t.Area}";
         sp.Children.Add(new TextBlock
         {
-            Text = $"{t.KindLabel} · {t.Area}".ToUpperInvariant(),
+            Text = eyebrow.ToUpperInvariant(),
             Classes = { "eyebrow" }, Foreground = Ui.Br("Brush.Muted"),
         });
         sp.Children.Add(new TextBlock { Text = t.Title, Classes = { "title2" }, TextWrapping = TextWrapping.Wrap });
@@ -526,6 +575,15 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
             sp.Children.Add(plain);
         }
         return sp;
+    }
+
+    /// <summary>The rule's own source heading: the text after the em dash of the seeded
+    /// title ("Rule 10 — QSPP Assessor" → "QSPP Assessor"); "" when the source carries
+    /// none.</summary>
+    private static string HeadingSuffix(string sourceTitle)
+    {
+        var i = sourceTitle.IndexOf('—');
+        return i > 0 ? sourceTitle[(i + 1)..].Trim() : "";
     }
 
     /// <summary>Status row: the four-step readiness stepper, the ONE next action beside it,
@@ -1185,17 +1243,27 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
 /// The ListBox shows these two concrete types so the DataTemplates match by DataType.</summary>
 public abstract class ListEntry;
 
-/// <summary>Section header row: label, "x of y started" count, chevron, indentation. The
-/// label takes the row's area hue (v2 3D #5); HeaderBrush is set by the list engine.</summary>
+/// <summary>Section band row: plural band label, the readable count (tooltip + accessible
+/// name behind the short pill), collapsed state, and the brushes that paint the band:
+/// HeaderBrush = the group hue (bar + pill text), BandBrush = the tint fill, PillBrush =
+/// the pill ground. Gap spaces the band 8pt above when an earlier band exists.</summary>
 public sealed class ListHeaderEntry : ListEntry
 {
     public string Label { get; init; } = "";
     public string Count { get; init; } = "";
-    public string Chevron { get; init; } = "▾";
+    public string CountShort { get; init; } = "";
     public bool Collapsed { get; init; }
     public bool Collapsible { get; init; } = true;
-    public bool Indented { get; init; }
     public IBrush? HeaderBrush { get; init; }
+    public IBrush? BandBrush { get; init; }
+    public IBrush? PillBrush { get; init; }
+    public bool Gap { get; init; }
+
+    public Thickness BandGap => Gap ? new Thickness(0, 8, 0, 0) : default;
+
+    /// <summary>Chevron as a rotation: collapsed points right, expanded points down, and
+    /// the template's 150ms TransformOperationsTransition animates between the two.</summary>
+    public string ChevronTransform => Collapsed ? "rotate(0deg)" : "rotate(90deg)";
 }
 
 /// <summary>Requirement leaf row: headline first (the display title), then status dot + word,

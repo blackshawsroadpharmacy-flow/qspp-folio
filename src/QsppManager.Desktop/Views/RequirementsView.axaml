@@ -12,18 +12,43 @@
         <TextBox x:Name="FilterBox" DockPanel.Dock="Top" PlaceholderText="Filter by title or reference" />
         <ListBox x:Name="ReqList" Classes="list" Margin="4,8,4,0" Background="Transparent">
           <ListBox.DataTemplates>
+            <!-- Section band (owner band spec): 40pt band, the group hue tint at ~8%,
+                 3px hue bar, 15pt Semibold Ink label, count pill on the hue tint with the
+                 readable count behind tooltip + accessible name, 12pt chevron rotating
+                 150ms. Bands never show the leaf selection/hover chrome (BandedListBox
+                 adds the .band class; App.axaml opts band items out of it). -->
             <DataTemplate DataType="v:ListHeaderEntry">
-              <Grid ColumnDefinitions="*,Auto" Margin="10,7,0,2">
-                <TextBlock Text="{Binding Label}" Classes="eyebrow" TextTrimming="CharacterEllipsis" Margin="0,0,4,0"
-                           Foreground="{Binding HeaderBrush, FallbackValue={DynamicResource Brush.Muted}}" />
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
-                  <TextBlock Text="{Binding Count}" Classes="small" Foreground="{DynamicResource Brush.Muted}" />
-                  <TextBlock Text="{Binding Chevron}" Classes="small" Foreground="{DynamicResource Brush.Muted}" />
-                </StackPanel>
-              </Grid>
+              <Panel Margin="{Binding BandGap}">
+                <Border Height="40" CornerRadius="6" Background="{Binding BandBrush, FallbackValue={DynamicResource Brush.BandStone}}">
+                  <Grid ColumnDefinitions="Auto,*,Auto" Margin="14,0,12,0">
+                    <Border Width="3" CornerRadius="1.5" VerticalAlignment="Stretch"
+                            Background="{Binding HeaderBrush, FallbackValue={DynamicResource Brush.Muted}}" />
+                    <TextBlock Grid.Column="1" Text="{Binding Label}" Margin="10,0,8,0"
+                               FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"
+                               Foreground="{DynamicResource Brush.Ink}" TextTrimming="CharacterEllipsis" />
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                      <Border CornerRadius="999" Padding="8,2" Background="{Binding PillBrush, FallbackValue={DynamicResource Brush.StoneTint}}"
+                              ToolTip.Tip="{Binding Count}" AutomationProperties.Name="{Binding Count}">
+                        <TextBlock Text="{Binding CountShort}" FontSize="11" FontWeight="Medium"
+                                   Foreground="{Binding HeaderBrush, FallbackValue={DynamicResource Brush.Muted}}" />
+                      </Border>
+                      <TextBlock Text="▸" FontSize="12" Foreground="{DynamicResource Brush.Muted}" VerticalAlignment="Center"
+                                 RenderTransform="{Binding ChevronTransform, FallbackValue=rotate(0deg)}">
+                        <TextBlock.Transitions>
+                          <Transitions>
+                            <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.15" />
+                          </Transitions>
+                        </TextBlock.Transitions>
+                      </TextBlock>
+                    </StackPanel>
+                  </Grid>
+                </Border>
+              </Panel>
             </DataTemplate>
+            <!-- Leaf row (unchanged shape): headline first, status dot + word, ref in mono.
+                 Rows indent 12pt under their band so the hierarchy reads at a glance. -->
             <DataTemplate DataType="v:ListLeafEntry">
-              <Grid ColumnDefinitions="Auto,*">
+              <Grid ColumnDefinitions="Auto,*" Margin="12,0,0,0">
                 <!-- Selection rail: 3px in the row's AREA hue, visible while selected (3D #5) -->
                 <Border Grid.RowSpan="2" Width="3" CornerRadius="1.5" Margin="3,0,7,0"
                         Background="{Binding DotBrush, FallbackValue={DynamicResource Brush.Muted}}"

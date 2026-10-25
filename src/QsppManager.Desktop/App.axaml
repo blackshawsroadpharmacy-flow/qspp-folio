@@ -102,6 +102,15 @@
           <SolidColorBrush x:Key="Brush.Violet" Color="{StaticResource Color.Violet}" />   <SolidColorBrush x:Key="Brush.VioletTint" Color="{StaticResource Color.VioletTint}" />
           <SolidColorBrush x:Key="Brush.Stone" Color="{StaticResource Color.Stone}" />     <SolidColorBrush x:Key="Brush.StoneTint" Color="{StaticResource Color.StoneTint}" />
           <SolidColorBrush x:Key="Brush.Red" Color="{StaticResource Color.Red}" />         <SolidColorBrush x:Key="Brush.RedTint" Color="{StaticResource Color.RedTint}" />
+          <!-- Section band fills (Requirements list): the group hue at about 8% over the
+               exact Surface ground; the band hover is 4% ink (owner band spec). -->
+          <SolidColorBrush x:Key="Brush.BandInk" Color="{StaticResource Color.Ink}" Opacity="0.08" />
+          <SolidColorBrush x:Key="Brush.BandTeal" Color="{StaticResource Color.Teal}" Opacity="0.08" />
+          <SolidColorBrush x:Key="Brush.BandClay" Color="{StaticResource Color.Clay}" Opacity="0.08" />
+          <SolidColorBrush x:Key="Brush.BandBerry" Color="{StaticResource Color.Berry}" Opacity="0.08" />
+          <SolidColorBrush x:Key="Brush.BandUmber" Color="{StaticResource Color.Umber}" Opacity="0.08" />
+          <SolidColorBrush x:Key="Brush.BandStone" Color="{StaticResource Color.Stone}" Opacity="0.08" />
+          <SolidColorBrush x:Key="Brush.BandHover" Color="{StaticResource Color.Ink}" Opacity="0.04" />
         </ResourceDictionary>
 
         <!-- ============ DARK — derived from the same green identity ============ -->
@@ -181,6 +190,13 @@
           <SolidColorBrush x:Key="Brush.Violet" Color="{StaticResource Color.Violet}" />   <SolidColorBrush x:Key="Brush.VioletTint" Color="{StaticResource Color.VioletTint}" />
           <SolidColorBrush x:Key="Brush.Stone" Color="{StaticResource Color.Stone}" />     <SolidColorBrush x:Key="Brush.StoneTint" Color="{StaticResource Color.StoneTint}" />
           <SolidColorBrush x:Key="Brush.Red" Color="{StaticResource Color.Red}" />         <SolidColorBrush x:Key="Brush.RedTint" Color="{StaticResource Color.RedTint}" />
+          <SolidColorBrush x:Key="Brush.BandInk" Color="{StaticResource Color.Ink}" Opacity="0.08" />
+          <SolidColorBrush x:Key="Brush.BandTeal" Color="{StaticResource Color.Teal}" Opacity="0.08" />
+          <SolidColorBrush x:Key="Brush.BandClay" Color="{StaticResource Color.Clay}" Opacity="0.08" />
+          <SolidColorBrush x:Key="Brush.BandBerry" Color="{StaticResource Color.Berry}" Opacity="0.08" />
+          <SolidColorBrush x:Key="Brush.BandUmber" Color="{StaticResource Color.Umber}" Opacity="0.08" />
+          <SolidColorBrush x:Key="Brush.BandStone" Color="{StaticResource Color.Stone}" Opacity="0.08" />
+          <SolidColorBrush x:Key="Brush.BandHover" Color="{StaticResource Color.Ink}" Opacity="0.04" />
           <Color x:Key="Color.HeroBg">#1D312A</Color>
           <SolidColorBrush x:Key="Brush.HeroBg" Color="{StaticResource Color.HeroBg}" />
           <SolidColorBrush x:Key="Brush.HeroFg" Color="{StaticResource Color.Ink}" />
@@ -689,6 +705,21 @@
     </Style>
     <Style Selector="ListBox.list ListBoxItem:selected">
       <Setter Property="FontWeight" Value="Normal" />
+    </Style>
+
+    <!-- Section bands (Requirements list): a banded item draws its own 40pt fill, so the
+         leaf selection tint must never bleed through it; band items opt out of the sage
+         selection and sit on the 4% ink hover instead (owner band spec). -->
+    <Style Selector="ListBox.list ListBoxItem.band">
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="MinHeight" Value="40" />
+    </Style>
+    <Style Selector="ListBox.list ListBoxItem.band:selected /template/ ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="ListBox.list ListBoxItem.band:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource Brush.BandHover}" />
     </Style>
 
     <!-- Interpretation-issue box: caution tint, themed -->
