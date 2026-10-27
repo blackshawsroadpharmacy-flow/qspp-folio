@@ -286,10 +286,18 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
             return ServiceResult.Fail($"Only Owner/Admin or Manager/Reviewer accounts can mark evidence '{target}'.");
         if (target == EvidenceReviewState.ReadyForReview && item.ContainsPatientData && string.IsNullOrWhiteSpace(item.PatientDataAttestation))
             return ServiceResult.Fail("Privacy gate: evidence contains patient data without a redaction attestation. Redact the underlying content (not a black box), replace the file, then retry.");
+        if (target == EvidenceReviewState.Retired && string.IsNullOrWhiteSpace(note))
+            return ServiceResult.Fail("Say why this evidence is being retired; the reason is kept with its history.");
         item.ReviewState = target;
         item.ReviewerUserId = target is EvidenceReviewState.ManagerVerified ? session.UserId : item.ReviewerUserId;
         item.ReviewedAtUtc = target is EvidenceReviewState.ManagerVerified or EvidenceReviewState.NeedsRework ? DateTime.UtcNow : item.ReviewedAtUtc;
         item.ReviewNote = note ?? item.ReviewNote;
+        var retiredLinks = 0;
+        if (target == EvidenceReviewState.Retired)
+        {
+            item.SupersededReason = note.Trim();
+            retiredLinks = FlagLinksAfterRetire(item, "retired", note.Trim(), session);
+        }
         if (target == EvidenceReviewState.ManagerVerified)
         {
             // Manager verification activates the evidence's Proposed links — the link review
@@ -298,7 +306,7 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
                 l.State = LinkState.Active;
         }
         db.SaveChanges();
-        audit.Append(session.DisplayName, session.UserId, "evidence.review", "evidence", evidenceId.ToString(), $"to={target}; note={note}");
+        audit.Append(session.DisplayName, session.UserId, "evidence.review", "evidence", evidenceId.ToString(), $"to={target}; note={note}" + (retiredLinks > 0 ? $"; links={retiredLinks}" : ""));
         indexer?.IndexEvidence(evidenceId);
         return ServiceResult.Succeed();
     }
@@ -313,6 +321,7 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
         var nu = db.EvidenceItems.FirstOrDefault(e => e.Id == newId);
         if (old == null || nu == null) return ServiceResult.Fail("Evidence item not found.");
         if (newId == oldId) return ServiceResult.Fail("Choose a different, current version to supersede with.");
+        if (nu.ReviewState == EvidenceReviewState.Retired) return ServiceResult.Fail("The replacement is itself retired. Choose a current version.");
         if (old.ReviewState != EvidenceReviewState.ManagerVerified)
             return ServiceResult.Fail("Only ManagerVerified evidence gets the formal supersession flow; retire drafts instead.");
         old.ReviewState = EvidenceReviewState.Retired;
@@ -320,27 +329,34 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
         old.SupersededReason = reason;
         indexer?.IndexEvidence(old.Id);
         indexer?.IndexEvidence(nu.Id);
-        var affected = db.EvidenceLinks.Where(l => l.EvidenceItemId == oldId && l.State != LinkState.Superseded).ToList();
+        var affectedCount = FlagLinksAfterRetire(old, "superseded", reason, session);
+        db.SaveChanges();
+        audit.Append(session.DisplayName, session.UserId, "evidence.superseded", "evidence", oldId.ToString(), $"old={oldId} new={newId} reason={reason} affectedLinks={affectedCount}");
+        return ServiceResult.Succeed();
+    }
+
+    /// <summary>Marks every live link of an evidence item Superseded and raises one re-link task per
+    /// requirement. Caller saves. Returns the number of links changed.</summary>
+    private int FlagLinksAfterRetire(EvidenceItem old, string what, string reason, UserSession session)
+    {
+        var affected = db.EvidenceLinks.Where(l => l.EvidenceItemId == old.Id && l.State != LinkState.Superseded).ToList();
         foreach (var l in affected)
         {
             l.State = LinkState.Superseded;
             var req = db.Requirements.FirstOrDefault(r => r.Id == l.RequirementId);
             var st = db.RequirementStates.FirstOrDefault(s => s.RequirementId == l.RequirementId);
-            var task = new TaskItem
+            db.Tasks.Add(new TaskItem
             {
-                Title = $"Evidence superseded — re-link current version for {req?.Ref ?? "requirement"}",
-                Details = $"Superseded evidence '{old.Title}' was replaced ({reason}). Choose the current version, link it with a rationale, and mark the link reviewed so readiness reflects reality.",
+                Title = $"Evidence {what}: re-link current version for {req?.Ref ?? "requirement"}",
+                Details = $"Evidence '{old.Title}' was {what} ({reason}). Choose the current version, link it with a rationale, and mark the link reviewed so readiness reflects reality.",
                 RequirementId = l.RequirementId,
-                EvidenceItemId = oldId,
+                EvidenceItemId = old.Id,
                 AssignedToUserId = st?.OwnerUnassigned == false ? st.OwnerUserId : EnsurePharmacyOwner(),
                 Priority = TaskPriority.High,
                 CreatedByUserId = session.UserId,
-            };
-            db.Tasks.Add(task);
+            });
         }
-        db.SaveChanges();
-        audit.Append(session.DisplayName, session.UserId, "evidence.superseded", "evidence", oldId.ToString(), $"old={oldId} new={newId} reason={reason} affectedLinks={affected.Count}");
-        return ServiceResult.Succeed();
+        return affected.Count;
     }
 
     private Guid EnsurePharmacyOwner()

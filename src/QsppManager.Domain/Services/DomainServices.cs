@@ -202,7 +202,7 @@ public static class StateMachines
         };
 
     public static bool MayVerifyEvidence(EvidenceReviewState target, UserRole actor)
-        => target == EvidenceReviewState.ManagerVerified
+        => target is EvidenceReviewState.ManagerVerified or EvidenceReviewState.Retired
             ? actor is UserRole.OwnerAdmin or UserRole.ManagerReviewer
             : actor is not UserRole.ReviewerReadOnly;
 
