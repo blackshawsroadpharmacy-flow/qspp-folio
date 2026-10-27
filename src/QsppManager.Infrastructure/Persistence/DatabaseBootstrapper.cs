@@ -35,7 +35,50 @@ public static class DatabaseBootstrapper
             }
         }
         finally { conn.Close(); }
+
+        // Plan 001 (FIX-03): a database that is about to be migrated gets a VACUUM INTO
+        // safety copy first. A fresh install (no file or no user tables) has nothing worth saving.
+        var pending = db.Database.GetPendingMigrations().ToList();
+        var dbFile = db.Database.GetDbConnection().DataSource;
+        if (pending.Count > 0 && File.Exists(dbFile) && new FileInfo(dbFile).Length > 0 && HasUserTables(db))
+            PreMigrationBackup(db, dbFile, pending[^1]);
+
         db.Database.Migrate();
+    }
+
+    /// <summary>A fresh install has no data worth saving; a legacy or migrated DB does.
+    /// Checks for the Requirements table through the same read-only Scalar helper.</summary>
+    private static bool HasUserTables(QsppDbContext db)
+    {
+        var conn = db.Database.GetDbConnection();
+        conn.Open();
+        try { return Scalar(conn, "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Requirements'") > 0; }
+        finally { conn.Close(); }
+    }
+
+    /// <summary>VACUUM INTO copy kept in pre-migration/ beside the database before any
+    /// pending migration runs (plan 001). Throws on failure by contract: the app must
+    /// never migrate without the safety copy, and the caller catches to stop the boot.</summary>
+    private static void PreMigrationBackup(QsppDbContext db, string dbFile, string pendingMigrationId)
+    {
+        var dir = Path.Combine(Path.GetDirectoryName(dbFile)!, "pre-migration");
+        Directory.CreateDirectory(dir);
+        var target = Path.Combine(dir, $"qspp-{DateTime.Now.ToString("yyyyMMdd-HHmmss")}-before-{pendingMigrationId}.db");
+        var escaped = target.Replace("'", "''");
+        db.Database.ExecuteSqlRaw($"VACUUM INTO '{escaped}'");
+        PrunePreMigration(dir);
+    }
+
+    /// <summary>Keeps the newest 5 qspp-*.db safety copies (stamp prefix sorts chronologically).</summary>
+    private static void PrunePreMigration(string dir)
+    {
+        var keep = Directory.EnumerateFiles(dir, "qspp-*.db")
+            .OrderByDescending(Path.GetFileName)
+            .Take(5)
+            .ToHashSet(StringComparer.Ordinal);
+        foreach (var f in Directory.EnumerateFiles(dir, "qspp-*.db"))
+            if (!keep.Contains(f))
+                try { File.Delete(f); } catch { }
     }
 
     private static long Scalar(System.Data.Common.DbConnection conn, string sql)

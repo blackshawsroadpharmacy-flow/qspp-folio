@@ -9,6 +9,7 @@ using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Microsoft.EntityFrameworkCore;
 using QsppManager.Desktop.ViewModels;
+using QsppManager.Infrastructure.Backup;
 using QsppManager.Infrastructure.Persistence;
 using QsppManager.Infrastructure.Printing;
 using QsppManager.Infrastructure.ProcessSort;
@@ -81,6 +82,9 @@ public partial class App : Avalonia.Application
                 restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Information)
             .CreateLogger();
         if (migrationWarning != null) Log.Warning("{Warn}", migrationWarning);
+        if (RestoreOutcome is { Attempted: true } restoreOutcome)
+            Log.Write(restoreOutcome.Promoted ? Serilog.Events.LogEventLevel.Information : Serilog.Events.LogEventLevel.Warning,
+                "Restore promotion: {Message}", restoreOutcome.Message);
 
         // A UI-thread exception should not take the whole session down: log it and keep running.
         // (⌘, previously crashed the app via a latent SettingsView cast bug — caught this way too.)
@@ -96,7 +100,21 @@ public partial class App : Avalonia.Application
             .UseSqlite($"Data Source={AppData.DatabasePath(DemoMode)}")
             .Options;
         Db = new QsppDbContext(options);
-        DatabaseBootstrapper.Prepare(Db);   // fresh → migrations create; legacy EnsureCreated → stamped then migrated
+        try
+        {
+            DatabaseBootstrapper.Prepare(Db);   // fresh → migrations create; legacy EnsureCreated → stamped then migrated
+        }
+        catch (Exception ex)
+        {
+            Log.Fatal(ex, "Migration safety backup failed or migration refused to run; boot stopped before any data change");
+            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime bootDesktop)
+            {
+                base.OnFrameworkInitializationCompleted();
+                bootDesktop.Shutdown();
+                return;
+            }
+            throw;
+        }
 
         var fontsDir = Path.Combine(RepoRoot, "assets", "fonts");
         if (!Directory.Exists(fontsDir))
@@ -516,27 +534,19 @@ public partial class App : Avalonia.Application
 
     /// <summary>If a verified restore left files in appsdata/restore-staging, promote them
     /// (database + attachments) into the live data dir BEFORE the database opens. Runs once;
-    /// the staging dir is removed after promotion.</summary>
+    /// staging is removed only on success; failure leaves live data untouched (plan 001).</summary>
+    private static RestorePromoter.Outcome? RestoreOutcome;
+
     private static void RestoreStagedBackupIfAny()
     {
-        var staging = AppData.RestoreStaging();
-        var stagedDb = Path.Combine(staging, "qspp.db");
-        if (!File.Exists(stagedDb)) return;
-        var liveDb = AppData.DatabasePath(App.DemoMode);
-        File.Copy(stagedDb, liveDb, overwrite: true);
-        var stagedAtt = Path.Combine(staging, "attachments");
-        if (Directory.Exists(stagedAtt))
+        var knownMigrations = new QsppDbContext(new DbContextOptionsBuilder<QsppDbContext>()
+            .UseSqlite("Data Source=:memory:").Options).Database.GetMigrations().ToList();
+        RestoreOutcome = RestorePromoter.Promote(AppData.RestoreStaging(), AppData.DatabasePath(App.DemoMode),
+            AppData.AttachmentsDir, AppData.Root, knownMigrations);
+        if (RestoreOutcome is { Attempted: true, Promoted: false } failure)
         {
-            var attDir = AppData.AttachmentsDir;
-            foreach (var f in Directory.EnumerateFiles(stagedAtt, "*", SearchOption.AllDirectories))
-            {
-                var dest = Path.Combine(attDir, Path.GetRelativePath(stagedAtt, f));
-                Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
-                File.Copy(f, dest, overwrite: true);
-            }
+            try { File.WriteAllText(Path.Combine(AppData.Root, "restore-failed.txt"), failure.Message); } catch { }
         }
-        try { Directory.Delete(staging, recursive: true); } catch { }
-        Console.WriteLine($"[qspp] restored backup promoted into {AppData.Root}");
     }
 
     /// <summary>Signed-in session; null until sign-in. Roles enforced in workspace services.</summary>
