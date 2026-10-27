@@ -104,25 +104,51 @@ public class BackupService(QsppDbContext db, AttachmentStore store, string backu
             foreach (var f in doc.RootElement.GetProperty("files").EnumerateArray())
                 expected[f.GetProperty("path").GetString()!] = f.GetProperty("sha256").GetString()!;
 
+            // Reject path traversal in the manifest before anything is read or written.
+            var targetFull = Path.GetFullPath(targetDir).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            bool Contained(string rel)
+            {
+                if (string.IsNullOrWhiteSpace(rel) || Path.IsPathRooted(rel) || rel.Contains('\0')) return false;
+                var full = Path.GetFullPath(Path.Combine(targetDir, rel.Replace('/', Path.DirectorySeparatorChar)));
+                return full.StartsWith(targetFull, StringComparison.Ordinal);
+            }
+
+            foreach (var p in expected.Keys)
+                if (!Contained(p))
+                    return (false, $"Unsafe path in backup manifest ('{p}'). Nothing was restored.", "", 0);
+
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var e in archive.Entries)
+            {
+                if (string.IsNullOrEmpty(e.Name)) continue;             // directory entry
+                if (!seen.Add(e.FullName))
+                    return (false, $"Backup contains two entries named '{e.FullName}'. Nothing was restored.", "", 0);
+                if (e.FullName == "manifest.json") continue;
+                if (!expected.ContainsKey(e.FullName) || !Contained(e.FullName))
+                    return (false, $"Backup contains '{e.FullName}', which its manifest does not list. Nothing was restored.", "", 0);
+            }
+
             foreach (var (entryPath, sha) in expected)
             {
                 var entry = archive.GetEntry(entryPath);
                 if (entry == null)
                     throw new InvalidOperationException($"manifest lists '{entryPath}' but it is missing from the archive");
                 var tmp = Path.Combine(targetDir, ".hashcheck");
-                entry.ExtractToFile(tmp, overwrite: true);
-                var actual = HashFile(tmp);
-                File.Delete(tmp);
+                string actual;
+                try { entry.ExtractToFile(tmp, overwrite: true); actual = HashFile(tmp); }
+                finally { try { File.Delete(tmp); } catch { } }
                 if (!string.Equals(actual, sha, StringComparison.OrdinalIgnoreCase))
                     return (false, $"Hash mismatch for {entryPath} — the backup is corrupted or tampered with. Nothing was restored.", "", 0);
             }
 
-            // Extract everything (hashes already proven).
+            // Extract everything (manifest safety and hashes already proven).
             var restored = 0;
             foreach (var entry in archive.Entries)
             {
                 if (string.IsNullOrEmpty(entry.Name)) continue;
                 var dest = Path.Combine(targetDir, entry.FullName.Replace('/', Path.DirectorySeparatorChar));
+                if (!Path.GetFullPath(dest).StartsWith(targetFull, StringComparison.Ordinal))
+                    return (false, "Unsafe entry path. Restore stopped.", "", restored);
                 Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
                 entry.ExtractToFile(dest, overwrite: true);
                 restored++;
