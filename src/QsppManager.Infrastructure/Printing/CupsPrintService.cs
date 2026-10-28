@@ -21,8 +21,17 @@ public class CupsPrintService(QsppDbContext db, AuditService audit)
         {
             var psi = new ProcessStartInfo("lpstat", ["-p", "-d"]) { RedirectStandardOutput = true, RedirectStandardError = true };
             using var p = Process.Start(psi) ?? throw new InvalidOperationException("lpstat could not be started.");
-            var output = p.StandardOutput.ReadToEnd();
-            p.WaitForExit(5000);
+            // FIX-18: pipe reads as tasks + a hard timeout with a tree kill, so a hung
+            // printer queue can no longer freeze discovery.
+            var outTask = p.StandardOutput.ReadToEndAsync();
+            _ = p.StandardError.ReadToEndAsync();
+            if (!p.WaitForExit(5000))
+            {
+                try { p.Kill(entireProcessTree: true); } catch { }
+                Console.Error.WriteLine("printer discovery timed out after 5 s; lpstat was stopped");
+                return [];
+            }
+            var output = outTask.Result;   // complete by now: the process exited
             List<PrinterInfo> list = new();
             foreach (var line in output.Split('\n'))
             {
@@ -47,20 +56,15 @@ public class CupsPrintService(QsppDbContext db, AuditService audit)
     public record PrintOutcome(bool Ok, string detail);
 
     /// <summary>Submits an existing PDF to a printer. No automatic retries: a failed or
-    /// uncertain submission may have consumed paper elsewhere; the user re-prints deliberately.</summary>
+    /// uncertain submission may have consumed paper elsewhere; the user re-prints deliberately.
+    /// FIX-18: output is read as tasks so a hung queue cannot deadlock, and a timed-out spool
+    /// call gets its process tree killed and reports an honest failure.</summary>
     public PrintOutcome SubmitToPrinter(string pdfPath, string printer, int copies, bool duplex, CancellationToken ct = default)
     {
         if (!File.Exists(pdfPath)) return new PrintOutcome(false, $"Rendered PDF is missing at {pdfPath}. This is an application error — please try again.");
         var known = DiscoverPrinters().Select(x => x.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
         if (known.Count > 0 && !known.Contains(printer))
             return new PrintOutcome(false, $"Printer '{printer}' is not visible to the print system right now. Check the device, then choose a printer again. Nothing was printed.");
-
-        var args = new List<string> { "-d", printer, "-n", Math.Clamp(copies, 1, 50).ToString() };
-        if (duplex) args.AddRange(["-o", "sides=two-sided-long-edge"]);
-        args.Add("-o");
-        args.Add("sides=one-sided");
-        args.Add(pdfPath);
-        _ = args; // replaced below: duplex option must be exclusive
 
         var finalArgs = new List<string> { "-d", printer, "-n", Math.Clamp(copies, 1, 50).ToString() };
         finalArgs.AddRange(duplex ? ["-o", "sides=two-sided-long-edge"] : ["-o", "sides=one-sided"]);
@@ -70,15 +74,21 @@ public class CupsPrintService(QsppDbContext db, AuditService audit)
         try
         {
             using var p = Process.Start(psi) ?? throw new InvalidOperationException("lp could not be started.");
-            var stdout = p.StandardOutput.ReadToEnd();
-            var stderr = p.StandardError.ReadToEnd();
-            p.WaitForExit(15000);
+            var stdout = p.StandardOutput.ReadToEndAsync();
+            var stderr = p.StandardError.ReadToEndAsync();
+            if (!p.WaitForExit(15000))
+            {
+                try { p.Kill(entireProcessTree: true); } catch { }
+                return new PrintOutcome(false, "The print queue did not respond within 15 seconds; the lp process was stopped. Nothing confirmed as printed. Resolve the printer queue and print again.");
+            }
+            var outText = stdout.Result;   // complete by now: the process exited
+            var errText = stderr.Result;
             if (p.ExitCode == 0)
             {
-                var jobId = ExtractRequestId(stdout);
-                return new PrintOutcome(true, jobId is null ? stdout.Trim() : $"Spooler accepted job {jobId}. Confirm the pages came out of the device.");
+                var jobId = ExtractRequestId(outText);
+                return new PrintOutcome(true, jobId is null ? outText.Trim() : $"Spooler accepted job {jobId}. Confirm the pages came out of the device.");
             }
-            return new PrintOutcome(false, $"The print system rejected the job (lp exit {p.ExitCode}). {stderr.Trim()} No automatic retry — resolve the printer issue and print again.");
+            return new PrintOutcome(false, $"The print system rejected the job (lp exit {p.ExitCode}). {errText.Trim()} No automatic retry — resolve the printer issue and print again.");
         }
         catch (Exception ex)
         {

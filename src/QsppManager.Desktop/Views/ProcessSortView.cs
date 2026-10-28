@@ -281,7 +281,13 @@ public partial class ProcessSortDialog : Window
     private void OpenOutput()
     {
         if (string.IsNullOrWhiteSpace(_outputDir)) { Say("Choose an output folder first."); return; }
-        try { Process.Start(new ProcessStartInfo("/usr/bin/open", $"\"{_outputDir}\"") { UseShellExecute = true }); }
+        try
+        {
+            // FIX-18: argument list, never an interpolated argument string.
+            var psi = new ProcessStartInfo("/usr/bin/open") { UseShellExecute = true };
+            psi.ArgumentList.Add(_outputDir);
+            Process.Start(psi);
+        }
         catch (Exception ex) { Say($"Could not open the folder: {ex.Message}"); }
     }
 

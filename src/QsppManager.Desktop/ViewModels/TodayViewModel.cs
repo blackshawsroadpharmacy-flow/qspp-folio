@@ -117,7 +117,15 @@ public class TodayViewModel(ShellViewModel shell, TodayView view) : ViewModelBas
 
     private static void RevealInFinder(string fullPath)
     {
-        try { System.Diagnostics.Process.Start("open", $"-R \"{fullPath}\""); } catch { /* Finder may refuse paths it cannot see */ }
+        try
+        {
+            // FIX-18: argument list, never an interpolated argument string.
+            var psi = new System.Diagnostics.ProcessStartInfo("open") { UseShellExecute = false };
+            psi.ArgumentList.Add("-R");
+            psi.ArgumentList.Add(fullPath);
+            System.Diagnostics.Process.Start(psi);
+        }
+        catch { /* Finder may refuse paths it cannot see */ }
     }
 
     private static readonly Regex PathRx = new(@"((?:/Users|/Volumes|~/)[A-Za-z0-9 ._\-&,()'@+]*)", RegexOptions.Compiled);

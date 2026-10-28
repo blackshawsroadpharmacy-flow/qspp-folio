@@ -318,4 +318,22 @@ public sealed class LayamockServer : IDisposable
     {
         try { _listener.Stop(); _listener.Close(); } catch { }
     }
+
+    /// <summary>FIX-18: the loopback pin parses the URL instead of prefix-matching; the
+    /// user-info trick must not slip a real host past the check.</summary>
+    [Theory]
+    [InlineData("http://127.0.0.1:8317/v1", true)]
+    [InlineData("http://localhost:8317/v1", true)]
+    [InlineData("http://127.0.0.1:1@example.com/", false)]
+    [InlineData("http://localhost:1@example.com/", false)]
+    [InlineData("http://192.168.1.4:8317/v1", false)]
+    [InlineData("https://127.0.0.1:8317/v1", false)]   // scheme pinned to http (same-machine server)
+    [InlineData("not a url", false)]
+    public void Stage2_BindsToLoopbackOnly(string url, bool accepted)
+    {
+        if (accepted)
+            Assert.NotNull(new FolioDecisionStage2(url));
+        else
+            Assert.Throws<ArgumentException>(() => new FolioDecisionStage2(url));
+    }
 }

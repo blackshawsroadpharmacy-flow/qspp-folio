@@ -33,7 +33,13 @@ public sealed class FolioDecisionStage2
     public FolioDecisionStage2(string? baseUrl = null)
     {
         var url = baseUrl ?? Environment.GetEnvironmentVariable("QSPP_LAYA_URL") ?? DefaultBaseUrl;
-        if (!url.StartsWith("http://127.0.0.1:") && !url.StartsWith("http://localhost:"))
+        // FIX-18: parse, do not prefix-match. "http://127.0.0.1:1@example.com/" parses with
+        // host example.com and user info "127.0.0.1:1" — the prefix check used to accept it.
+        // Scheme pinned to http: the stage-2 server is a process on the same machine.
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)
+            || uri.Scheme != "http"
+            || (uri.Host != "127.0.0.1" && uri.Host != "localhost")
+            || uri.UserInfo.Length > 0)
             throw new ArgumentException("Stage-2 must bind to loopback only; refusing non-loopback URL.");
         _http = new HttpClient { BaseAddress = new Uri(url), Timeout = TimeSpan.FromSeconds(20) };
     }

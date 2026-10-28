@@ -56,16 +56,24 @@ public sealed class FolioOcr(string helperPath) : FolioOcrEngine
     public override FolioOcr.OcrResult Ocr(string fullPath, int? page, int dpi, CancellationToken ct = default)
     {
         if (!File.Exists(helperPath)) return Unavailable;
-        var args = page is { } p ? $"--page {p} --dpi {dpi}" : $"--dpi {dpi}";
+        // FIX-18: build the command as an argument list — one malicious or accidental
+        // quote/space in a filename can no longer change what the helper sees.
         var psi = new ProcessStartInfo
         {
             FileName = helperPath,
-            Arguments = $"\"{fullPath}\" {args}",
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
             CreateNoWindow = true,
         };
+        psi.ArgumentList.Add(fullPath);
+        if (page is { } p)
+        {
+            psi.ArgumentList.Add("--page");
+            psi.ArgumentList.Add(p.ToString());
+        }
+        psi.ArgumentList.Add("--dpi");
+        psi.ArgumentList.Add(dpi.ToString());
         using var proc = new Process { StartInfo = psi };
         try { proc.Start(); }
         catch (Exception ex) { return new(false, $"OCR helper could not start: {ex.Message}", EngineKey, 0, []); }
