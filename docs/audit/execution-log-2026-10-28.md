@@ -357,3 +357,25 @@ Baseline: build 0 Error(s) / 83 Warning(s); tests 231 passed, 0 failed
 - FIX-23 stop condition (>8 call sites): recon found 5 spawns, OK to plan; site count
   to re-verify at execution.
 - Both commits land in ONE plans commit before this block; review asks ride the report.
+
+## Packaging run (owner asked for the distributable), 28 Oct evening
+
+- First live execution of the FIX-16 pipeline exposed a REAL pre-existing bug: the
+  Info.plist heredoc had lost its PLIST terminator (present in neither 5858779 nor the
+  FIX-16 commit), so cat swallowed the rest of scripts/package-app.sh into the plist:
+  no codesign, no zip, no seed scan, silent exit 0. EVERY bundle since the rebrand
+  (including the delivered ~/Applications/QSPP Folio.app and the 20261025 zip) carries a
+  plist whose tail is script text; plutil still parses the head, which is why boots worked.
+- Fixed + committed 13507e2. Then the full pipeline ran clean: publish (Release,
+  self-contained, DebugType none, PathMap /q), bundle assemble, helper rebuilt minos 12.0,
+  ad-hoc sign, codesign --verify --deep --strict exit=0, ditto zip 0 ._ members, seed
+  privacy scan 0 files, package-app.sh exit=0.
+- Distribution artifacts: dist/QSPP-Folio-20261028-arm64.dmg (99M, sha256 7d78130d8bb112c1…)
+  and dist/QSPP-Folio-20261028-arm64-distribution.zip (90M, sha256 602b3df07f202b79…).
+  DMG verified: mounts readonly, codesign verify OK inside, plutil OK, helper present.
+  Bundle personal-string scan: 0 files. Pack inside Resources: 22 files. plutil -lint: OK.
+- The 20261025 zip is superseded by the 20261028 artifacts (old plist damage + stale
+  helper + pre-fix binaries): do not distribute. Old zip left in place until Hugh deletes it.
+- Packaging was performed because Hugh asked in chat; FIX-21 work is STASHED
+  ("FIX-21 wip (sweep+tests, 4 test fails, unique index needs open-only filter)") and
+  contributed nothing to this build. Working tree at the build: clean at HEAD 13507e2.
