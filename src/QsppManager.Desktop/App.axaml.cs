@@ -151,6 +151,7 @@ public partial class App : Avalonia.Application
         }
         catch (Exception ex)
         {
+            SeedImportError = "The program reference content did not finish loading (" + ex.GetType().Name + "). It will retry on the next start. See the log in the data folder.";
             Log.Error(ex, "seed import partially failed");
         }
 
@@ -551,6 +552,10 @@ public partial class App : Avalonia.Application
 
     /// <summary>Signed-in session; null until sign-in. Roles enforced in workspace services.</summary>
     public static UserSession? Session { get; set; }
+
+    /// <summary>FIX-07: set when a boot-time seed/corpus import failed; shown in About.
+    /// Cleared by the next successful import (each app start retries the import).</summary>
+    public static string? SeedImportError { get; private set; }
     public static Window? Main { get; set; }
 
     private static string FindRepoRoot()

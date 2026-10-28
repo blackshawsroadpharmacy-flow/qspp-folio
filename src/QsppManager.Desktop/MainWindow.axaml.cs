@@ -516,6 +516,7 @@ public partial class MainWindow : Window
         stack.Children.Add(header);
         stack.Children.Add(Ui.InfoLine("Data folder", AppData.Root));
         stack.Children.Add(Ui.InfoLine("Sources pack", SeedImporter.PackRoot() ?? "(pack not found, set it in Settings)"));
+        if (App.SeedImportError is { } seedErr) stack.Children.Add(Ui.InfoLine("Corpus import", seedErr));
         stack.Children.Add(new TextBlock
         {
             Text = "Offline-first. No cloud upload. Audit history is append-only.",

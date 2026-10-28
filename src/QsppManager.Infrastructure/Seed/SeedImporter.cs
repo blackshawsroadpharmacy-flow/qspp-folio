@@ -222,7 +222,16 @@ public class SeedImporter(QsppDbContext db, AttachmentStore store, AuditService 
     // ---------- requirements ----------
     private (int reqs, int examples) ImportRequirements(CancellationToken ct)
     {
-        if (db.Requirements.Any()) return WordingRefresh(ct);
+        // FIX-07: insert-missing import. Existing installs keep their rows (DD-32 wording
+        // refresh still runs first); new seed content is added, and a requirement whose
+        // (RefKind, Ref) exists under a different deterministic id is re-sourced in place.
+        var hadRows = db.Requirements.Any();
+        if (hadRows) WordingRefresh(ct);   // keeps DD-35 behaviour: reword existing rows first
+        var knownIds = db.Requirements.IgnoreQueryFilters().AsNoTracking().Select(r => r.Id).ToHashSet();
+        var byKindRef = db.Requirements.IgnoreQueryFilters()
+            .Select(r => new { r.RefKind, r.Ref, r.Id }).ToList()
+            .ToDictionary(x => (x.RefKind, x.Ref), x => x.Id);
+        var added = 0; var resourced = 0;
         var path = Path.Combine(repoRoot, "seed", "requirements.json");
         if (!File.Exists(path)) return (0, 0);
 
@@ -239,7 +248,25 @@ public class SeedImporter(QsppDbContext db, AttachmentStore store, AuditService 
             var id = el.TryGetProperty("id", out var idEl) && idEl.ValueKind == JsonValueKind.String && Guid.TryParse(idEl.GetString(), out var g)
                 ? g : DeterministicId($"{kind}", $"{el.GetProperty("sourceDoc").GetString() ?? ""}:{refKey}");
 
-            if (db.Requirements.IgnoreQueryFilters().Any(r => r.Id == id)) continue;
+            if (knownIds.Contains(id)) continue;
+            // The REM upsert owns the Surveillance namespace; the re-source rule must not touch it.
+            if (kind == RefKind.Surveillance) continue;
+            if (byKindRef.TryGetValue((kind, refKey), out var existingId))
+            {
+                // Same requirement, new source document or version: update in place, keep the id.
+                var cur = db.Requirements.IgnoreQueryFilters().First(x => x.Id == existingId);
+                var newDoc = S(el, "sourceDoc"); var newVer = S(el, "sourceVersion");
+                if (cur.SourceDocFile != newDoc || cur.SourceVersion != newVer)
+                {
+                    audit.Append("system", null, "corpus.resourced", "requirement", cur.Id.ToString(),
+                        $"{kind} {refKey}: '{cur.SourceVersion}' -> '{newVer}'");
+                    cur.SourceDocFile = newDoc; cur.SourceVersion = newVer;
+                    cur.Title = S(el, "title"); cur.PlainSummary = S(el, "summary"); cur.WordingExcerpt = S(el, "wording");
+                    cur.AnchorPage = null; cur.AnchorVerified = false; cur.AnchorApproximate = true;
+                    resourced++;
+                }
+                continue;
+            }
 
             var r = new Requirement
             {
@@ -268,6 +295,7 @@ public class SeedImporter(QsppDbContext db, AttachmentStore store, AuditService 
                     r.AnchorLines = string.Join("-", al.EnumerateArray().Select(x => x.GetInt32().ToString()));
             }
             db.Requirements.Add(r);
+            knownIds.Add(id); byKindRef[(kind, refKey)] = id; added++;
 
             if (el.TryGetProperty("evidenceExamples", out var ev) && ev.ValueKind == JsonValueKind.Array)
             {
@@ -286,8 +314,11 @@ public class SeedImporter(QsppDbContext db, AttachmentStore store, AuditService 
             }
         }
         db.SaveChanges();
-        if (db.Requirements.Any())
-            audit.Append("system", null, "corpus.imported", "requirements", "*", $"Imported {db.Requirements.Count()} requirements, {db.RequirementEvidenceExamples.Count()} evidence examples from seed");
+        if (added > 0)
+            audit.Append("system", null, hadRows ? "corpus.added" : "corpus.imported", "requirements", "*",
+                $"{(hadRows ? "Added" : "Imported")} {added} requirements" + (resourced > 0 ? $"; {resourced} re-sourced" : ""));
+        else if (resourced > 0)
+            audit.Append("system", null, "corpus.resourced", "requirements", "*", $"{resourced} requirements re-sourced");
         return (db.Requirements.Count(), db.RequirementEvidenceExamples.Count());
     }
 
@@ -336,18 +367,22 @@ public class SeedImporter(QsppDbContext db, AttachmentStore store, AuditService 
     // ---------- interpretation issues ----------
     private int ImportIssues(CancellationToken ct)
     {
-        if (db.InterpretationIssues.Any()) return db.InterpretationIssues.Count();
+        // FIX-07: insert-missing. Existing issues, including resolved ones, are never touched.
         var path = Path.Combine(repoRoot, "seed", "issues.json");
         if (File.Exists(path))
         {
             using var doc = JsonDocument.Parse(File.ReadAllText(path), new JsonDocumentOptions { AllowTrailingCommas = true });
             var arr = doc.RootElement.ValueKind == JsonValueKind.Array
                 ? doc.RootElement : doc.RootElement.GetProperty("issues");
+            var haveKeys = db.InterpretationIssues.AsNoTracking().Select(i => i.Key).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var added = 0;
             foreach (var el in arr.EnumerateArray())
             {
+                var key = S(el, "key") != "" ? S(el, "key") : S(el, "id");
+                if (haveKeys.Contains(key)) continue;
                 db.InterpretationIssues.Add(new InterpretationIssue
                 {
-                    Key = S(el, "key") != "" ? S(el, "key") : S(el, "id"),
+                    Key = key,
                     Title = S(el, "title"),
                     ConservativePlanning = S(el, "conservativePlanning"),
                     Status = S(el, "status") != "" ? S(el, "status") : "unresolved",
@@ -355,12 +390,17 @@ public class SeedImporter(QsppDbContext db, AttachmentStore store, AuditService 
                     RetrievedDate = S(el, "retrievedDate"),
                     PackVersion = S(el, "packVersion"),
                 });
+                haveKeys.Add(key);
+                added++;
             }
             db.SaveChanges();
+            if (added > 0)
+                audit.Append("system", null, "issues.added", "interpretation-issue", "*", $"{added} new interpretation issue(s) from seed");
             return db.InterpretationIssues.Count();
         }
 
         // Fallback seed (from the reference pack analysis, retrieved 2026-10-19)
+        if (db.InterpretationIssues.Any()) return db.InterpretationIssues.Count();
         const string packVersion = "qspp-pack 26 Sep 2026";
         var issues = new[]
         {
@@ -415,11 +455,13 @@ public class SeedImporter(QsppDbContext db, AttachmentStore store, AuditService 
     // ---------- source documents ----------
     public int ImportDocuments(CancellationToken ct)
     {
+        // FIX-07: import only what is new (skip by sha256 before reading large files);
+        // ImportFromBytes keeps the final skip-by-sha guard.
         var packRoot = PackRoot();
-        if (db.SourceDocuments.Any()) return db.SourceDocuments.Count();
         var docsPath = Path.Combine(repoRoot, "seed", "documents.json");
         var manifestPath = Path.Combine(packRoot, "website-scrape", "downloads", "manifest.json");
         var count = 0;
+        var haveSha = db.SourceDocuments.AsNoTracking().Select(d => d.Sha256Hex).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         if (File.Exists(docsPath))
         {
@@ -442,15 +484,18 @@ public class SeedImporter(QsppDbContext db, AttachmentStore store, AuditService 
                 var packFile = m.GetProperty("path").GetString() ?? "";
                 if (Path.GetExtension(packFile).ToLowerInvariant() is not ".pdf" and not ".png") continue;
                 var sha = m.TryGetProperty("sha256", out var sh) ? sh.GetString() ?? "" : "";
+                if (!string.IsNullOrWhiteSpace(sha) && haveSha.Contains(sha)) continue;   // already stored: do not re-read
                 var size = m.TryGetProperty("size", out var sz) ? sz.GetInt64() : 0;
-                _ = ImportFromBytes(packFile, File.ReadAllBytes(packFile), DisplayNameFor(packFile), RoleFor(packFile), VersionFor(packFile), sha, $"Scraped from {url} on 2026-10-19, qspp-pack manifest");
-                count++;
+                count += ImportFromBytes(packFile, File.ReadAllBytes(packFile), DisplayNameFor(packFile), RoleFor(packFile), VersionFor(packFile), sha, $"Scraped from {url} on 2026-10-19, qspp-pack manifest");
             }
         }
         return count;
 
         int ImportOne(string absPath, string display, string role, string version, string expectedSha, string provenance)
-            => File.Exists(absPath) ? ImportFromBytes(absPath, File.ReadAllBytes(absPath), display, role, version, expectedSha, provenance) : 0;
+        {
+            if (!string.IsNullOrWhiteSpace(expectedSha) && haveSha.Contains(expectedSha)) return 0;   // already stored: do not read 35 MB every boot
+            return File.Exists(absPath) ? ImportFromBytes(absPath, File.ReadAllBytes(absPath), display, role, version, expectedSha, provenance) : 0;
+        }
     }
 
     private int ImportFromBytes(string originPath, byte[] bytes, string display, string role, string version, string expectedSha, string provenance)
