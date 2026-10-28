@@ -888,13 +888,9 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
         return i is null ? null : (i.ResolvedChoice, i.ResolutionNote);
     }
 
-    public List<DeadlineInfo> DeadlinesFor(Requirement r, RequirementState state)
-    {
-        List<DeadlineInfo> list = new();
-        if (state.Readiness == RequirementReadiness.ReadyForReview || state.Readiness == RequirementReadiness.InProgress)
-            list.Add(DeadlineInfo.Internal(DateOnly.FromDateTime(DateTime.Today).AddDays(14), "Next internal review checkpoint (14 days from today)"));
-        return list;
-    }
+    // FIX-11 step 1: the invented 14-day internal checkpoint is gone (F-11). Per-requirement
+    // deadlines now come only from recorded assessments and seeded program dates.
+    public List<DeadlineInfo> DeadlinesFor(Requirement r, RequirementState state) => new();
 
     public List<DeadlineInfo> PharmacyDeadlines(bool includePlanningOnly = true)
     {
@@ -907,9 +903,7 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
         {
             list.Add(DeadlineInfo.Calculated(exp.AddDays(-90), "internal planning", "90 days before accreditation expiry — start re-accreditation preparation"));
             list.Add(DeadlineInfo.Calculated(exp, "Program Rules definitions: Accreditation Expiry Date", "Accreditation expires; re-accreditation assessment must occur within 3 calendar months BEFORE expiry per Rule 5"));
-            var cutoff = DeadlineCalculator.ConservativeCancelCutoff(exp);
             list.Add(DeadlineInfo.Calculated(DeadlineCalculator.AddCalendarDays(exp, -120), "internal planning", "Latest sensible date to book a re-accreditation assessment safely outside cancellation fee windows"));
-            _ = cutoff;
         }
         if (ph.OnsiteAssessmentDate is { } onsite)
         {
