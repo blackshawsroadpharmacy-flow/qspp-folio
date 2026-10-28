@@ -325,6 +325,12 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
             return ServiceResult.Fail("Privacy gate: evidence contains patient data without a redaction attestation. Redact the underlying content (not a black box), replace the file, then retry.");
         if (target == EvidenceReviewState.Retired && string.IsNullOrWhiteSpace(note))
             return ServiceResult.Fail("Say why this evidence is being retired; the reason is kept with its history.");
+        // FIX-12 (Hugh's call): with two or more manager-grade accounts, the person who
+        // imported evidence cannot mark it verified themselves. Pharmacies with fewer than
+        // two manager-grade accounts are exempt so a single-account install keeps working.
+        if (target == EvidenceReviewState.ManagerVerified && item.CreatedByUserId == session.UserId
+            && db.Users.Count(u => u.IsActive && (u.Role == UserRole.OwnerAdmin || u.Role == UserRole.ManagerReviewer)) >= 2)
+            return ServiceResult.Fail("Four-eyes: the person who imported this evidence cannot mark it verified. Ask another Owner or Manager to review it.");
         item.ReviewState = target;
         item.ReviewerUserId = target is EvidenceReviewState.ManagerVerified ? session.UserId : item.ReviewerUserId;
         item.ReviewedAtUtc = target is EvidenceReviewState.ManagerVerified or EvidenceReviewState.NeedsRework ? DateTime.UtcNow : item.ReviewedAtUtc;
@@ -426,6 +432,8 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
         if (session == null || session.ReadOnly) return ServiceResult.Fail("Sign in as Contributor or above to create tasks.");
         if (string.IsNullOrWhiteSpace(title)) return ServiceResult.Fail("Give the task a title.");
         if (requirementId.HasValue && !db.Requirements.Any(r => r.Id == requirementId)) return ServiceResult.Fail("Linked requirement not found.");
+        // FIX-12: an assignee that does not exist silently produced orphaned tasks.
+        if (!db.Users.Any(u => u.Id == assignedTo)) return ServiceResult.Fail("The assignee does not exist.");
         var task = new TaskItem { Title = title.Trim(), Details = details, RequirementId = requirementId, AssignedToUserId = assignedTo, Priority = priority, DueDate = due, CreatedByUserId = session.UserId };
         db.Tasks.Add(task);
         db.SaveChanges();
@@ -440,6 +448,9 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
         if (t == null) return ServiceResult.Fail("Task not found.");
         if (t.State == TaskState.Done) return ServiceResult.Fail("Task is already complete.");
         if (t.State == TaskState.Cancelled) return ServiceResult.Fail("Cancelled tasks cannot be completed.");
+        // FIX-12: the owner of the work closes it; owners/managers may also close on behalf.
+        if (t.AssignedToUserId != session.UserId && !session.CanVerify)
+            return ServiceResult.Fail("Only the assignee or an Owner/Manager can complete this task.");
         t.State = TaskState.Done;
         t.CompletedAtUtc = DateTime.UtcNow;
         t.CompletedByUserId = session.UserId;
