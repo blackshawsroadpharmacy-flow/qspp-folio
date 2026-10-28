@@ -86,6 +86,7 @@ cat > "$CONTENTS/Info.plist" <<'PLIST'
     <key>NSPrincipalClass</key><string>NSApplication</string>
 </dict>
 </plist>
+PLIST
 $PLIST_BUDDY -c "Print" "$CONTENTS/Info.plist" >/dev/null
 
 echo "→ ad-hoc code signature"
