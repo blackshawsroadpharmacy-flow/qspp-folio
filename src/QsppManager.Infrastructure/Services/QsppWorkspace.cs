@@ -472,21 +472,36 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
 
     /// <summary>Resolving an issue REQUIRES a recorded outcome: who settled it and which
     /// source is authoritative. The plan-only flags in deadline views lift only then.</summary>
-    public ServiceResult ResolveIssue(Guid issueId, string resolutionNote, UserSession session)
+    public ServiceResult ResolveIssue(Guid issueId, string resolutionNote, UserSession session, string choice = "")
     {
         if (session == null || !session.CanVerify) return ServiceResult.Fail("Only Owner/Admin or Manager/Reviewer accounts can resolve an interpretation issue.");
         if (string.IsNullOrWhiteSpace(resolutionNote))
             return ServiceResult.Fail("Record how the question was settled — who confirmed it, and which source is taken as authoritative.");
         var i = db.InterpretationIssues.FirstOrDefault(x => x.Id == issueId);
         if (i == null) return ServiceResult.Fail("Interpretation issue not found.");
+        var valid = ValidChoices(i.Key);
+        choice = (choice ?? "").Trim();
+        if (valid.Length > 0 && !valid.Contains(choice))
+            return ServiceResult.Fail($"Choose how this was settled: {string.Join(" or ", valid)}.");
+        if (valid.Length == 0) choice = "";
         i.Status = "resolved";
+        i.ResolvedChoice = choice;
         i.ResolutionNote = resolutionNote[..Math.Min(resolutionNote.Length, 2000)];
         i.LastReviewedAtUtc = DateTime.UtcNow;
         i.ReviewedByUserId = session.UserId;
         db.SaveChanges();
-        audit.Append(session.DisplayName, session.UserId, "issue.resolved", "interpretation-issue", issueId.ToString(), $"{i.Key}; {i.ResolutionNote}");
+        audit.Append(session.DisplayName, session.UserId, "issue.resolved", "interpretation-issue", issueId.ToString(), $"{i.Key}; choice={i.ResolvedChoice}; {i.ResolutionNote}");
         return ServiceResult.Succeed();
     }
+
+    /// <summary>Deadline-bearing issues require a structured choice before dates stop being
+    /// planning-only; the UI shows these options when resolving.</summary>
+    public static string[] ValidChoices(string issueKey) => issueKey switch
+    {
+        "ISSUE-CANCELWINDOW" => ["business", "calendar"],
+        "ISSUE-MIDCYCLE" => ["15-21", "13-24"],
+        _ => [],
+    };
 
     // ---------- M3: recurring tasks ----------
     /// <summary>Materialises due recurring occurrences as ordinary tasks. Idempotent per
@@ -855,6 +870,13 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
     }
 
     // ---------- deadlines ----------
+    /// <summary>The recorded choice for a resolved issue, or null while the issue is open.</summary>
+    private (string choice, string note)? ResolvedIssue(string key)
+    {
+        var i = db.InterpretationIssues.AsNoTracking().FirstOrDefault(x => x.Key == key && x.Status == "resolved" && x.ResolvedChoice != "");
+        return i is null ? null : (i.ResolvedChoice, i.ResolutionNote);
+    }
+
     public List<DeadlineInfo> DeadlinesFor(Requirement r, RequirementState state)
     {
         List<DeadlineInfo> list = new();
@@ -881,13 +903,30 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
         if (ph.OnsiteAssessmentDate is { } onsite)
         {
             list.Add(DeadlineInfo.Confirmed(onsite, "Assessment provider (recorded booking)"));
-            var cutoff = DeadlineCalculator.ConservativeCancelCutoff(onsite);
-            list.Add(DeadlineInfo.Calculated(cutoff, "ISSUE-CANCELWINDOW (conservative planning)", "Last date to change/cancel this assessment without an assumed cancellation fee — PLANNING ONLY: sources disagree (10 business days per Rule 10 vs 10 calendar days per Assessments Policy/Fees page)", planningOnly: true, issueKey: "ISSUE-CANCELWINDOW"));
+            // FIX-08: use the resolved reading when the issue carries a structured choice;
+            // until then keep the strictest reading, holiday-aware, marked planning-only.
+            var rc = ResolvedIssue("ISSUE-CANCELWINDOW");
+            var business = rc is null || rc.Value.choice == "business";           // unresolved: strictest reading
+            var cutoff = DeadlineCalculator.CancelCutoff(onsite, business, TodayPlanning.IsVictorianHoliday);
+            if (rc is { } r1)
+                list.Add(DeadlineInfo.Calculated(cutoff, "ISSUE-CANCELWINDOW (resolved)", $"Last date to change/cancel without a fee, {(business ? "10 business days" : "10 calendar days")} before the assessment. Settled: {r1.note}", planningOnly: false, issueKey: "ISSUE-CANCELWINDOW"));
+            else
+                list.Add(DeadlineInfo.Calculated(cutoff, "ISSUE-CANCELWINDOW (conservative planning)", "Last date to change/cancel this assessment without an assumed cancellation fee. PLANNING ONLY: sources disagree (10 business days per Rule 10 vs 10 calendar days per Assessments Policy/Fees page)", planningOnly: true, issueKey: "ISSUE-CANCELWINDOW"));
         }
         if (ph.CycleStartDate is { } cs)
         {
-            var (wStart, wEnd) = DeadlineCalculator.ConservativeMidCycleWindow(cs);
-            list.Add(DeadlineInfo.Calculated(wStart, "ISSUE-MIDCYCLE (conservative planning)", $"Mid-Cycle Review window under the conservative reading (months 15–21, Rule 8 + T&C definition). Window: {wStart:dd MMM yyyy} – {wEnd:dd MMM yyyy}. PLANNING ONLY — sources disagree.", planningOnly: true, issueKey: "ISSUE-MIDCYCLE"));
+            var rm = ResolvedIssue("ISSUE-MIDCYCLE");
+            if (rm is { } r2)
+            {
+                var parts = r2.choice.Split('-');
+                var (wStartR, wEndR) = DeadlineCalculator.MidCycleWindow(cs, int.Parse(parts[0]), int.Parse(parts[1]));
+                list.Add(DeadlineInfo.Calculated(wStartR, "ISSUE-MIDCYCLE (resolved)", $"Mid-Cycle Review window under the settled reading (months {r2.choice}). Window: {wStartR:dd MMM yyyy} to {wEndR:dd MMM yyyy}. Settled: {r2.note}", planningOnly: false, issueKey: "ISSUE-MIDCYCLE"));
+            }
+            else
+            {
+                var (wStart, wEnd) = DeadlineCalculator.ConservativeMidCycleWindow(cs);
+                list.Add(DeadlineInfo.Calculated(wStart, "ISSUE-MIDCYCLE (conservative planning)", $"Mid-Cycle Review window under the conservative reading (months 15–21, Rule 8 + T&C definition). Window: {wStart:dd MMM yyyy} – {wEnd:dd MMM yyyy}. PLANNING ONLY — sources disagree.", planningOnly: true, issueKey: "ISSUE-MIDCYCLE"));
+            }
             for (var y = 0; y < 3; y++)
                 list.Add(DeadlineInfo.Calculated(cs.AddYears(y), "T&C Clause 5c — Annual Attestation Statement", $"Annual attestation due at the cycle anniversary (year {y + 1})"));
         }
@@ -999,8 +1038,10 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
             foreach (var ev in db.AssessmentEvents.AsNoTracking().Where(x => x.State == "Planned" || x.State == "InProgress").ToList())
                 if (ev.ScheduledDate >= anchor && ev.ScheduledDate <= fd.Date)
                     milestones.Add((ev.ScheduledDate, $"Planned {ev.Kind}", false));
-            var (wStart, wEnd) = DeadlineCalculator.ConservativeMidCycleWindow(anchor);
-            if (wStart <= fd.Date) milestones.Add((wStart, "Mid-cycle window opens (conservative reading)", true));
+            // FIX-08: the milestone follows the resolved mid-cycle reading (planning-only while unresolved).
+            var mid = PharmacyDeadlines(true).FirstOrDefault(d => d.InterpretationIssueKey == "ISSUE-MIDCYCLE");
+            if (mid is { } m && m.Date <= fd.Date)
+                milestones.Add((m.Date, "Mid-cycle window opens" + (m.PlanningOnly ? " (conservative reading)" : ""), m.PlanningOnly));
         }
 
         return new TodayScreenBrief(featured, tone, next, runStart, milestones,

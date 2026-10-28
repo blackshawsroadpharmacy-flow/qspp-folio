@@ -73,7 +73,11 @@ public class QsppDbContext(DbContextOptions<QsppDbContext> options) : DbContext(
             e.HasIndex(x => x.UserName).IsUnique();
         });
         mb.Entity<SourceDocument>(e => e.HasIndex(x => x.Sha256Hex));
-        mb.Entity<InterpretationIssue>(e => e.HasIndex(x => x.Key).IsUnique());
+        mb.Entity<InterpretationIssue>(e =>
+        {
+            e.HasIndex(x => x.Key).IsUnique();
+            e.Property(x => x.ResolvedChoice).HasMaxLength(40);
+        });
         mb.Entity<AuditEvent>(e =>
         {
             e.Property(x => x.Details).HasMaxLength(2000);

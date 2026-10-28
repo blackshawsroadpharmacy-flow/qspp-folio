@@ -203,6 +203,10 @@ public class InterpretationIssue
     public DateTime? LastReviewedAtUtc { get; set; }
     public Guid? ReviewedByUserId { get; set; }
     public string ResolutionNote { get; set; } = "";
+
+    /// <summary>Structured outcome when resolved: "business"/"calendar" (cancel window) or "15-21"/"13-24"
+    /// (mid-cycle). Empty for issues with no date effect.</summary>
+    public string ResolvedChoice { get; set; } = "";
 }
 
 public class AuditEvent

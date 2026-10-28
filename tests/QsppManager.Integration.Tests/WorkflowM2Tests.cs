@@ -85,7 +85,9 @@ public class JourneyAndIssuesTests : TestBase
         var fail = Workspace.ResolveIssue(issue.Id, "", Owner);
         Assert.False(fail.Ok);
 
-        Assert.True(Workspace.ResolveIssue(issue.Id, "Confirmed by pharmacist manager 20 Oct 2026: Program Rules wording is authoritative.", Owner).Ok);
+        // FIX-08: deadline-bearing issues also need a structured choice ("business"/"calendar").
+        var choice = QsppWorkspace.ValidChoices(issue.Key).FirstOrDefault() ?? "";
+        Assert.True(Workspace.ResolveIssue(issue.Id, "Confirmed by pharmacist manager 20 Oct 2026: Program Rules wording is authoritative.", Owner, choice).Ok);
         Assert.Equal("resolved", Workspace.Issues().First(i => i.Id == issue.Id).Status);
 
         // read-only reviewers cannot resolve

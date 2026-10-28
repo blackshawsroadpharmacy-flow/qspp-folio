@@ -127,4 +127,16 @@ public class StateMachineTests
     [InlineData(RequirementReadiness.AssessorAccepted, RequirementReadiness.InProgress, false)]
     public void ReadinessTransitions_FollowTheDefinedMachine(RequirementReadiness from, RequirementReadiness to, bool expected)
         => Assert.Equal(expected, StateMachines.CanTransitionReadiness(from, to));
+
+    [Fact]
+    public void CancelCutoff_BusinessCalendarAndHolidays()
+    {
+        // Friday 13 Nov 2026. Melbourne Cup Day (Tue 3 Nov 2026) is a Victorian holiday.
+        var onsite = new DateOnly(2026, 11, 13);
+        Assert.Equal(new DateOnly(2026, 10, 30), DeadlineCalculator.CancelCutoff(onsite, true));
+        Assert.Equal(new DateOnly(2026, 10, 29), DeadlineCalculator.CancelCutoff(onsite, true, TodayPlanning.IsVictorianHoliday));
+        Assert.Equal(new DateOnly(2026, 11, 3), DeadlineCalculator.CancelCutoff(onsite, false));
+        // Sanity for the holiday source itself (FIX-08 stop condition: never hard-code).
+        Assert.True(TodayPlanning.IsVictorianHoliday(new DateOnly(2026, 11, 3)));
+    }
 }

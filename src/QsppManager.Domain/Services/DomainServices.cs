@@ -56,12 +56,21 @@ public static class DeadlineCalculator
     public static (DateOnly windowStart, DateOnly windowEnd) ConservativeMidCycleWindow(DateOnly cycleStart)
         => (AddCalendarMonths(cycleStart, 15), AddCalendarMonths(cycleStart, 21));
 
+    /// <summary>Mid-cycle window for a chosen reading, e.g. months 13-24 or 15-21.</summary>
+    public static (DateOnly windowStart, DateOnly windowEnd) MidCycleWindow(DateOnly cycleStart, int startMonth, int endMonth)
+        => (AddCalendarMonths(cycleStart, startMonth), AddCalendarMonths(cycleStart, endMonth));
+
     /// <summary>Conservative cancellation-cutoff guardrail under ISSUE-CANCELWINDOW:
     /// the safest reading is 10 BUSINESS days (Program Rule 10); the Assessments Policy and
     /// Fees page say 10 calendar days. Returns the last date you may change/cancel without
     /// assuming a fee, using the conservative rule while unresolved.</summary>
     public static DateOnly ConservativeCancelCutoff(DateOnly assessmentDate)
         => AddBusinessDays(assessmentDate, -10);
+
+    /// <summary>Last date to change or cancel without a fee: 10 business days (holiday-aware when a
+    /// predicate is supplied) or 10 calendar days before the assessment.</summary>
+    public static DateOnly CancelCutoff(DateOnly assessmentDate, bool businessDays, Func<DateOnly, bool>? isHoliday = null)
+        => businessDays ? AddBusinessDays(assessmentDate, -10, isHoliday) : assessmentDate.AddDays(-10);
 }
 
 /// <summary>Recurring-task occurrence maths (M3). Anchor-based sequences: month/quarter/year

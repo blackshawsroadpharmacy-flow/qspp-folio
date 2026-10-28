@@ -152,7 +152,8 @@ public class CorpusUpsertTests : TestBase
     public void Reimport_AddsNewIssue_KeepsResolvedStatus()
     {
         var cancel = Db.InterpretationIssues.First(i => i.Key == "ISSUE-CANCELWINDOW");
-        Assert.True(Workspace.ResolveIssue(cancel.Id, "confirmed with pharmacist manager: 10 business days", Owner).Ok);
+        // FIX-08: this issue bears deadlines, so resolving needs the structured choice too.
+        Assert.True(Workspace.ResolveIssue(cancel.Id, "confirmed with pharmacist manager: 10 business days", Owner, "business").Ok);
 
         var issues = new object[]
         {

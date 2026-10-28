@@ -617,6 +617,11 @@ namespace QsppManager.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("ResolvedChoice")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("RetrievedDate")
                         .IsRequired()
                         .HasColumnType("TEXT");

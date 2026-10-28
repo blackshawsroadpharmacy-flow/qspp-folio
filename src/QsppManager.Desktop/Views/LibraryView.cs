@@ -312,7 +312,15 @@ public partial class LibraryView : UserControl, IPageSearchFocus
         var note = await Dialogs.Prompt(this, "Resolution record (required)",
             "Who settled this, and which source is taken as authoritative?");
         if (string.IsNullOrWhiteSpace(note)) return;
-        var res = App.Workspace.ResolveIssue(row.Id, note, App.Session!);
+        // FIX-08: deadline-bearing issues need a structured choice before planning flags lift.
+        var options = QsppManager.Infrastructure.Services.QsppWorkspace.ValidChoices(row.Key);
+        var choice = "";
+        if (options.Length > 0)
+        {
+            choice = await Dialogs.Prompt(this, "Which reading was confirmed?", $"Type one of: {string.Join(" or ", options)}") ?? "";
+            if (string.IsNullOrWhiteSpace(choice)) return;
+        }
+        var res = App.Workspace.ResolveIssue(row.Id, note, App.Session!, choice);
                 _resultBar.Show(res.Ok, "Resolved and recorded. Planning flags for this question can now follow the settled source.", res.Error);
         Load();
     }
