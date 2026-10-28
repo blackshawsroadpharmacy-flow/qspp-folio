@@ -15,12 +15,9 @@ namespace QsppManager.Integration.Tests;
 /// the source material an editorial title must be written from, keyed by the human seed id.</summary>
 public class DisplayTitlesRunnerTests
 {
-    [Fact]
+    [DumpTitlesFact]
     public void Dump_needsHumanTitleCorpus()
     {
-        var gate = Environment.GetEnvironmentVariable("QSPP_DUMP_TITLES");
-        if (gate != "1") return; // gated: no side effects in the normal 220-green run
-
         var repoRoot = FindRepoRoot();
         Assert.True(Directory.Exists(Path.Combine(repoRoot, "seed")), $"seed not found at {repoRoot}");
 

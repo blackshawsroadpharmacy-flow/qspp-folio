@@ -27,15 +27,21 @@ public static class DatabaseBootstrapper
         conn.Open();
         try
         {
-            bool hasHistory = Scalar(conn, "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='__EFMigrationsHistory'") > 0;
+            var hasHistoryTable = Scalar(conn, "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='__EFMigrationsHistory'") > 0;
+            // FIX-17: rows decide, not the table's existence. A history table that exists
+            // but has lost its rows is an install whose history is gone; it must be
+            // re-stamped and migrated, not failed with 'table already exists' from a
+            // re-run InitialCreate.
+            var hasHistory = hasHistoryTable && Scalar(conn, "SELECT COUNT(*) FROM __EFMigrationsHistory") > 0;
             if (!hasHistory)
             {
                 var hasSchema = Scalar(conn, "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Requirements'") > 0;
                 if (hasSchema)
                 {
-                    Exec(conn, "CREATE TABLE IF NOT EXISTS __EFMigrationsHistory (" +
-                               "MigrationId TEXT NOT NULL CONSTRAINT PK___EFMigrationsHistory PRIMARY KEY, " +
-                               "ProductVersion TEXT NOT NULL)");
+                    if (!hasHistoryTable)
+                        Exec(conn, "CREATE TABLE IF NOT EXISTS __EFMigrationsHistory (" +
+                                   "MigrationId TEXT NOT NULL CONSTRAINT PK___EFMigrationsHistory PRIMARY KEY, " +
+                                   "ProductVersion TEXT NOT NULL)");
                     Exec(conn, $"INSERT OR IGNORE INTO __EFMigrationsHistory (MigrationId, ProductVersion) VALUES ('{InitialMigrationId}', '10.0.13')");
                 }
                 // No schema and no history → fresh install; leave it to Migrate().

@@ -38,6 +38,16 @@ public class PrintPipelineTests
         var bytes = composer.Compose(model);
         Assert.True(bytes.Length > 5000, $"PDF unexpectedly small: {bytes.Length} bytes");
         Assert.Equal("%PDF", System.Text.Encoding.ASCII.GetString(bytes, 0, 4));
+        // FIX-17: the rendered bytes are read back with PdfPig — page count and content are
+        // asserted, not just a magic number.
+        using (var doc = UglyToad.PdfPig.PdfDocument.Open(bytes))
+        {
+            Assert.Equal(1, doc.NumberOfPages);
+            var text = string.Join("\n", doc.GetPages().Select(pg => pg.Text));
+            Assert.Contains("Burke Road Compounding", text);
+            Assert.Contains("2.2.3.8", text);
+            Assert.Contains("Potency testing SOP v1", text);
+        }
     }
 
     [Fact]
@@ -53,6 +63,14 @@ public class PrintPipelineTests
             "", [], [], "blank", DateTime.UtcNow);
         var bytes = composer.Compose(model);
         Assert.Equal("%PDF", System.Text.Encoding.ASCII.GetString(bytes, 0, 4));
+        // FIX-17: same honesty for the blank variant
+        using (var doc = UglyToad.PdfPig.PdfDocument.Open(bytes))
+        {
+            Assert.Equal(1, doc.NumberOfPages);
+            var text = string.Join("\n", doc.GetPages().Select(pg => pg.Text));
+            Assert.Contains("2.2.3.10", text);
+            Assert.Contains("Beyond-use dates", text);
+        }
     }
 
     [Fact]

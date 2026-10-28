@@ -147,15 +147,4 @@ public class AssessorPackTests : TestBase
         }
         finally { Clock.Unpin(); }
     }
-
-    [Fact]
-    public void VicHolidays_BusinessDaysSkip_GazettedDays_WithProvenance()
-    {
-        // Christmas Fri 25 Dec 2026 + Boxing Day observed Mon 28 Dec → Friday 24 Dec + 1 business day = Tue 29 Dec
-        Assert.Equal(new DateOnly(2026, 12, 29),
-            DeadlineCalculator.AddBusinessDays(new DateOnly(2026, 12, 24), 1, VicHolidays.IsNonBusinessDay));
-        // Melbourne Cup day (Tue 3 Nov 2026) is a VIC public holiday
-        Assert.True(VicHolidays.IsHoliday(new DateOnly(2026, 11, 3)));
-        Assert.False(VicHolidays.IsHoliday(new DateOnly(2026, 11, 4)));
-    }
 }

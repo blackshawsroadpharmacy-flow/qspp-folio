@@ -14,10 +14,9 @@ namespace QsppManager.Integration.Tests;
 /// finds wording that lives INSIDE them (e.g. page text of the Standard).</summary>
 public class DocFullTextRealCorpusTests
 {
-    [Fact]
+    [RealCorpusFact]
     public void ExtractRealCorpus_AndSearchInsidePdfs()
     {
-        if (Environment.GetEnvironmentVariable("QSPP_REAL_CORPUS") != "1") return; // opt-in only
         var dataDir = Environment.GetEnvironmentVariable("QSPP_DATA_DIR");
         Assert.False(string.IsNullOrWhiteSpace(dataDir), "QSPP_DATA_DIR must point at an initialised data dir");
 

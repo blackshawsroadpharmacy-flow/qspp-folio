@@ -182,18 +182,32 @@ public class WorkspaceWorkflowTests : TestBase
     }
 
     [Fact]
-    public void Evidence_PatientData_WithoutAttestation_IsRefused_OrBlockedAtReview()
+    public void Evidence_PatientData_ImportWithoutAttestation_IsRefused()
     {
+        // the import itself refuses without an explicit redaction attestation
         var (item, importResult) = ImportEvidence("Patient list", "contains patient rows", patientData: true, attestation: "");
-        if (item == null)
+        Assert.False(importResult.Ok);
+        Assert.Contains("attestation", importResult.Error);
+        Assert.Null(item);
+    }
+
+    [Fact]
+    public void Evidence_PatientData_ReviewGate_CatchesARowWithoutAttestation()
+    {
+        // A row that reaches the db another way (older install, manual write) still cannot
+        // pass review while it claims patient data with no attestation recorded.
+        var row = new EvidenceItem
         {
-            // Preferred behaviour: the import is refused outright without an attestation.
-            Assert.False(importResult.Ok);
-            return;
-        }
-        // If an installation allows the import, the privacy gate must still catch submission for review.
-        var submit = Workspace.SetEvidenceReview(item.Id, EvidenceReviewState.ReadyForReview, Owner, "");
+            Title = "Legacy patient row", Kind = EvidenceKind.PolicyOrSop,
+            FileName = "legacy.pdf", MimeType = "application/pdf",
+            StoredRelativePath = "legacy/legacy.pdf", Sha256 = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+            FileBytes = 10, CreatedByUserId = Owner.UserId, ContainsPatientData = true, PatientDataAttestation = "",
+        };
+        Db.EvidenceItems.Add(row);
+        Db.SaveChanges();
+        var submit = Workspace.SetEvidenceReview(row.Id, EvidenceReviewState.ReadyForReview, Owner, "");
         Assert.False(submit.Ok);
+        Assert.Contains("Privacy gate", submit.Error);
     }
 
     [Fact]

@@ -70,4 +70,68 @@ public class StartupIntegrityTests
         using (var held = new FileStream(Path.Combine(dir2, ".lock"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None))
             Assert.False(DataDirLock.TryAcquire(dir2));
     }
+
+    [Fact]
+    public void Prepare_StampsLegacySchemaWithoutHistory_AndCompletesMigrations()
+    {
+        // FIX-17 step 5: migrations are exercised end to end on the REAL legacy shape:
+        // a database that was migrated only to InitialCreate has the old schema and no
+        // history table; Prepare stamps InitialCreate back and migrates every later step.
+        // (The backlog's EnsureCreated premise cannot pass: an EnsureCreated schema already
+        // contains every later column, so the re-runs AddColumn would hit duplicate-column
+        // errors — that failure says nothing about the legacy path, which this test builds
+        // the true legacy schema for.)
+        var path = Path.Combine(Path.GetTempPath(), $"qspp-leghist-{Guid.NewGuid():N}.db");
+
+        using (var seedDb = FreshDb(path))
+            seedDb.Database.Migrate(DatabaseBootstrapper.InitialMigrationId);
+        using (var wiper = FreshDb(path))
+        {
+            wiper.Database.OpenConnection();
+            using var wipe = wiper.Database.GetDbConnection().CreateCommand();
+            wipe.CommandText = "DROP TABLE __EFMigrationsHistory";
+            _ = wipe.ExecuteNonQuery();
+            wiper.Database.CloseConnection();
+        }
+
+        AssertPreparedLegacy(path);
+    }
+
+    [Fact]
+    public void Prepare_RecoversAnEmptyMigrationsHistoryTable()
+    {
+        // FIX-17: the empty-table edge the sweep found. A history table whose rows are gone
+        // must be re-stamped, not failed with 'table AuditEvents already exists'.
+        var path = Path.Combine(Path.GetTempPath(), $"qspp-emptyhist-{Guid.NewGuid():N}.db");
+
+        using (var seedDb = FreshDb(path))
+            seedDb.Database.Migrate(DatabaseBootstrapper.InitialMigrationId);
+        using (var wiper = FreshDb(path))
+        {
+            wiper.Database.OpenConnection();
+            using var wipe = wiper.Database.GetDbConnection().CreateCommand();
+            wipe.CommandText = "DELETE FROM __EFMigrationsHistory";
+            _ = wipe.ExecuteNonQuery();
+            wiper.Database.CloseConnection();
+        }
+
+        AssertPreparedLegacy(path);
+    }
+
+    private static void AssertPreparedLegacy(string path)
+    {
+        using var db = FreshDb(path);
+        DatabaseBootstrapper.Prepare(db);
+        db.Database.OpenConnection();
+        using (var row = db.Database.GetDbConnection().CreateCommand())
+        {
+            row.CommandText = "SELECT COUNT(*) FROM __EFMigrationsHistory WHERE MigrationId = '20261019142616_InitialCreate'";
+            Assert.Equal(1, Convert.ToInt64(row.ExecuteScalar()));
+            row.CommandText = "SELECT COUNT(*) FROM __EFMigrationsHistory";
+            Assert.Equal(db.Database.GetMigrations().Count(), Convert.ToInt64(row.ExecuteScalar()));
+            row.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Requirements'";
+            Assert.Equal(1, Convert.ToInt64(row.ExecuteScalar()));
+        }
+        db.Database.CloseConnection();
+    }
 }
