@@ -302,3 +302,58 @@ Baseline: build 0 Error(s) / 83 Warning(s); tests 231 passed, 0 failed
   (expected skipped = 2 met), exit=0. In-gate fixes: SkipGates.cs missing using Xunit;
   two Assert.Contains comparer overloads reduced to two-arg form; StartupIntegrityTests
   rewrite after an accidental clobber (file recovered from its own content).
+
+## FIX-16: packaging hygiene (backlog YAML, F-30/F-31/F-32)
+
+- Commit: f26d428; N0 unchanged (script + .gitignore + vendored pack only).
+- Steps 1-3 implemented in scripts/package-app.sh: bare codesign + --verify --deep --strict
+  (set -e stops on failure), ditto -c -k --norsrc --keepParent zip with an in-script AppleDouble
+  counter that fails the build on any ._ member, and the seed PRIVACY GATE (rg pattern
+  hugh|burke|blackshaws|burkeroad|/Users/hughn, case-insensitive) with the hit list printed
+  before failing.
+- PRIVACY GATE run now, read-only: 0 files hit. BUILD GATE n/a source-wise; the shell script
+  is bash -n clean.
+- NOT RUN (needs a packaging run, which the execution prompt keeps off unless Hugh says):
+  the ditto zip step's unzip ._ count; codesign verify output. They execute with the next
+  release package run.
+- Step 4 (asked and ANSWERED): "Delete the old artifacts" — dist/"Hugh's QSPP Manager.app"
+  (186M), dist/"QSPP Manager.app" (183M), dist/QsppManager-20261025-arm64-internal.zip (88M),
+  dist/HQsppManager-20261025-arm64-internal.zip (90M) deleted. dist/ now: QSPP Folio.app,
+  QSPP-Folio-20261025-arm64-distribution.zip, README-20261025.txt.
+- Step 5 (asked and ANSWERED): "Track vendor/qspp-pack in git" — OPPOSITE of the script's
+  comment ("untracked by intent"). .gitignore: vendor/ entry and the stray
+  QSPP-User-Assessment-Guide PDF ignore removed; 33 MB / 22 PDFs committed. README restore
+  note not needed (checkout restores it).
+
+## FIX-19: docs refresh (backlog YAML, F-29)
+
+- Commit: d47c8e6 (amended twice before anything was reported: one, the first title carried an
+  em dash and three gate/doc lines did too, all cleaned; two, a stray typo in the G8 line was
+  absorbed. 0 em dashes in either file after the second amend).
+- README.md rewritten: QSPP Folio as product name everywhere, owner and pharmacy names out,
+  retired-clone path out, current counts (300 passed + 2 opt-in skipped = 302), macOS 12
+  floor + FIX-10, one process per data folder + FIX-15, links to the audit and execution log.
+- GATES.md rewritten: <repo> instead of real paths; every gate carries evidence that exists
+  (commit hashes, /tmp tails) or is named as not re-run this pass: visual re-sweep (G4/G11),
+  close-vs-quit (G6), default-dir probe (G7), pack-recovery path (G8), dialogs (G9), the
+  real-printer job (G10), AX spot-checks (G12), G15 report pending.
+- docs/milestones.md (goal line names it; files list does not): header note only (dated rows
+  keep historical wording and counts; current numbers live in GATES.md + the fix-phase report).
+- PRIVACY GATE run over README.md + GATES.md: 0 files. BUILD/TEST gates n/a-ish: docs only; the
+  suite was untouched (300+2 stands).
+
+## FIX-21 + FIX-23: plan files written; execution STOPPED for owner review
+
+- Per the execution prompt, both are hermes_execution: plan-file. Plans written:
+  - plans/009-expiry-suspends-links-opens-review.md (FIX-21, F-23): shared unexpired
+    predicate, SweepEvidenceExpiry on the workspace, TaskItem.SourceKey column with the
+    open-task-only idempotence rule (migration), boot + 24 h DispatcherTimer hook, 5 tests.
+  - plans/010-threaded-context-discipline.md (FIX-23, F-19): recon table of the 5 Task.Run
+    spawns, stage 1 = process-wide semaphore gate serialized (honest: kills the exposure,
+    does not yet meet the YAML's literal factory goal), stage 2 = the XL IDbContextFactory
+    rewrite of QsppWorkspace deferred to a separate plan 011 needing Hugh's go-ahead.
+- No source change made for either; no tests run for either; N0 remains 302 (300 + 2).
+- Stop condition check for FIX-21 (FIX-02 merged): e631566 is in the branch, OK.
+- FIX-23 stop condition (>8 call sites): recon found 5 spawns, OK to plan; site count
+  to re-verify at execution.
+- Both commits land in ONE plans commit before this block; review asks ride the report.
