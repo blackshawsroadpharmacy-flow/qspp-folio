@@ -53,11 +53,14 @@ else
 fi
 
 # Bundle the local OCR worker (Apple Vision helper; tools/ocr/qspp-ocr.swift).
-# Falls back to compiling it if build/qspp-ocr is missing. The helper is the app's
-# ONLY OCR path — on-device, no network, no model downloads (see DD-37).
+# Always rebuilt so its deployment target matches the app (FIX-10: minos 12.0;
+# the old skip-if-present shortcut let a stale minos 26.0 helper ship silently).
+# The helper is the app's ONLY OCR path — on-device, no network, no model downloads (see DD-37).
+echo "→ compiling the Apple Vision OCR helper (tools/ocr/qspp-ocr.swift, target arm64-apple-macos12.0)"
+swiftc -O -target arm64-apple-macos12.0 -o "$ROOT/build/qspp-ocr" "$ROOT/tools/ocr/qspp-ocr.swift"
 if [ ! -x "$ROOT/build/qspp-ocr" ]; then
-  echo "→ compiling the Apple Vision OCR helper (tools/ocr/qspp-ocr.swift)"
-  swiftc -O -o "$ROOT/build/qspp-ocr" "$ROOT/tools/ocr/qspp-ocr.swift"
+  echo "ERROR: qspp-ocr helper failed to build" >&2
+  exit 1
 fi
 cp "$ROOT/build/qspp-ocr" "$CONTENTS/MacOS/qspp-ocr"
 chmod +x "$CONTENTS/MacOS/qspp-ocr"
@@ -75,7 +78,7 @@ cat > "$CONTENTS/Info.plist" <<'PLIST'
     <key>CFBundlePackageType</key><string>APPL</string>
     <key>CFBundleExecutable</key><string>QsppManager.Desktop</string>
     <key>CFBundleIconFile</key><string>QsppManager</string>
-    <key>LSMinimumSystemVersion</key><string>11.0</string>
+    <key>LSMinimumSystemVersion</key><string>12.0</string>
     <key>LSArchitecturePriority</key>
     <array><string>arm64</string></array>
     <key>NSHighResolutionCapable</key><true/>
