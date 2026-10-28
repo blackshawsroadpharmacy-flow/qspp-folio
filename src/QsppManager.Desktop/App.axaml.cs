@@ -67,6 +67,40 @@ public partial class App : Avalonia.Application
 
     private void MenuAbout(object? sender, EventArgs e) => (Main as MainWindow)?.ShowAbout();
 
+    public const string AlreadyOpenMessage =
+        "QSPP Folio is already open for this data folder. Nothing was changed. " +
+        "Close the copy that is open in the Dock, or use a different QSPP data folder, then start again.";
+
+    /// <summary>FIX-15: the boot stop dialog for a corrupt data file or a double launch.
+    /// Plain window, no theme dependencies; the caller shuts the app down when it closes.</summary>
+    private static void ShowBootStopDialog(string message)
+    {
+        var dlg = new Window
+        {
+            Title = "QSPP Folio",
+            SizeToContent = SizeToContent.WidthAndHeight,
+            CanResize = false,
+            WindowStartupLocation = WindowStartupLocation.CenterScreen,
+        };
+        var ok = new Button { Content = "OK", HorizontalAlignment = HorizontalAlignment.Right };
+        ok.Click += (_, _) => dlg.Close();
+        dlg.Content = new StackPanel
+        {
+            Margin = new Thickness(24),
+            Width = 440,
+            Spacing = 12,
+            Children =
+            {
+                new TextBlock { Text = "QSPP Folio", FontWeight = FontWeight.SemiBold, FontSize = 15 },
+                new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap },
+                ok,
+            },
+        };
+        if (Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            dlg.Closed += (_, _) => desktop.Shutdown();
+        dlg.Show();
+    }
+
     public override void OnFrameworkInitializationCompleted()
     {
         var (dataRoot, migrated, migrationWarning) = AppData.MigrateLegacyOnFirstRun();
@@ -96,13 +130,39 @@ public partial class App : Avalonia.Application
 
         Config = AppConfig.Load();
 
+        // FIX-15: one process per data folder. Acquired before anything touches the database.
+        if (!DataDirLock.TryAcquire(AppData.Root))
+        {
+            Log.Error("Second launch refused: the .lock file in the data folder is already held");
+            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime lockDesktop)
+            {
+                ShowBootStopDialog(AlreadyOpenMessage);
+                base.OnFrameworkInitializationCompleted();
+                lockDesktop.Shutdown(-1);
+                return;
+            }
+        }
+
         var options = new DbContextOptionsBuilder<QsppDbContext>()
-            .UseSqlite($"Data Source={AppData.DatabasePath(DemoMode)}")
+            .UseSqlite($"Data Source={AppData.DatabasePath(DemoMode)};Default Timeout=5;Foreign Keys=True")
             .Options;
         Db = new QsppDbContext(options);
         try
         {
             DatabaseBootstrapper.Prepare(Db);   // fresh → migrations create; legacy EnsureCreated → stamped then migrated
+        }
+        catch (CorruptDatabaseException cex)
+        {
+            // FIX-15: corruption gate — show the message that names the newest backup.
+            Log.Fatal(cex, "Startup corruption check failed; boot stopped before any data change");
+            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime failDesktop)
+            {
+                ShowBootStopDialog(cex.Message);
+                base.OnFrameworkInitializationCompleted();
+                failDesktop.Shutdown(-1);
+                return;
+            }
+            throw;
         }
         catch (Exception ex)
         {

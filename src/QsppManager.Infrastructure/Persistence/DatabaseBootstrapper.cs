@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using QsppManager.Domain.Entities;
+using QsppManager.Infrastructure.Runtime;
 
 namespace QsppManager.Infrastructure.Persistence;
 
@@ -17,6 +18,12 @@ public static class DatabaseBootstrapper
     public static void Prepare(QsppDbContext db)
     {
         var conn = db.Database.GetDbConnection();
+        // FIX-15: PRAGMA quick_check BEFORE anything writes to or stamps this file. A corrupt
+        // data file stops here with the newest backup named; it must not reach VACUUM INTO or
+        // a migration. (The backlog says "after Prepare"; running it first catches the corrupt
+        // file before the safety copy reads it, which is the same intent, said plainly.)
+        RunQuickCheck(db.Database.GetDbConnection().DataSource);
+
         conn.Open();
         try
         {
@@ -44,6 +51,57 @@ public static class DatabaseBootstrapper
             PreMigrationBackup(db, dbFile, pending[^1]);
 
         db.Database.Migrate();
+
+        // FIX-15: WAL mode after the schema settles. journal_mode is persisted in the file
+        // header, so it sticks; the connection string keeps foreign keys and a 5 s timeout
+        // for every other open.
+        conn.Open();
+        try { Exec(conn, "PRAGMA journal_mode=WAL;"); }
+        finally { conn.Close(); }
+    }
+
+    /// <summary>Corruption gate (FIX-15): a file that is not a readable SQLite database, or
+    /// one whose quick_check does not return exactly "ok", stops the boot with a
+    /// user-ready message naming the newest backup file.</summary>
+    private static void RunQuickCheck(string dbFile)
+    {
+        // A fresh install has no file yet (or a 0-byte leftover); there is nothing to check.
+        // This also mirrors the FIX-03 rule that only an existing, non-empty db gets read.
+        if (!File.Exists(dbFile) || new FileInfo(dbFile).Length == 0) return;
+        // Open a raw connection straight to the file so the check reads the exact bytes on disk.
+        using var raw = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={dbFile};Mode=ReadWrite");
+        try
+        {
+            raw.Open();
+            using var cmd = raw.CreateCommand();
+            cmd.CommandText = "PRAGMA quick_check";
+            var result = Convert.ToString(cmd.ExecuteScalar() ?? "") ?? "";
+            if (result != "ok")
+                throw new CorruptDatabaseException(BootStopMessage(dbFile, result));
+        }
+        catch (Microsoft.Data.Sqlite.SqliteException)
+        {
+            throw new CorruptDatabaseException(BootStopMessage(dbFile, "the file is not a readable SQLite database"));
+        }
+    }
+
+    /// <summary>Names the newest backup file (QsppManager-backup-* in the backups folder
+    /// beside the database) so recovery starts from the right place.</summary>
+    private static string BootStopMessage(string dbFile, string result)
+    {
+        var dataDir = Path.GetDirectoryName(dbFile);
+        var backupsDir = dataDir is null ? "backups" : Path.Combine(dataDir, "backups");
+        var newest = Directory.Exists(backupsDir)
+            ? Directory.EnumerateFiles(backupsDir, "QsppManager-backup-*.db")
+                .OrderByDescending(Path.GetFileName)
+                .FirstOrDefault()
+        : null;
+        var backupLine = newest is null
+            ? "No backup file was found in the backups folder of this data folder."
+            : $"Newest backup file: {Path.GetFileName(newest)}.";
+        return "The data file did not pass a corruption check before start (" + result + "). " +
+               "Nothing was changed. " + backupLine +
+               " Stop here: do not delete or overwrite anything; have the newest backup checked and restored before any other step.";
     }
 
     /// <summary>A fresh install has no data worth saving; a legacy or migrated DB does.
