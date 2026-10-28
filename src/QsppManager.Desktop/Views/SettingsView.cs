@@ -92,6 +92,18 @@ public partial class SettingsView : UserControl
         var resetPass = new Button { Content = "Set/reset a passphrase…" };
         resetPass.Click += (_, _) => ResetStaffPassphrase();
         users.Children.Add(resetPass);
+        // FIX-05: one-time recovery code lets the login-screen reset work after a forgotten passphrase.
+        var recovery = new Button { Content = "Create a recovery code…" };
+        recovery.Click += async (_, _) =>
+        {
+            if (App.Session is null) { _message.Text = "Sign in first."; return; }
+            var (res, code) = App.Auth.CreateRecoveryCode(App.Session, App.Config);
+            if (!res.Ok || code is null) { _message.Text = res.Error; return; }
+            App.Config.Save();
+            await Dialogs.Prompt(this, "Recovery code (shown once)", "Write this down and keep it somewhere safe. It lets someone reset a passphrase from the login screen.", code);
+            _message.Text = "Recovery code created. The previous code, if any, no longer works.";
+        };
+        users.Children.Add(recovery);
         sp.Children.Add(Ui.Section("Users and roles", users));
 
         // Accessibility

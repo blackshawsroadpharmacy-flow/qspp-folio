@@ -31,6 +31,7 @@ public abstract class TestBase : IDisposable
 
     protected TestBase()
     {
+        AuthService.Iterations = 2_000;   // FIX-05: keep the suite fast; hash-shape tests assert the 600k constant
         Directory.CreateDirectory(TempRepo);
         Directory.CreateDirectory(Path.Combine(TempRepo, "seed"));
         WriteSeedRequirements();

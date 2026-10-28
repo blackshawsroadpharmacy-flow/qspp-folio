@@ -14,6 +14,9 @@ public sealed class AppConfig
     public string? LastPrinter { get; set; }
     public bool SidebarCollapsed { get; set; }
     public bool ReduceMotion { get; set; }
+    public string? RecoverySalt { get; set; }
+    public string? RecoveryHash { get; set; }
+    public int RecoveryIterations { get; set; }
 
     [System.Text.Json.Serialization.JsonIgnore]
     public static string ConfigPath => System.IO.Path.Combine(AppData.Root, "app-config.json");

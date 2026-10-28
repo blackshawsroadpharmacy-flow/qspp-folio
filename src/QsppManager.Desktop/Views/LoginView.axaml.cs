@@ -65,7 +65,7 @@ public partial class LoginView : UserControl
             ResetMessage.Text = "The two new passphrases do not match.";
             return;
         }
-        var result = App.Auth.ForgotPassphraseReset(ResetUserName.Text?.Trim() ?? "", ConfirmPhrase.Text ?? "", NewPass.Text ?? "");
+        var result = App.Auth.ForgotPassphraseReset(ResetUserName.Text?.Trim() ?? "", ConfirmPhrase.Text ?? "", RecoveryCode.Text ?? "", NewPass.Text ?? "", App.Config);
         if (!result.Ok)
         {
             ResetMessage.Text = result.Error;
@@ -74,7 +74,7 @@ public partial class LoginView : UserControl
         ResetMessage.Text = "";
         SuccessMessage.Text = $"Passphrase reset for '{ResetUserName.Text?.Trim()}'. Sign in with the new passphrase.";
         SuccessMessage.IsVisible = true;
-        NewPass.Text = NewPass2.Text = ConfirmPhrase.Text = "";
+        NewPass.Text = NewPass2.Text = ConfirmPhrase.Text = RecoveryCode.Text = "";
         ExitResetMode();
     }
 }

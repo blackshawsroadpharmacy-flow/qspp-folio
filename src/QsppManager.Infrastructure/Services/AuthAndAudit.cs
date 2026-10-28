@@ -65,13 +65,51 @@ public class AuditService(QsppDbContext db)
 /// authentication for a single-machine deployment (honest scope per docs/decisions.md DD-13).</summary>
 public class AuthService(QsppDbContext db, AuditService audit)
 {
+    /// <summary>OWASP-aligned work factor for PBKDF2-HMAC-SHA256. Tests lower <see cref="Iterations"/>
+    /// for speed; production never changes it.</summary>
+    public const int DefaultIterations = 600_000;
+    public static int Iterations = DefaultIterations;
+
     public static (string salt, string hash, int iterations) HashPassphrase(string passphrase)
     {
         var salt = RandomNumberGenerator.GetBytes(16);
-        const int iterations = 120_000;
+        var iterations = Iterations;
         var hash = Rfc2898DeriveBytes.Pbkdf2(System.Text.Encoding.UTF8.GetBytes(passphrase), salt, iterations, HashAlgorithmName.SHA256, 32);
         return (Convert.ToHexString(salt).ToLowerInvariant(), Convert.ToHexString(hash).ToLowerInvariant(), iterations);
     }
+
+    private readonly Dictionary<string, (int Fails, DateTime LockedUntil)> _attempts = new(StringComparer.OrdinalIgnoreCase);
+    private readonly object _attemptLock = new();
+    public Func<DateTime> UtcNow { get; set; } = () => DateTime.UtcNow;
+
+    /// <summary>Per-name throttle. In memory only: a restart clears it. It slows a person at the
+    /// keyboard; it is not a defence against someone who can copy the database file.</summary>
+    private string? LockMessage(string key)
+    {
+        lock (_attemptLock)
+            if (_attempts.TryGetValue(key, out var a) && a.LockedUntil > UtcNow())
+                return $"Too many attempts. Try again in {Math.Ceiling((a.LockedUntil - UtcNow()).TotalSeconds):0} seconds.";
+        return null;
+    }
+
+    private void RecordFailure(string key, string display)
+    {
+        lock (_attemptLock)
+        {
+            _attempts.TryGetValue(key, out var a);
+            var fails = a.Fails + 1;
+            var until = a.LockedUntil;
+            if (fails >= 5)
+            {
+                var step = Math.Min(fails - 5, 5);                   // 0..5
+                until = UtcNow().AddSeconds(Math.Min(30 * Math.Pow(2, step), 900));
+                audit.Append("workstation", null, "user.login.locked", "user", display, $"{fails} failed attempts");
+            }
+            _attempts[key] = (fails, until);
+        }
+    }
+
+    private void ClearFailures(string key) { lock (_attemptLock) _attempts.Remove(key); }
 
     public static bool VerifyPassphrase(string passphrase, string saltHex, string hashHex, int iterations)
     {
@@ -100,9 +138,22 @@ public class AuthService(QsppDbContext db, AuditService audit)
 
     public (ServiceResult result, UserSession? session) Login(string userName, string passphrase)
     {
+        var locked = LockMessage(userName.Trim());
+        if (locked != null) return (ServiceResult.Fail(locked), null);
         var user = db.Users.FirstOrDefault(u => u.UserName == userName && u.IsActive);
         if (user is null || !VerifyPassphrase(passphrase, user.PassphraseSalt, user.PassphraseHash, user.PassphraseIterations))
+        {
+            RecordFailure(userName.Trim(), userName.Trim());
             return (ServiceResult.Fail("Sign-in failed. Check the user name and passphrase."), null);
+        }
+        ClearFailures(userName.Trim());
+        if (user.PassphraseIterations < Iterations)
+        {
+            var (s2, h2, i2) = HashPassphrase(passphrase);
+            user.PassphraseSalt = s2; user.PassphraseHash = h2; user.PassphraseIterations = i2;
+            db.SaveChanges();
+            audit.Append(user.DisplayName, user.Id, "user.passphrase.rehash", "user", user.Id.ToString(), $"work factor raised to {i2}");
+        }
         audit.Append(user.DisplayName, user.Id, "user.login", "user", user.Id.ToString(), "");
         return (ServiceResult.Succeed(user.Id), new UserSession(user.Id, user.UserName, user.DisplayName, user.Role));
     }
@@ -152,20 +203,48 @@ public class AuthService(QsppDbContext db, AuditService audit)
         return ApplyNewPassphrase(user, session.DisplayName, session.UserId, "user.passphrase.reset", $"reset the passphrase for '{user.UserName}'", newPassphrase);
     }
 
-    /// <summary>The forgotten-passphrase safety net (no session, login screen). A passphrase
-    /// is PBKDF2-hash-only — it can never be shown again, only replaced. This deliberately
-    /// carries friction: the actor must type an exact confirmation phrase, and the audit
-    /// records the event loudly (actor 'workstation', distinct action) so any reset that
-    /// happened without the owner present is visible. Threat model: the database lives on
-    /// the same workstation, so this replaces access; it does NOT bypass hash-chain
-    /// verification or change roles/data.</summary>
-    public const string ForgotConfirmPhrase = "RESET MY PASSPHRASE";
-    public ServiceResult ForgotPassphraseReset(string userName, string confirmation, string newPassphrase)
+    /// <summary>Owner only. Returns the code once; only a PBKDF2 hash is stored.</summary>
+    public (ServiceResult result, string? code) CreateRecoveryCode(UserSession session, QsppManager.Infrastructure.Runtime.AppConfig cfg)
     {
+        if (session.Role != UserRole.OwnerAdmin)
+            return (ServiceResult.Fail("Only the pharmacy owner can create a recovery code."), null);
+        const string alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";   // no 0 O 1 I L
+        var chars = new char[20];
+        for (var i = 0; i < chars.Length; i++) chars[i] = alphabet[RandomNumberGenerator.GetInt32(alphabet.Length)];
+        var code = string.Join("-", Enumerable.Range(0, 5).Select(g => new string(chars, g * 4, 4)));
+        var (salt, hash, iters) = HashPassphrase(code.Replace("-", ""));
+        cfg.RecoverySalt = salt; cfg.RecoveryHash = hash; cfg.RecoveryIterations = iters;
+        // The caller persists cfg (App.Config.Save()). The service never writes to disk, so tests cannot touch a real data dir.
+        audit.Append(session.DisplayName, session.UserId, "recovery.created", "pharmacy", "recovery-code", "new recovery code issued (previous code, if any, no longer works)");
+        return (ServiceResult.Succeed(), code);
+    }
+
+    /// <summary>Forgotten-passphrase path (no session, login screen). A passphrase is
+    /// PBKDF2-hash-only: it can never be shown again, only replaced. It is NOT a bypass: the
+    /// actor needs the owner's one-time recovery code, plus the typed confirmation phrase.
+    /// The audit records the event loudly (actor 'workstation', distinct action) so any reset
+    /// is visible; the recovery code itself is never logged. Threat model: the database lives
+    /// on the same workstation, so this replaces access; it does NOT bypass hash-chain
+    /// verification or change roles/data. No code on file: the reset is refused and the
+    /// screen says why.</summary>
+    public const string ForgotConfirmPhrase = "RESET MY PASSPHRASE";
+    public ServiceResult ForgotPassphraseReset(string userName, string confirmation, string recoveryCode, string newPassphrase, QsppManager.Infrastructure.Runtime.AppConfig cfg)
+    {
+        var key = "recovery:" + (userName ?? "").Trim();
+        var locked = LockMessage(key);
+        if (locked != null) return ServiceResult.Fail(locked);
         if (confirmation.Trim().ToUpperInvariant() != ForgotConfirmPhrase)
             return ServiceResult.Fail($"Type {ForgotConfirmPhrase} to confirm the reset.");
         if (string.IsNullOrWhiteSpace(newPassphrase) || newPassphrase.Length < 8)
             return ServiceResult.Fail("The new passphrase must be at least 8 characters.");
+        if (string.IsNullOrEmpty(cfg.RecoveryHash) || string.IsNullOrEmpty(cfg.RecoverySalt))
+            return ServiceResult.Fail("No recovery code has been created on this computer. Sign in as the owner and create one in Settings, or ask the owner to set your passphrase.");
+        if (!VerifyPassphrase((recoveryCode ?? "").Replace("-", "").Replace(" ", "").ToUpperInvariant(), cfg.RecoverySalt, cfg.RecoveryHash, cfg.RecoveryIterations))
+        {
+            RecordFailure(key, (userName ?? "").Trim());
+            return ServiceResult.Fail("That recovery code is not correct.");
+        }
+        ClearFailures(key);
         var user = db.Users.FirstOrDefault(u => u.UserName == userName.Trim() && u.IsActive);
         if (user is null) return ServiceResult.Fail("No active account with that user name.");
         return ApplyNewPassphrase(user, "workstation", null, "user.passphrase.forgot_reset", $"forgot-passphrase reset for '{user.UserName}' (roles and data unchanged)", newPassphrase);

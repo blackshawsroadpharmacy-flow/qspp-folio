@@ -1,4 +1,5 @@
 using QsppManager.Domain;
+using QsppManager.Infrastructure.Runtime;
 using QsppManager.Infrastructure.Services;
 using Xunit;
 
@@ -59,15 +60,22 @@ public class PasswordResetTests : TestBase
     [Fact]
     public void ForgotReset_NeedsTypedConfirmation_ThenSignInWorks()
     {
+        // FIX-05: the owner creates a one-time recovery code first; the login-screen
+        // reset needs it. Never cfg.Save()/Load() in tests (resolves to the real data dir).
+        var cfg = new AppConfig();
+        var (created, code) = Auth.CreateRecoveryCode(Owner, cfg);
+        Assert.True(created.Ok, created.Error);
+        Assert.False(string.IsNullOrWhiteSpace(code));
+
         // wrong confirmation phrase refused
-        Assert.False(Auth.ForgotPassphraseReset("owner", "just let me in", "brand-passphras1").Ok);
-        Assert.False(Auth.ForgotPassphraseReset("owner", AuthService.ForgotConfirmPhrase, "short").Ok);
-        Assert.False(Auth.ForgotPassphraseReset("nobody", AuthService.ForgotConfirmPhrase, "brand-passphras1").Ok);
+        Assert.False(Auth.ForgotPassphraseReset("owner", "just let me in", code!, "brand-passphras1", cfg).Ok);
+        Assert.False(Auth.ForgotPassphraseReset("owner", AuthService.ForgotConfirmPhrase, code!, "short", cfg).Ok);
+        Assert.False(Auth.ForgotPassphraseReset("nobody", AuthService.ForgotConfirmPhrase, code!, "brand-passphras1", cfg).Ok);
         var (stillOld, _) = Auth.Login("owner", "passphras8");
         Assert.True(stillOld.Ok);   // nothing changed by the refused attempts
 
-        // correct confirmation phrase replaces the passphrase
-        var ok = Auth.ForgotPassphraseReset("owner", AuthService.ForgotConfirmPhrase, "brand-passphras1");
+        // correct confirmation phrase + recovery code replaces the passphrase
+        var ok = Auth.ForgotPassphraseReset("owner", AuthService.ForgotConfirmPhrase, code!, "brand-passphras1", cfg);
         Assert.True(ok.Ok, ok.Error);
         var (oldGone, _) = Auth.Login("owner", "passphras8");
         Assert.False(oldGone.Ok);
@@ -86,11 +94,14 @@ public class PasswordResetTests : TestBase
     [Fact]
     public void ResetPaths_LeaveDataAndIntactness_Untouched()
     {
+        var cfg = new AppConfig();
+        var (created, code) = Auth.CreateRecoveryCode(Owner, cfg);
+        Assert.True(created.Ok, created.Error);
         var reqsBefore = Db.Requirements.Count();
         var usersBefore = Db.Users.Count();
-        Assert.True(Auth.ForgotPassphraseReset("owner", AuthService.ForgotConfirmPhrase, "brand-passphras1").Ok);
+        Assert.True(Auth.ForgotPassphraseReset("owner", AuthService.ForgotConfirmPhrase, code!, "brand-passphras1", cfg).Ok);
         Assert.Equal(3, Db.Requirements.Count());
         Assert.Equal(usersBefore, Db.Users.Count());
-        Assert.Equal(1, Db.Users.Select(u => u.Role == UserRole.OwnerAdmin).Count());
+        Assert.Equal(1, Db.Users.Count(u => u.Role == UserRole.OwnerAdmin));
     }
 }

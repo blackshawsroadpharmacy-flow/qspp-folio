@@ -40,6 +40,10 @@
             <TextBox x:Name="ResetUserName" Watermark="User name to reset" Height="34" />
           </StackPanel>
           <StackPanel Spacing="6">
+            <TextBlock Classes="label">RECOVERY CODE</TextBlock>
+            <TextBox x:Name="RecoveryCode" Watermark="XXXX-XXXX-XXXX-XXXX-XXXX (from the owner)" Height="34" />
+          </StackPanel>
+          <StackPanel Spacing="6">
             <TextBlock Classes="label">TYPE TO CONFIRM</TextBlock>
             <TextBox x:Name="ConfirmPhrase" Watermark="Type exactly: RESET MY PASSPHRASE" Height="34" />
           </StackPanel>
