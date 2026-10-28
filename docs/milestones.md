@@ -4,6 +4,12 @@ Status vocabulary: ✔ implemented (evidence exists) · ◐ partial · ✗ not s
 ⊘ blocked (external dependency — name it). Updated as work proceeds; never
 claim runtime validation that did not happen on this machine.
 
+App naming: entries written before 25 Oct 2026 may say "Hugh's QSPP Manager";
+from the 25 Oct release the product is **QSPP Folio** everywhere user-visible
+(internal identifiers stay `QsppManager`). Current test counts are in `GATES.md`
+and the fix-phase report (`docs/audit/execution-log-2026-10-28.md`); the counts
+inside dated milestone rows are historical and describe that row's session.
+
 ## M1 — convincing durable vertical slice · **COMPLETE (verified 20 Oct 2026)**
 
 | Item | Status | Evidence |
