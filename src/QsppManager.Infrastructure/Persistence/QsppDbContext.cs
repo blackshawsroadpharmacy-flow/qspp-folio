@@ -48,6 +48,7 @@ public class QsppDbContext(DbContextOptions<QsppDbContext> options) : DbContext(
             e.HasIndex(x => new { x.PharmacyId, x.RequirementId }).IsUnique();
             e.Property(x => x.Notes).HasMaxLength(4000);
             e.Property(x => x.ExternalOutcomeRef).HasMaxLength(200);
+            e.Property(x => x.NoEvidenceReason).HasMaxLength(500);
         });
         mb.Entity<EvidenceItem>(e =>
         {

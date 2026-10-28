@@ -29,6 +29,7 @@ public class AssessorPackService(QsppWorkspace workspace, QsppDbContext db, PdfC
             var inScope = rows
                 .Where(r => r.Readiness is RequirementReadiness.ManagerVerified or RequirementReadiness.AssessorAccepted
                             && r.Applicability != Domain.Applicability.NotApplicable)
+                .Where(r => workspace.HasQualifyingEvidence(r.Id) || workspace.RequirementDetail(r.Id, session)?.State.NoEvidenceReason is { Length: > 0 })
                 .OrderBy(r => r.Ref).ToList();
             if (inScope.Count == 0)
                 return (false, "", "Nothing is in scope yet: the pack includes requirements that are manager-verified (or assessor-accepted) and applicable. Verify more requirements first.", 0, 0, []);

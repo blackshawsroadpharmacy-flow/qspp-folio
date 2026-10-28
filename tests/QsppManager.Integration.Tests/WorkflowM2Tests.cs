@@ -67,6 +67,7 @@ public class JourneyAndIssuesTests : TestBase
         Assert.True(Workspace.SetApplicability(ruleRow.Id, Applicability.Applicable, "Core program rule", Owner).Ok);
         Assert.True(Workspace.SetReadiness(ruleRow.Id, RequirementReadiness.InProgress, Owner).Ok);
         Assert.True(Workspace.SetReadiness(ruleRow.Id, RequirementReadiness.ReadyForReview, Owner).Ok);
+        AttachVerifiedEvidence(ruleRow.Id);
         Assert.True(Workspace.SetReadiness(ruleRow.Id, RequirementReadiness.ManagerVerified, Owner).Ok);
 
         var after = Workspace.Journey();

@@ -62,6 +62,19 @@ public abstract class TestBase : IDisposable
         try { Directory.Delete(TempRepo, recursive: true); } catch { }
     }
 
+    /// <summary>Import, link and manager-verify one evidence item for a requirement
+    /// (FIX-02 helper: verification now needs qualifying evidence).</summary>
+    protected void AttachVerifiedEvidence(Guid requirementId, string title = "Supporting SOP")
+    {
+        var path = Path.Combine(TempRepo, $"ev-{Guid.NewGuid():N}.pdf");
+        File.WriteAllBytes(path, System.Text.Encoding.ASCII.GetBytes("%PDF-1.4 fake " + Guid.NewGuid()));
+        var (res, item) = Workspace.ImportEvidence(path, title, EvidenceKind.PolicyOrSop, null, null, false, "", Owner);
+        Assert.True(res.Ok, res.Error);
+        Assert.True(Workspace.LinkEvidence(item!.Id, requirementId, "", null, null, "supports the requirement", Owner).Ok);
+        Assert.True(Workspace.SetEvidenceReview(item.Id, EvidenceReviewState.ReadyForReview, Owner, "").Ok);
+        Assert.True(Workspace.SetEvidenceReview(item.Id, EvidenceReviewState.ManagerVerified, Owner, "ok").Ok);
+    }
+
     private void WriteSeedRequirements()
     {
         var req = new object[]
@@ -159,6 +172,7 @@ public class WorkspaceWorkflowTests : TestBase
         Assert.False(jump.Ok);
         Assert.True(Workspace.SetReadiness(req.Id, RequirementReadiness.InProgress, Owner).Ok);
         Assert.True(Workspace.SetReadiness(req.Id, RequirementReadiness.ReadyForReview, Owner).Ok);
+        AttachVerifiedEvidence(req.Id);
         Assert.True(Workspace.SetReadiness(req.Id, RequirementReadiness.ManagerVerified, Owner).Ok);
         // Assessor acceptance without external ref is refused
         var accept = Workspace.SetReadiness(req.Id, RequirementReadiness.AssessorAccepted, Owner, "");

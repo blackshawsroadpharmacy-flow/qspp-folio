@@ -43,7 +43,7 @@ public class AssessorPackTests : TestBase
             // Bring one rule requirement into scope.
             var row = Workspace.RequirementRows(Owner).First(r => r.Ref == "Rule 8");
             Workspace.SetApplicability(row.Id, Applicability.Applicable, "core rule", Owner);
-            foreach (var t in new[] { RequirementReadiness.InProgress, RequirementReadiness.ReadyForReview, RequirementReadiness.ManagerVerified })
+            foreach (var t in new[] { RequirementReadiness.InProgress, RequirementReadiness.ReadyForReview })
                 Assert.True(Workspace.SetReadiness(row.Id, t, Owner).Ok);
 
             // Evidence A: clean file, manager-verified → included.
@@ -57,6 +57,7 @@ public class AssessorPackTests : TestBase
             Workspace.LinkEvidence(evA2!.Id, row.Id, "", null, null, "log", Owner);
             Workspace.SetEvidenceReview(evA2.Id, EvidenceReviewState.ReadyForReview, Owner, "");
             Workspace.SetEvidenceReview(evA2.Id, EvidenceReviewState.ManagerVerified, Owner, "");
+            Assert.True(Workspace.SetReadiness(row.Id, RequirementReadiness.ManagerVerified, Owner).Ok);
 
             // Evidence B: patient data WITH attestation → included (attestation is the gate).
             var b = Path.Combine(Path.GetTempPath(), $"pk-b-{Guid.NewGuid():N}.txt");

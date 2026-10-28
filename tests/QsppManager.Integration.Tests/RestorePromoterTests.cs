@@ -164,7 +164,7 @@ public class RestorePromoterTests
         {
             // v1 database: InitialCreate applied and nothing later stamped.
             db.Database.Migrate(InitialMigrationId);
-            DatabaseBootstrapper.Prepare(db);   // has 6 pending migrations -> must back up first
+            DatabaseBootstrapper.Prepare(db);   // has pending migrations -> must back up first
         }
         var preMigration = Path.Combine(Path.GetDirectoryName(dbPath)!, "pre-migration");
         var backups = Directory.EnumerateFiles(preMigration, "qspp-*.db").ToList();
@@ -175,9 +175,11 @@ public class RestorePromoterTests
         reopened.Database.OpenConnection();
         try
         {
+            // After Prepare the formerly v1 database is stamped with every migration the model has.
+            var expected = reopened.Database.GetMigrations().Count();
             using var cmd = reopened.Database.GetDbConnection().CreateCommand();
             cmd.CommandText = "SELECT COUNT(*) FROM __EFMigrationsHistory";
-            Assert.Equal(7L, Convert.ToInt64(cmd.ExecuteScalar()));
+            Assert.Equal((long)expected, Convert.ToInt64(cmd.ExecuteScalar()));
         }
         finally { reopened.Database.CloseConnection(); }
     }

@@ -67,6 +67,9 @@ public class RequirementState
     public string ExternalOutcomeRef { get; set; } = "";
     public DateTime? ExternalOutcomeAt { get; set; }
 
+    /// <summary>Set when a requirement was Manager-verified with no evidence file: why none is needed.</summary>
+    public string NoEvidenceReason { get; set; } = "";
+
     public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
 }
 

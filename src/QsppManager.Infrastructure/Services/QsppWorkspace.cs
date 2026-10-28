@@ -117,7 +117,7 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
         return ServiceResult.Succeed();
     }
 
-    public ServiceResult SetReadiness(Guid requirementId, RequirementReadiness target, UserSession session, string externalOutcomeRef = "")
+    public ServiceResult SetReadiness(Guid requirementId, RequirementReadiness target, UserSession session, string externalOutcomeRef = "", string noEvidenceReason = "")
     {
         if (session.ReadOnly) return ServiceResult.Fail("Read-only reviewer accounts cannot change readiness.");
         var ph = EnsurePharmacy();
@@ -126,6 +126,18 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
             return ServiceResult.Fail($"Requirement cannot move from '{st.Readiness}' to '{target}'.");
         if (!StateMachines.MayApplyReadiness(target, session.Role))
             return ServiceResult.Fail($"Only Owner/Admin or Manager/Reviewer accounts can set readiness to '{target}'.");
+        if (target == RequirementReadiness.ManagerVerified)
+        {
+            var reason = (noEvidenceReason ?? "").Trim();
+            if (!HasQualifyingEvidence(requirementId))
+            {
+                if (reason.Length < 10)
+                    return ServiceResult.Fail("Manager verification needs at least one linked, Manager-verified, in-date evidence item. If this requirement genuinely needs no evidence file, give the reason (10 characters or more) and it will be recorded in the audit trail.");
+                st.NoEvidenceReason = reason[..Math.Min(reason.Length, 500)];
+                audit.Append(session.DisplayName, session.UserId, "requirement.readiness.noevidence", "requirement", requirementId.ToString(), $"reason={st.NoEvidenceReason}");
+            }
+            else st.NoEvidenceReason = "";
+        }
         if (target == RequirementReadiness.AssessorAccepted)
         {
             if (!StateMachines.MayConfirmAssessorAcceptance(session.Role))
@@ -141,6 +153,20 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
         audit.Append(session.DisplayName, session.UserId, "requirement.readiness", "requirement", requirementId.ToString(),
             $"to={target}" + (target == RequirementReadiness.AssessorAccepted ? $"; externalRef={externalOutcomeRef}" : ""));
         return ServiceResult.Succeed();
+    }
+
+    /// <summary>True when the requirement has at least one Active link to Manager-verified
+    /// evidence whose EffectiveTo (if any) has not passed. Proposed, Suspended and
+    /// Superseded links never count.</summary>
+    public bool HasQualifyingEvidence(Guid requirementId)
+    {
+        var today = Clock.Today();
+        var ends = (from l in db.EvidenceLinks.AsNoTracking()
+                    where l.RequirementId == requirementId && l.State == LinkState.Active
+                    join e in db.EvidenceItems.AsNoTracking() on l.EvidenceItemId equals e.Id
+                    where e.ReviewState == EvidenceReviewState.ManagerVerified
+                    select e.EffectiveTo).ToList();
+        return ends.Any(d => d is null || d.Value >= today);
     }
 
     public ServiceResult AssignOwner(Guid requirementId, Guid? userId, UserSession session)
@@ -975,7 +1001,10 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
     {
         var ph = EnsurePharmacy();
         var total = db.Requirements.Count();
-        var verified = db.RequirementStates.AsNoTracking().Count(s => s.PharmacyId == ph.Id && s.Readiness == RequirementReadiness.ManagerVerified);
+        var verified = db.RequirementStates.AsNoTracking()
+            .Where(s => s.PharmacyId == ph.Id && s.Readiness == RequirementReadiness.ManagerVerified)
+            .Select(s => new { s.RequirementId, s.NoEvidenceReason }).ToList()
+            .Count(s => s.NoEvidenceReason != "" || HasQualifyingEvidence(s.RequirementId));
         return (verified, total);
     }
 
@@ -1064,7 +1093,7 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
         var decided = states.Count(s => s.Applicability != Applicability.Unknown);
         var withEvidence = db.EvidenceLinks.AsNoTracking()
             .Where(l => l.State != LinkState.Superseded).Select(l => l.RequirementId).Distinct().Count();
-        var verified = states.Count(s => s.Readiness == RequirementReadiness.ManagerVerified);
+        var verified = states.Count(s => s.Readiness == RequirementReadiness.ManagerVerified && (s.NoEvidenceReason != "" || HasQualifyingEvidence(s.RequirementId)));
         var pendingReview = db.EvidenceItems.Count(e => e.ReviewState == EvidenceReviewState.ReadyForReview);
         var today = Clock.Today();
         var overdue = db.Tasks.Count(t => t.State == TaskState.Open && t.DueDate != null && t.DueDate < today);

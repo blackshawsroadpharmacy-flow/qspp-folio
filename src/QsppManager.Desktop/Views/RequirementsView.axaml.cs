@@ -737,7 +737,14 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
             ext = await Dialogs.Prompt(this, "Assessor outcome reference", "Report / letter reference (required; only record an outcome that actually arrived)");
             if (string.IsNullOrWhiteSpace(ext)) return;
         }
-        var r = App.Workspace.SetReadiness(d.Requirement.Id, target, session, ext);
+        string? noEv = "";
+        if (target == RequirementReadiness.ManagerVerified && !App.Workspace.HasQualifyingEvidence(d.Requirement.Id))
+        {
+            noEv = await Dialogs.Prompt(this, "No verified evidence linked",
+                "Link and verify evidence first. If this requirement needs no evidence file, say why (recorded in the audit trail).");
+            if (string.IsNullOrWhiteSpace(noEv)) return;
+        }
+        var r = App.Workspace.SetReadiness(d.Requirement.Id, target, session, ext, noEv);
         ShowResult(r.Ok ? "Readiness updated." : r.Error);
         Reload();
     }
