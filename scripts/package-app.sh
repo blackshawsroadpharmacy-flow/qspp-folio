@@ -89,7 +89,34 @@ cat > "$CONTENTS/Info.plist" <<'PLIST'
 $PLIST_BUDDY -c "Print" "$CONTENTS/Info.plist" >/dev/null
 
 echo "→ ad-hoc code signature"
-codesign --force --deep --sign - "$DIST/$APP_NAME.app" 2>/dev/null || echo "(codesign skipped)"
+# FIX-16: no more swallowed failures. The sign must run, and the result must verify:
+# set -e stops the script if signing or verification fails (F-30).
+codesign --force --deep --sign - "$DIST/$APP_NAME.app"
+codesign --verify --deep --strict "$DIST/$APP_NAME.app"
+echo "  codesign verify exit=$?"
+
+# FIX-16: the distribution zip is ditto-made with no AppleDouble (_*) members (F-31).
+echo "→ distribution zip (ditto, no ._ files)"
+ZIP_PATH="$DIST/${APP_NAME// /-}-arm64-distribution.zip"
+rm -f "$ZIP_PATH"
+ditto -c -k --norsrc --keepParent "$DIST/$APP_NAME.app" "$ZIP_PATH"
+APPLEDOUBLE=$(unzip -l "$ZIP_PATH" | grep -c "/\\._" || true)
+if [ "$APPLEDOUBLE" != "0" ]; then
+  echo "ERROR: distribution zip contains $APPLEDOUBLE AppleDouble members" >&2
+  exit 1
+fi
+echo "  unzip -l ._ members: $APPLEDOUBLE"
+
+# FIX-16: the seed corpus must contain no names, home paths or site hints (F-32 PRIVACY GATE).
+echo "→ seed privacy scan"
+SEED_HITS=$(rg -l -a -i 'hugh|burke|blackshaws|burkeroad|/Users/hughn' seed || true)
+if [ -n "$SEED_HITS" ]; then
+  printf '%s\n' "$SEED_HITS"
+  echo "ERROR: seed corpus contains identifying strings; scrub before packaging" >&2
+  exit 1
+fi
+echo "  seed privacy scan clean (0 files)"
 
 echo "✓ built: $DIST/$APP_NAME.app"
+echo "  zip: $ZIP_PATH"
 echo "  launch with: open \"$DIST/$APP_NAME.app\""

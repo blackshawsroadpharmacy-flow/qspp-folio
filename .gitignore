@@ -30,8 +30,7 @@ Thumbs.db
 dist/
 Contents/Resources/
 
-# Vendored pack (large PDFs, untracked by intent; bundled into the .app at packaging)
-vendor/
-
+# Vendored reference pack — TRACKED from 2026-10-28 (Hugh's call; FIX-16 step 5).
+# The packaging step bundles it into the .app at Contents/Resources/qspp-pack.
 .font-backups-*/
 assets/fonts/.font-backups*/
