@@ -339,6 +339,7 @@ public class SeedImporter(QsppDbContext db, AttachmentStore store, AuditService 
             : doc.RootElement.GetProperty("requirements").EnumerateArray();
 
         var updates = 0;
+        var hintFixes = 0;
         foreach (var el in reqs)
         {
             if (el.ValueKind != JsonValueKind.Object) continue;
@@ -348,18 +349,25 @@ public class SeedImporter(QsppDbContext db, AttachmentStore store, AuditService 
                 ? g : DeterministicId($"{kind}", $"{el.GetProperty("sourceDoc").GetString() ?? ""}:{refKey}");
             var w = S(el, "wording");
             var s = S(el, "summary");
+            // FIX-09: the hint is seed metadata, not user state; repair rows saved by the old parser.
+            var hint = ParseEnum<ApplicabilityHint>(el.TryGetProperty("applicabilityHint", out var aEl) && aEl.ValueKind == JsonValueKind.String ? aEl.GetString()! : "Unknown");
             var r = db.Requirements.IgnoreQueryFilters().FirstOrDefault(x => x.Id == id);
-            if (r is null || (r.WordingExcerpt == w && r.PlainSummary == s)) continue;
+            if (r is null) continue;
+            if (r.ApplicabilityHint != hint) { r.ApplicabilityHint = hint; hintFixes++; }
+            if (r.WordingExcerpt == w && r.PlainSummary == s) continue;
             r.WordingExcerpt = w;
             r.PlainSummary = s;
             updates++;
             ct.ThrowIfCancellationRequested();
         }
-        if (updates > 0)
+        if (updates > 0 || hintFixes > 0)
         {
             db.SaveChanges();
-            audit.Append("system", null, "corpus.wording_refresh", "requirements", "*",
-                $"updated={updates} wording from re-derived anchored segments");
+            if (updates > 0)
+                audit.Append("system", null, "corpus.wording_refresh", "requirements", "*",
+                    $"updated={updates} wording from re-derived anchored segments");
+            if (hintFixes > 0)
+                audit.Append("system", null, "corpus.hint_refresh", "requirements", "*", $"applicability hint corrected on {hintFixes} requirements");
         }
         return count;
     }
@@ -581,5 +589,5 @@ public class SeedImporter(QsppDbContext db, AttachmentStore store, AuditService 
         => el.TryGetProperty(prop, out var p) && p.ValueKind == JsonValueKind.String ? p.GetString() ?? "" : "";
 
     private static T ParseEnum<T>(string raw) where T : struct, Enum
-        => Enum.TryParse<T>(raw, ignoreCase: true, out var v) ? v : default;
+        => Enum.TryParse<T>((raw ?? "").Replace("_", "").Replace("-", ""), ignoreCase: true, out var v) ? v : default;
 }

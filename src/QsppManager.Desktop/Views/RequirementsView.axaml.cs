@@ -958,7 +958,34 @@ public partial class RequirementsView : UserControl, IPageSearchFocus
             }
         };
         save.Margin = new(0, 8, 0, 0);
-        return new StackPanel { Spacing = 8, Children = { seg, reason, save } };
+        // FIX-09: while undecided, offer the rule's suggestion from the services the pharmacy offers.
+        Control? suggestionRow = null;
+        if (current == Applicability.Unknown && App.Workspace.SuggestApplicability(d.Requirement.Id) is { } sug)
+        {
+            var useIt = new Button { Content = "Use this suggestion", Height = 26 };
+            useIt.Click += (_, _) =>
+            {
+                pending = sug.value;
+                reason.Text = sug.reason;
+                foreach (var (v, btn) in buttons) { if (v == sug.value) btn.Classes.Add("on"); else btn.Classes.Remove("on"); }
+            };
+            suggestionRow = new StackPanel
+            {
+                Orientation = Orientation.Horizontal, Spacing = 10,
+                Children =
+                {
+                    new TextBlock { Classes = { "small" }, TextWrapping = TextWrapping.Wrap, MaxWidth = 520,
+                        Text = $"Suggested from the services you offer: {(sug.value == Applicability.Applicable ? "applies" : "doesn't apply")}. {sug.reason} Nothing is recorded until you press Save." },
+                    useIt,
+                },
+            };
+        }
+        var children = new List<Control> { seg };
+        if (suggestionRow is not null) children.Add(suggestionRow);
+        children.Add(reason); children.Add(save);
+        var block = new StackPanel { Spacing = 8 };
+        foreach (var c in children) block.Children.Add(c);
+        return block;
     }
 
     /// <summary>Next action: autosize text area saved on blur (no change = no write) and

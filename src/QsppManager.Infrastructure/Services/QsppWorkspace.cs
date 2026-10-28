@@ -117,6 +117,17 @@ public class QsppWorkspace(QsppDbContext db, AttachmentStore store, AuditService
         return ServiceResult.Succeed();
     }
 
+    /// <summary>A suggestion only while the requirement's applicability is still Unknown. Writes nothing.</summary>
+    public (Applicability value, string reason)? SuggestApplicability(Guid requirementId)
+    {
+        var ph = EnsurePharmacy();
+        var r = db.Requirements.AsNoTracking().FirstOrDefault(x => x.Id == requirementId);
+        if (r is null) return null;
+        var st = db.RequirementStates.AsNoTracking().FirstOrDefault(s => s.RequirementId == requirementId && s.PharmacyId == ph.Id);
+        if (st is not null && st.Applicability != Applicability.Unknown) return null;
+        return ApplicabilityRules.Suggest(r.ApplicabilityHint, (ServiceScopeFlag)ph.ServiceScopeFlags);
+    }
+
     public ServiceResult SetReadiness(Guid requirementId, RequirementReadiness target, UserSession session, string externalOutcomeRef = "", string noEvidenceReason = "")
     {
         if (session.ReadOnly) return ServiceResult.Fail("Read-only reviewer accounts cannot change readiness.");
